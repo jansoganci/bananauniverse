@@ -144,6 +144,7 @@ struct ChatContainerView: View {
     
     private var canSendMessage: Bool {
         guard let prompt = viewModel.currentPrompt, !prompt.isEmpty else { return false }
+        guard HybridCreditManager.shared.creditsLoaded else { return false }
         return viewModel.selectedImage != nil && viewModel.remainingQuota > 0 && !viewModel.isProcessing
     }
     

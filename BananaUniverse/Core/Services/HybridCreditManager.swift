@@ -20,6 +20,7 @@ class HybridCreditManager: ObservableObject {
     @Published var userState: UserState = .anonymous(deviceId: UUID().uuidString)
     @Published var isLoading = false
     @Published var errorMessage: String?
+    @Published var creditsLoaded = false // Track if credits have been loaded from backend
     
     // Daily quota properties
     @Published var dailyQuotaUsed: Int = 0
@@ -89,12 +90,45 @@ class HybridCreditManager: ObservableObject {
     // MARK: - Credit Management
     
     func loadCredits() {
+        creditsLoaded = false
         switch userState {
         case .anonymous(let deviceId):
-            loadAnonymousCredits(deviceId: deviceId)
+            Task {
+                do {
+                    await loadAnonymousCredits(deviceId: deviceId)
+                    await MainActor.run {
+                        creditsLoaded = true
+                        #if DEBUG
+                        print("✅ Anonymous credits loaded successfully: \(credits)")
+                        #endif
+                    }
+                } catch {
+                    await MainActor.run {
+                        creditsLoaded = true // Still mark as loaded to prevent infinite loading state
+                        #if DEBUG
+                        print("❌ Failed to load anonymous credits: \(error.localizedDescription)")
+                        #endif
+                    }
+                }
+            }
         case .authenticated(let user):
             Task {
-                await loadAuthenticatedCredits(userId: user.id)
+                do {
+                    await loadAuthenticatedCredits(userId: user.id)
+                    await MainActor.run {
+                        creditsLoaded = true
+                        #if DEBUG
+                        print("✅ Authenticated credits loaded successfully: \(credits)")
+                        #endif
+                    }
+                } catch {
+                    await MainActor.run {
+                        creditsLoaded = true // Still mark as loaded to prevent infinite loading state
+                        #if DEBUG
+                        print("❌ Failed to load authenticated credits: \(error.localizedDescription)")
+                        #endif
+                    }
+                }
             }
         }
     }
@@ -359,40 +393,56 @@ class HybridCreditManager: ObservableObject {
     
     // MARK: - Anonymous User Credits
     
-    private func loadAnonymousCredits(deviceId: String) {
-        // Try to load from backend first
-        Task {
-            do {
-                let result: [AnonymousCredits] = try await supabase.client
-                    .from("anonymous_credits")
-                    .select()
-                    .eq("device_id", value: deviceId)
-                    .execute()
-                    .value
-                
-                if let anonymousCredits = result.first {
-                    credits = anonymousCredits.credits
+    private func loadAnonymousCredits(deviceId: String) async {
+        do {
+            let result: [AnonymousCredits] = try await supabase.client
+                .from("anonymous_credits")
+                .select()
+                .eq("device_id", value: deviceId)
+                .execute()
+                .value
+            
+            if let anonymousCredits = result.first {
+                credits = anonymousCredits.credits
+                #if DEBUG
+                print("✅ Loaded anonymous credits from backend: \(credits)")
+                #endif
+            } else {
+                // No backend record - check local storage
+                let localCredits = getLocalCredits(deviceId: deviceId)
+                if localCredits > 0 {
+                    // Attempt to migrate local credits to backend
+                    try? await createAnonymousCreditsRecord(deviceId: deviceId, initialCredits: localCredits)
+                    credits = localCredits
+                    #if DEBUG
+                    print("✅ Using local credits (backend will sync on first Generate): \(credits)")
+                    #endif
                 } else {
-                    // No backend record - check local storage
-                    let localCredits = getLocalCredits(deviceId: deviceId)
-                    if localCredits > 0 {
-                        // Migrate local credits to backend
-                        try await createAnonymousCreditsRecord(deviceId: deviceId, initialCredits: localCredits)
-                        credits = localCredits
-                    } else {
-                        // New user - give free credits
-                        credits = FREE_CREDITS
-                        try await createAnonymousCreditsRecord(deviceId: deviceId, initialCredits: FREE_CREDITS)
-                    }
-                }
-            } catch {
-                // Fallback to local storage
-                credits = getLocalCredits(deviceId: deviceId)
-                if credits == 0 {
+                    // New user - give free credits locally
                     credits = FREE_CREDITS
                     saveLocalCredits(deviceId: deviceId)
+                    // Attempt to create backend record (will auto-create on first Generate if this fails)
+                    try? await createAnonymousCreditsRecord(deviceId: deviceId, initialCredits: FREE_CREDITS)
+                    #if DEBUG
+                    print("✅ New user - starting with \(credits) free credits")
+                    print("⚠️ Backend record will be auto-created on first Generate")
+                    #endif
                 }
             }
+        } catch {
+            #if DEBUG
+            print("⚠️ Failed to load anonymous credits from backend: \(error.localizedDescription)")
+            #endif
+            // Fallback to local storage
+            credits = getLocalCredits(deviceId: deviceId)
+            if credits == 0 {
+                credits = FREE_CREDITS
+                saveLocalCredits(deviceId: deviceId)
+            }
+            #if DEBUG
+            print("✅ Fallback to local credits: \(credits)")
+            print("⚠️ Backend will sync on first Generate")
+            #endif
         }
     }
     
@@ -417,11 +467,25 @@ class HybridCreditManager: ObservableObject {
             updatedAt: Date()
         )
         
-        try await supabase.client
-            .from("anonymous_credits")
-            .insert(anonymousCredits)
-            .execute()
-        
+        do {
+            try await supabase.client
+                .from("anonymous_credits")
+                .insert(anonymousCredits)
+                .execute()
+            
+            #if DEBUG
+            print("✅ Created anonymous credits record in backend for device: \(deviceId)")
+            print("✅ Initial credits: \(initialCredits)")
+            #endif
+        } catch {
+            #if DEBUG
+            print("❌ Failed to create anonymous credits record for device: \(deviceId)")
+            print("❌ Error: \(error.localizedDescription)")
+            print("⚠️ This is normal for new users - backend will auto-create on first Generate")
+            #endif
+            // Don't throw - let backend self-heal on first image generation
+            // throw error
+        }
     }
     
     private func updateAnonymousCreditsBackend(deviceId: String) async throws {
@@ -446,13 +510,37 @@ class HybridCreditManager: ObservableObject {
             
             if let userCredits = result.first {
                 credits = userCredits.credits
+                #if DEBUG
+                print("✅ Loaded authenticated credits from backend: \(credits)")
+                #endif
             } else {
-                // New authenticated user - create record
-                try await createAuthenticatedCreditsRecord(userId: userId)
+                // New authenticated user - check local credits for migration
+                let localCredits = getLocalCredits(deviceId: userState.identifier)
+                let initialCredits = max(localCredits, FREE_CREDITS)
+                credits = initialCredits
+                saveLocalCredits(deviceId: userState.identifier)
+                
+                // Attempt to create backend record (will auto-create on first Generate if this fails)
+                try? await createAuthenticatedCreditsRecord(userId: userId)
+                #if DEBUG
+                print("✅ New authenticated user - starting with \(credits) credits")
+                print("⚠️ Backend record will be auto-created on first Generate")
+                #endif
             }
         } catch {
+            #if DEBUG
+            print("⚠️ Failed to load authenticated credits from backend: \(error.localizedDescription)")
+            #endif
             // Fallback to local storage
-            credits = getLocalCredits(deviceId: userState.identifier)
+            let localCredits = getLocalCredits(deviceId: userState.identifier)
+            credits = localCredits > 0 ? localCredits : FREE_CREDITS
+            if credits > 0 {
+                saveLocalCredits(deviceId: userState.identifier)
+            }
+            #if DEBUG
+            print("✅ Fallback to local credits: \(credits)")
+            print("⚠️ Backend will sync on first Generate")
+            #endif
         }
     }
     
@@ -473,17 +561,30 @@ class HybridCreditManager: ObservableObject {
         let localCredits = getLocalCredits(deviceId: userState.identifier)
         let initialCredits = max(localCredits, FREE_CREDITS)
         
-        try await supabase.client
-            .from("user_credits")
-            .insert([
-                "user_id": userId.uuidString,
-                "credits": String(initialCredits),
-                "created_at": Date().ISO8601Format(),
-                "updated_at": Date().ISO8601Format()
-            ])
-            .execute()
-        
-        credits = initialCredits
+        do {
+            try await supabase.client
+                .from("user_credits")
+                .insert([
+                    "user_id": userId.uuidString,
+                    "credits": String(initialCredits),
+                    "created_at": Date().ISO8601Format(),
+                    "updated_at": Date().ISO8601Format()
+                ])
+                .execute()
+            
+            credits = initialCredits
+            
+            #if DEBUG
+            print("✅ Created authenticated credits record in backend with \(initialCredits) credits")
+            #endif
+        } catch {
+            #if DEBUG
+            print("❌ Failed to create authenticated credits record: \(error.localizedDescription)")
+            print("⚠️ This is normal for new users - backend will auto-create on first Generate")
+            #endif
+            // Don't throw - let backend self-heal on first image generation
+            // throw error
+        }
     }
     
     // MARK: - Migration (Anonymous → Authenticated)
@@ -629,6 +730,43 @@ class HybridCreditManager: ObservableObject {
     
     private func trackPurchase(product: MockAdaptyProduct) {
         UserDefaults.standard.set(true, forKey: "has_purchased")
+    }
+    
+    // MARK: - Backend Response Sync
+    
+    /// Updates local quota state from backend response after image processing
+    /// This ensures UI quota counter stays in sync with backend truth
+    func updateFromBackendResponse(credits: Int, quotaUsed: Int, quotaLimit: Int, isPremium: Bool) async {
+        // Update credits
+        self.credits = credits
+        
+        // Update quota
+        self.dailyQuotaUsed = quotaUsed
+        self.dailyQuotaLimit = quotaLimit
+        
+        // Update premium status
+        self.isPremiumUser = isPremium
+        
+        // Persist to local storage
+        saveDailyQuota()
+        
+        // Save credits based on user state
+        switch userState {
+        case .anonymous(let deviceId):
+            saveAnonymousCredits(deviceId: deviceId)
+        case .authenticated(let user):
+            do {
+                try await saveAuthenticatedCredits(userId: user.id)
+            } catch {
+                #if DEBUG
+                print("❌ Failed to save authenticated credits after backend sync: \(error)")
+                #endif
+            }
+        }
+        
+        #if DEBUG
+        print("✅ HybridCreditManager synced from backend: credits=\(credits), quota=\(quotaUsed)/\(quotaLimit)")
+        #endif
     }
 }
 

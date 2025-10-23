@@ -144,7 +144,9 @@ class StorageService: ObservableObject {
         }
         
         return autoreleasepool {
-            guard let cgImage = image.cgImage else { return nil }
+            // CRITICAL FIX: Preserve orientation by fixing it before processing
+            guard let fixedImage = image.fixedOrientation() else { return nil }
+            guard let cgImage = fixedImage.cgImage else { return nil }
             
             // Create Core Image context for efficient GPU-based processing
             let ciImage = CIImage(cgImage: cgImage)
@@ -163,10 +165,11 @@ class StorageService: ObservableObject {
             
             // Render the resized image and compress it once
             if let outputCGImage = context.createCGImage(resized, from: resized.extent) {
+                // Now orientation is already fixed, so cgImage is correct
                 tempImage = UIImage(cgImage: outputCGImage)
                 tempData = tempImage?.jpegData(compressionQuality: quality)
                 #if DEBUG
-                print("✅ Image compressed to data efficiently using Core Image")
+                print("✅ Image compressed to data efficiently using Core Image (orientation preserved)")
                 #endif
                 return tempData
             }
@@ -229,5 +232,86 @@ enum StorageError: Error {
         case .uploadFailed:
             return "Failed to upload image"
         }
+    }
+}
+
+// MARK: - UIImage Extension for Orientation Fix
+extension UIImage {
+    /// Fixes image orientation by redrawing the image in the correct orientation
+    /// This ensures EXIF orientation data is applied to the actual pixel data
+    func fixedOrientation() -> UIImage? {
+        // If image is already in correct orientation, return as is
+        if imageOrientation == .up {
+            return self
+        }
+        
+        // Calculate the transform needed to rotate/flip the image
+        var transform = CGAffineTransform.identity
+        
+        switch imageOrientation {
+        case .down, .downMirrored:
+            transform = transform.translatedBy(x: size.width, y: size.height)
+            transform = transform.rotated(by: .pi)
+            
+        case .left, .leftMirrored:
+            transform = transform.translatedBy(x: size.width, y: 0)
+            transform = transform.rotated(by: .pi / 2)
+            
+        case .right, .rightMirrored:
+            transform = transform.translatedBy(x: 0, y: size.height)
+            transform = transform.rotated(by: -.pi / 2)
+            
+        case .up, .upMirrored:
+            break
+            
+        @unknown default:
+            break
+        }
+        
+        // Apply mirroring if needed
+        switch imageOrientation {
+        case .upMirrored, .downMirrored:
+            transform = transform.translatedBy(x: size.width, y: 0)
+            transform = transform.scaledBy(x: -1, y: 1)
+            
+        case .leftMirrored, .rightMirrored:
+            transform = transform.translatedBy(x: size.height, y: 0)
+            transform = transform.scaledBy(x: -1, y: 1)
+            
+        default:
+            break
+        }
+        
+        // Draw the image with the correct orientation
+        guard let cgImage = cgImage,
+              let colorSpace = cgImage.colorSpace,
+              let context = CGContext(
+                data: nil,
+                width: Int(size.width),
+                height: Int(size.height),
+                bitsPerComponent: cgImage.bitsPerComponent,
+                bytesPerRow: 0,
+                space: colorSpace,
+                bitmapInfo: cgImage.bitmapInfo.rawValue
+              ) else {
+            return nil
+        }
+        
+        context.concatenate(transform)
+        
+        // Draw based on orientation
+        switch imageOrientation {
+        case .left, .leftMirrored, .right, .rightMirrored:
+            context.draw(cgImage, in: CGRect(x: 0, y: 0, width: size.height, height: size.width))
+            
+        default:
+            context.draw(cgImage, in: CGRect(x: 0, y: 0, width: size.width, height: size.height))
+        }
+        
+        guard let newCGImage = context.makeImage() else {
+            return nil
+        }
+        
+        return UIImage(cgImage: newCGImage)
     }
 }

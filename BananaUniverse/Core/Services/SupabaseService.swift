@@ -138,6 +138,8 @@ class SupabaseService: ObservableObject {
         // Add user identification and premium status
         if userState.isAuthenticated {
             body["user_id"] = userState.identifier
+            // Also add device_id as fallback for authenticated users
+            body["device_id"] = await HybridCreditManager.shared.getDeviceUUID()
         } else {
             body["device_id"] = userState.identifier
         }
@@ -155,7 +157,30 @@ class SupabaseService: ObservableObject {
             }
             var request = URLRequest(url: functionURL)
             request.httpMethod = "POST"
-            request.setValue("Bearer \(Config.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+            
+            // CRITICAL FIX: Use actual user session token for authenticated users
+            if userState.isAuthenticated {
+                // Get the user's session token
+                if let session = try? await client.auth.session {
+                    request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
+                    #if DEBUG
+                    print("🔑 Using authenticated user token for API call")
+                    #endif
+                } else {
+                    // Fallback to anon key if session retrieval fails
+                    request.setValue("Bearer \(Config.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+                    #if DEBUG
+                    print("⚠️ Failed to get session, using anon key")
+                    #endif
+                }
+            } else {
+                // Anonymous users use anon key
+                request.setValue("Bearer \(Config.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+                #if DEBUG
+                print("🔓 Using anon key for anonymous user")
+                #endif
+            }
+            
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             request.setValue(userState.identifier, forHTTPHeaderField: "device-id") // For anonymous users
             request.httpBody = jsonData
@@ -174,6 +199,18 @@ class SupabaseService: ObservableObject {
             let response = try JSONDecoder().decode(SteveJobsProcessResponse.self, from: responseData)
             
             if response.success {
+                // CRITICAL: Update quota from backend response
+                if let quotaInfo = response.quotaInfo {
+                    await HybridCreditManager.shared.updateFromBackendResponse(
+                        credits: quotaInfo.credits,
+                        quotaUsed: quotaInfo.quotaUsed,
+                        quotaLimit: quotaInfo.quotaLimit,
+                        isPremium: quotaInfo.isPremium
+                    )
+                    #if DEBUG
+                    print("✅ Quota updated from backend: \(quotaInfo.quotaUsed)/\(quotaInfo.quotaLimit)")
+                    #endif
+                }
                 return response
             } else {
                 throw SupabaseError.processingFailed(response.error ?? "Processing failed")
@@ -716,13 +753,31 @@ struct SteveJobsProcessResponse: Codable {
     let success: Bool
     let processedImageURL: String?
     let error: String?
-    let rateLimitInfo: RateLimitInfo?
+    let rateLimitInfo: RateLimitInfo?  // Deprecated, keeping for backward compatibility
+    let quotaInfo: QuotaInfo?
     
     enum CodingKeys: String, CodingKey {
         case success
         case processedImageURL = "processed_image_url"
         case error
         case rateLimitInfo = "rate_limit_info"
+        case quotaInfo = "quota_info"
+    }
+}
+
+struct QuotaInfo: Codable {
+    let credits: Int
+    let quotaUsed: Int
+    let quotaLimit: Int
+    let quotaRemaining: Int
+    let isPremium: Bool
+    
+    enum CodingKeys: String, CodingKey {
+        case credits
+        case quotaUsed = "quota_used"
+        case quotaLimit = "quota_limit"
+        case quotaRemaining = "quota_remaining"
+        case isPremium = "is_premium"
     }
 }
 

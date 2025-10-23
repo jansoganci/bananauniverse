@@ -33,24 +33,32 @@ struct HomeView: View {
                     selectedCategory: $selectedCategory
                 )
                 
-                // Tools Grid
+                // Content Area
                 ScrollView {
-                    LazyVGrid(
-                        columns: [
-                            GridItem(.flexible(), spacing: DesignTokens.Spacing.sm),
-                            GridItem(.flexible(), spacing: DesignTokens.Spacing.sm)
-                        ],
-                        spacing: DesignTokens.Spacing.sm
-                    ) {
-                        ForEach(currentTools) { tool in
-                            ToolCard(
-                                tool: tool,
-                                onTap: { handleToolTap(tool) },
-                                showPremiumBadge: shouldShowPremiumBadge
+                    VStack(spacing: DesignTokens.Spacing.lg) {
+                        // Featured Tool Card
+                        if let featuredTool = featuredTool {
+                            FeaturedToolCard(
+                                tool: featuredTool,
+                                onUseTool: { handleToolTap(featuredTool) },
+                                onLearnMore: { showToolInfo(featuredTool) }
                             )
+                            .padding(.horizontal, DesignTokens.Spacing.md)
+                            .transition(.asymmetric(
+                                insertion: .opacity.combined(with: .scale(scale: 0.95)),
+                                removal: .opacity.combined(with: .scale(scale: 1.05))
+                            ))
                         }
+                        
+                        // Tools Grid Section
+                        ToolGridSection(
+                            tools: remainingTools,
+                            showPremiumBadge: shouldShowPremiumBadge,
+                            onToolTap: handleToolTap,
+                            category: selectedCategory
+                        )
+                        .animation(DesignTokens.Animation.smooth, value: selectedCategory)
                     }
-                    .padding(.horizontal, DesignTokens.Spacing.md)
                     .padding(.top, DesignTokens.Spacing.md)
                     .padding(.bottom, DesignTokens.Spacing.lg)
                 }
@@ -64,17 +72,21 @@ struct HomeView: View {
         }
     }
     
+    // MARK: - Computed Properties
+    
+    /// Featured tool for current category
+    private var featuredTool: Tool? {
+        CategoryFeaturedMapping.featuredTool(for: selectedCategory)
+    }
+    
+    /// Remaining tools (excluding featured)
+    private var remainingTools: [Tool] {
+        CategoryFeaturedMapping.remainingTools(for: selectedCategory)
+    }
+    
+    /// All tools for current category (for backward compatibility)
     private var currentTools: [Tool] {
-        switch selectedCategory {
-        case "main_tools":
-            return Tool.mainTools
-        case "pro_looks":
-            return Tool.proLooksTools
-        case "restoration":
-            return Tool.restorationTools
-        default:
-            return Tool.mainTools
-        }
+        CategoryFeaturedMapping.currentTools(for: selectedCategory)
     }
     
     private var shouldShowPremiumBadge: Bool {
@@ -87,6 +99,8 @@ struct HomeView: View {
         }
     }
     
+    // MARK: - Helper Methods
+    
     private func handleToolTap(_ tool: Tool) {
         if tool.requiresPro {
             showPaywall = true
@@ -95,6 +109,12 @@ struct HomeView: View {
             // Navigate to Chat tab with the tool's prompt
             onToolSelected(tool.prompt)
         }
+    }
+    
+    private func showToolInfo(_ tool: Tool) {
+        // TODO: Implement tool info modal or navigation
+        // For now, just show an alert or navigate to tool details
+        print("Show tool info for: \(tool.title)")
     }
 }
 
@@ -118,7 +138,11 @@ struct CategoryTabs: View {
                         label: category.label,
                         isActive: selectedCategory == category.id,
                         onTap: {
-                            withAnimation {
+                            // Add haptic feedback for category switching
+                            DesignTokens.Haptics.selectionChanged()
+                            
+                            // Enhanced animation for category switching
+                            withAnimation(DesignTokens.Animation.spring) {
                                 selectedCategory = category.id
                             }
                         }

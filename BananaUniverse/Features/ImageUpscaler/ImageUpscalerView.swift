@@ -145,6 +145,11 @@ struct ImageUpscalerView: View {
                                         .progressViewStyle(CircularProgressViewStyle(tint: .white))
                                     Text("Processing...")
                                         .font(.system(size: 16, weight: .semibold))
+                                } else if !creditManager.creditsLoaded {
+                                    ProgressView()
+                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    Text("Loading credits...")
+                                        .font(.system(size: 16, weight: .semibold))
                                 } else {
                                     Image(systemName: "arrow.up.backward.and.arrow.down.forward")
                                     Text("Upscale Image (\(upscaleFactor)x)")
@@ -154,11 +159,11 @@ struct ImageUpscalerView: View {
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
-                            .background(isProcessing ? Color.gray : Color(hex: "33C3A4"))
+                            .background((isProcessing || !creditManager.creditsLoaded) ? Color.gray : Color(hex: "33C3A4"))
                             .cornerRadius(12)
                         }
                         .padding(.horizontal, 20)
-                        .disabled(isProcessing)
+                        .disabled(isProcessing || !creditManager.creditsLoaded)
                     }
                     
                     // Error Message

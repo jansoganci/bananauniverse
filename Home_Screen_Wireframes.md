@@ -251,3 +251,4 @@ To:   [Main Tools] [Pro Looks] [Restoration]
 ---
 
 *These wireframes illustrate the three main concepts while maintaining the existing header, navigation, and design system. Each concept offers different benefits for user experience and scalability.*
+
