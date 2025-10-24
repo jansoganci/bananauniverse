@@ -11,6 +11,7 @@ interface ProcessImageRequest {
   device_id?: string; // For anonymous users
   user_id?: string; // For authenticated users
   is_premium?: boolean; // Premium user status
+  client_request_id?: string; // For idempotency
 }
 
 interface ProcessImageResponse {
@@ -47,7 +48,7 @@ Deno.serve(async (req: Request) => {
     // ============================================
     
     const requestData: ProcessImageRequest = await req.json();
-    let { image_url, prompt, device_id, user_id, is_premium } = requestData;
+    let { image_url, prompt, device_id, user_id, is_premium, client_request_id } = requestData;
     
     // CRITICAL FIX: Also try to get device_id from header if not in body
     if (!device_id) {
@@ -153,57 +154,191 @@ Deno.serve(async (req: Request) => {
     }
     
     // ============================================
-    // 4. CREDIT & QUOTA VALIDATION
+    // 4. SET DEVICE ID SESSION FOR RLS POLICIES
     // ============================================
     
-    console.log('💳 [STEVE-JOBS] Validating credits and quota...');
-    
-    let quotaValidation: any;
-    
-    if (userType === 'authenticated') {
-      const { data, error } = await supabase.rpc('validate_user_daily_quota', {
-        p_user_id: userIdentifier,
-        p_is_premium: isPremium
+    // Set session variable for RLS policies
+    if (device_id) {
+      console.log('🔧 [RLS] Setting device_id session variable:', device_id);
+      const { error: sessionError } = await supabase.rpc('set_device_id_session', { 
+        p_device_id: device_id 
       });
       
-      if (error) {
-        console.error('❌ [STEVE-JOBS] Quota validation error:', error);
-        return new Response(
-          JSON.stringify({ success: false, error: 'Quota validation failed' }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+      if (sessionError) {
+        console.error('[Edge Function] Failed to set device_id session:', sessionError);
+        // Continue anyway - the consume_quota function will also try to set it
+      } else {
+        console.log('✅ [RLS] Device ID session variable set successfully');
       }
-      
-      quotaValidation = data;
-    } else {
-      const { data, error } = await supabase.rpc('validate_anonymous_daily_quota', {
-        p_device_id: userIdentifier,
-        p_is_premium: isPremium
-      });
-      
-      if (error) {
-        console.error('❌ [STEVE-JOBS] Quota validation error:', error);
-        return new Response(
-          JSON.stringify({ success: false, error: 'Quota validation failed' }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      
-      quotaValidation = data;
     }
     
-    if (!quotaValidation.valid) {
-      console.log(`❌ [STEVE-JOBS] Quota validation failed: ${quotaValidation.error}`);
+    // ============================================
+    // 5. NEW QUOTA SYSTEM (WITH FALLBACK)
+    // ============================================
+    
+    console.log('🆕 [QUOTA] Trying new quota system...');
+    
+    let quotaResult: any;
+    let useNewSystem = true;
+    
+    try {
+      const { data, error } = await supabase.rpc('consume_quota', {
+        p_user_id: userType === 'authenticated' ? userIdentifier : null,
+        p_device_id: userType === 'anonymous' ? userIdentifier : null,
+        p_is_premium: isPremium,
+        p_client_request_id: client_request_id || crypto.randomUUID()
+      });
+      
+      if (error) {
+        console.warn('⚠️ [QUOTA] New quota system failed, falling back to old system:', error.message);
+        useNewSystem = false;
+      } else {
+        quotaResult = data;
+        console.log('✅ [QUOTA] New quota system success:', JSON.stringify(quotaResult));
+      }
+    } catch (error: any) {
+      console.warn('⚠️ [QUOTA] New quota system exception, falling back to old system:', error.message);
+      useNewSystem = false;
+    }
+    
+    // Fallback to old system if new system failed
+    if (!useNewSystem) {
+      console.warn('⚠️ [QUOTA] Fallback to old credit system');
+      
+      let quotaValidation: any;
+      
+      if (userType === 'authenticated') {
+        const { data, error } = await supabase.rpc('validate_user_daily_quota', {
+          p_user_id: userIdentifier,
+          p_is_premium: isPremium
+        });
+        
+        if (error) {
+          console.error('❌ [STEVE-JOBS] Quota validation error:', error);
+          return new Response(
+            JSON.stringify({ success: false, error: 'Quota validation failed' }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        
+        quotaValidation = data;
+      } else {
+        const { data, error } = await supabase.rpc('validate_anonymous_daily_quota', {
+          p_device_id: userIdentifier,
+          p_is_premium: isPremium
+        });
+        
+        if (error) {
+          console.error('❌ [STEVE-JOBS] Quota validation error:', error);
+          return new Response(
+            JSON.stringify({ success: false, error: 'Quota validation failed' }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        
+        quotaValidation = data;
+      }
+      
+      if (!quotaValidation.valid) {
+        console.log(`❌ [STEVE-JOBS] Quota validation failed: ${quotaValidation.error}`);
+        
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: quotaValidation.error,
+            quota_info: {
+              credits: quotaValidation.credits,
+              quota_used: quotaValidation.quota_used,
+              quota_limit: quotaValidation.quota_limit,
+              quota_remaining: quotaValidation.quota_remaining,
+              is_premium: isPremium
+            }
+          }),
+          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      // Consume credit in old system
+      let creditConsumption: any;
+      
+      if (userType === 'authenticated') {
+        const { data, error } = await supabase.rpc('consume_credit_with_quota', {
+          p_user_id: userIdentifier,
+          p_device_id: null,
+          p_is_premium: isPremium
+        });
+        
+        if (error) {
+          console.error('❌ [STEVE-JOBS] Credit consumption error:', error);
+          return new Response(
+            JSON.stringify({ success: false, error: 'Credit consumption failed' }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        
+        creditConsumption = data;
+      } else {
+        const { data, error } = await supabase.rpc('consume_credit_with_quota', {
+          p_user_id: null,
+          p_device_id: userIdentifier,
+          p_is_premium: isPremium
+        });
+        
+        if (error) {
+          console.error('❌ [STEVE-JOBS] Credit consumption error:', error);
+          return new Response(
+            JSON.stringify({ success: false, error: 'Credit consumption failed' }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        
+        creditConsumption = data;
+      }
+      
+      if (!creditConsumption.success) {
+        console.log(`❌ [STEVE-JOBS] Credit consumption failed: ${creditConsumption.error}`);
+        
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: creditConsumption.error,
+            quota_info: {
+              credits: creditConsumption.credits,
+              quota_used: creditConsumption.quota_used,
+              quota_limit: creditConsumption.quota_limit,
+              quota_remaining: creditConsumption.quota_remaining,
+              is_premium: isPremium
+            }
+          }),
+          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      // Set quota result for old system
+      quotaResult = {
+        success: true,
+        quota_used: creditConsumption.quota_used,
+        quota_limit: creditConsumption.quota_limit,
+        quota_remaining: creditConsumption.quota_remaining,
+        credits: creditConsumption.credits
+      };
+      
+      console.log(`✅ [STEVE-JOBS] Old system credit consumed: ${creditConsumption.credits} credits remaining`);
+    }
+    
+    // Check quota result (works for both systems)
+    if (!quotaResult.success) {
+      console.log(`❌ [QUOTA] Quota check failed: ${quotaResult.error}`);
       
       return new Response(
         JSON.stringify({
           success: false,
-          error: quotaValidation.error,
+          error: quotaResult.error || 'Daily limit reached. Please try again tomorrow or upgrade to Premium.',
           quota_info: {
-            credits: quotaValidation.credits,
-            quota_used: quotaValidation.quota_used,
-            quota_limit: quotaValidation.quota_limit,
-            quota_remaining: quotaValidation.quota_remaining,
+            credits: quotaResult.credits || 0,
+            quota_used: quotaResult.quota_used || 0,
+            quota_limit: quotaResult.quota_limit || 5,
+            quota_remaining: quotaResult.quota_remaining || 0,
             is_premium: isPremium
           }
         }),
@@ -211,78 +346,10 @@ Deno.serve(async (req: Request) => {
       );
     }
     
-    // Log self-healing if it occurred
-    if (quotaValidation.self_healed) {
-      console.log(`🔧 [STEVE-JOBS] Self-healed missing record for ${userType} user: ${userIdentifier}`);
-    }
-    
-    console.log(`✅ [STEVE-JOBS] Quota validation passed: ${quotaValidation.credits} credits, ${quotaValidation.quota_used}/${quotaValidation.quota_limit} quota`);
+    console.log(`✅ [QUOTA] Quota consumed successfully: ${quotaResult.quota_remaining} remaining`);
     
     // ============================================
-    // 5. CONSUME CREDIT AND UPDATE QUOTA
-    // ============================================
-    
-    console.log('💳 [STEVE-JOBS] Consuming credit and updating quota...');
-    
-    let creditConsumption: any;
-    
-    if (userType === 'authenticated') {
-      const { data, error } = await supabase.rpc('consume_credit_with_quota', {
-        p_user_id: userIdentifier,
-        p_device_id: null,
-        p_is_premium: isPremium
-      });
-      
-      if (error) {
-        console.error('❌ [STEVE-JOBS] Credit consumption error:', error);
-        return new Response(
-          JSON.stringify({ success: false, error: 'Credit consumption failed' }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      
-      creditConsumption = data;
-    } else {
-      const { data, error } = await supabase.rpc('consume_credit_with_quota', {
-        p_user_id: null,
-        p_device_id: userIdentifier,
-        p_is_premium: isPremium
-      });
-      
-      if (error) {
-        console.error('❌ [STEVE-JOBS] Credit consumption error:', error);
-        return new Response(
-          JSON.stringify({ success: false, error: 'Credit consumption failed' }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      
-      creditConsumption = data;
-    }
-    
-    if (!creditConsumption.success) {
-      console.log(`❌ [STEVE-JOBS] Credit consumption failed: ${creditConsumption.error}`);
-      
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: creditConsumption.error,
-          quota_info: {
-            credits: creditConsumption.credits,
-            quota_used: creditConsumption.quota_used,
-            quota_limit: creditConsumption.quota_limit,
-            quota_remaining: creditConsumption.quota_remaining,
-            is_premium: isPremium
-          }
-        }),
-        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-    
-    console.log(`✅ [STEVE-JOBS] Credit consumed successfully: ${creditConsumption.credits} credits remaining`);
-    
-    // ============================================
-    // 6. GENERATE JOB ID & TRACK START TIME
+    // 7. GENERATE JOB ID & TRACK START TIME
     // ============================================
     
     // Generate unique job ID for database tracking
@@ -292,7 +359,7 @@ Deno.serve(async (req: Request) => {
     console.log(`📋 [STEVE-JOBS] Job ID: ${jobId}`);
     
     // ============================================
-    // 7. CALL FAL.AI DIRECTLY (STEVE JOBS STYLE!)
+    // 8. CALL FAL.AI DIRECTLY (STEVE JOBS STYLE!)
     // ============================================
     
     console.log('🤖 [STEVE-JOBS] Calling Fal.AI directly...');
@@ -338,7 +405,7 @@ Deno.serve(async (req: Request) => {
     const processedImageUrl = falResult.images[0].url;
     
     // ============================================
-    // 8. SAVE PROCESSED IMAGE TO STORAGE
+    // 9. SAVE PROCESSED IMAGE TO STORAGE
     // ============================================
     
     console.log('💾 [STEVE-JOBS] Saving processed image to storage...');
@@ -377,7 +444,7 @@ Deno.serve(async (req: Request) => {
     console.log('✅ [STEVE-JOBS] Processed image saved:', urlData.signedUrl);
     
     // ============================================
-    // 9. PERSIST JOB TO DATABASE
+    // 10. PERSIST JOB TO DATABASE
     // ============================================
     
     const processingEndTime = Date.now();
@@ -455,7 +522,7 @@ Deno.serve(async (req: Request) => {
     }
     
     // ============================================
-    // 10. RETURN SUCCESS RESPONSE
+    // 11. RETURN SUCCESS RESPONSE
     // ============================================
     
     const response: ProcessImageResponse = {
@@ -463,10 +530,10 @@ Deno.serve(async (req: Request) => {
       processed_image_url: urlData.signedUrl,
       job_id: jobId,
       quota_info: {
-        credits: creditConsumption.credits,
-        quota_used: creditConsumption.quota_used,
-        quota_limit: creditConsumption.quota_limit,
-        quota_remaining: creditConsumption.quota_remaining,
+        credits: quotaResult.credits || 0,
+        quota_used: quotaResult.quota_used,
+        quota_limit: quotaResult.quota_limit,
+        quota_remaining: quotaResult.quota_remaining,
         is_premium: isPremium
       }
     };

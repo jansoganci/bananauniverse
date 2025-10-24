@@ -172,7 +172,7 @@ class LibraryViewModel: ObservableObject {
     func rerunJob(_ item: HistoryItem) async {
         
         // Check if user has quota
-        guard creditManager.hasCredits() else {
+        guard creditManager.hasQuotaLeft else {
             let libraryError = LibraryError.noQuotaRemaining
             errorMessage = libraryError.errorDescription
             showingError = true

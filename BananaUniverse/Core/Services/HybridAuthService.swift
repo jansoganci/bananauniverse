@@ -83,32 +83,38 @@ class HybridAuthService: ObservableObject {
     }
     
     private func handleAuthenticationStateChange(from previousState: UserState, to newState: UserState) async {
-        // Update credit manager with the new state
+        print("🔄 [AUTH] User state transition: \(previousState) → \(newState)")
+        
+        // CRITICAL: Update quota manager with new state
         HybridCreditManager.shared.setUserState(newState)
         
-        // If transitioning from anonymous to authenticated, handle credit migration
+        // If transitioning from anonymous to authenticated, handle quota migration
         if case .anonymous = previousState, case .authenticated(let user) = newState {
+            print("🔄 [AUTH] Anonymous → Authenticated transition")
+            
+            // Initialize new user in backend if needed
+            await HybridCreditManager.shared.initializeNewUser()
+            
             // Identify user in Adapty for purchase tracking
             do {
                 // Mock identify - always succeeds
                 // try await AdaptyService.shared.identify(userId: user.id.uuidString)
                 print("Mock: User identified in Adapty")
             } catch {
-                // Adapty identification failed, but don't block authentication
                 print("Mock: Adapty identification skipped")
             }
-            
-            // Credit migration will be handled by HybridCreditManager
         }
         
-        // If transitioning from authenticated to anonymous, logout from Adapty
+        // If transitioning from authenticated to anonymous, handle cleanup
         if case .authenticated = previousState, case .anonymous = newState {
+            print("🔄 [AUTH] Authenticated → Anonymous transition")
+            
+            // Logout from Adapty
             do {
                 // Mock logout - always succeeds
                 // try await AdaptyService.shared.logout()
                 print("Mock: User logged out from Adapty")
             } catch {
-                // Adapty logout failed, but don't block sign out
                 print("Mock: Adapty logout skipped")
             }
         }

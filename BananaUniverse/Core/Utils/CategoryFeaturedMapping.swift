@@ -87,11 +87,11 @@ struct CategoryFeaturedMapping {
     static func categoryDisplayName(for category: String) -> String {
         switch category {
         case "main_tools":
-            return "Main Tools"
+            return "Photo Editor"
         case "pro_looks":
-            return "Pro Looks"
+            return "Pro Photos"
         case "restoration":
-            return "Restoration"
+            return "Enhancer"
         default:
             return "Unknown Category"
         }

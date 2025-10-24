@@ -106,6 +106,77 @@ class SupabaseService: ObservableObject {
         return publicURL.absoluteString
     }
     
+    // MARK: - Quota Management
+    
+    /// Consume quota using the new quota system
+    func consumeQuota(userId: String?, deviceId: String?, isPremium: Bool) async throws -> QuotaInfo {
+        // Generate client request ID for idempotency
+        let clientRequestId = UUID().uuidString
+        
+        // Prepare request body
+        var body: [String: Any] = [
+            "client_request_id": clientRequestId,
+            "is_premium": isPremium
+        ]
+        
+        if let userId = userId {
+            body["user_id"] = userId
+        }
+        if let deviceId = deviceId {
+            body["device_id"] = deviceId
+        }
+        
+        let jsonData = try JSONSerialization.data(withJSONObject: body)
+        
+        guard let functionURL = URL(string: "\(Config.supabaseURL)/functions/v1/process-image") else {
+            throw SupabaseError.invalidURL
+        }
+        
+        var request = URLRequest(url: functionURL)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(deviceId ?? "", forHTTPHeaderField: "device-id")
+        request.httpBody = jsonData
+        
+        // Set authorization header
+        if let userId = userId {
+            // Authenticated user - try to get session token
+            if let session = try? await client.auth.session {
+                request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
+            } else {
+                request.setValue("Bearer \(Config.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+            }
+        } else {
+            // Anonymous user
+            request.setValue("Bearer \(Config.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+        }
+        
+        request.timeoutInterval = 30
+        
+        let (responseData, urlResponse) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = urlResponse as? HTTPURLResponse else {
+            throw SupabaseError.invalidResponse
+        }
+        
+        if httpResponse.statusCode == 429 {
+            throw SupabaseError.quotaExceeded
+        }
+        
+        if httpResponse.statusCode != 200 {
+            throw SupabaseError.serverError("Quota consumption failed with status: \(httpResponse.statusCode)")
+        }
+        
+        // Parse response
+        let response = try JSONDecoder().decode(SteveJobsProcessResponse.self, from: responseData)
+        
+        guard let quotaInfo = response.quotaInfo else {
+            throw SupabaseError.invalidResponse
+        }
+        
+        return quotaInfo
+    }
+
     // MARK: - AI Processing
     
     /// 🍎 STEVE JOBS STYLE: Direct image processing with new process-image edge function
@@ -117,7 +188,7 @@ class SupabaseService: ObservableObject {
         options: [String: Any] = [:]
     ) async throws -> SteveJobsProcessResponse {
         
-        // Check if user can process image (includes credits and quota validation)
+        // Check if user can process image using quota system
         guard await HybridCreditManager.shared.canProcessImage() else {
             throw SupabaseError.insufficientCredits
         }
@@ -129,10 +200,14 @@ class SupabaseService: ObservableObject {
         } else {
         }
         
+        // Generate client request ID for idempotency
+        let clientRequestId = UUID().uuidString
+        
         // Prepare request body
         var body: [String: Any] = [
             "image_url": imageURL,
-            "prompt": prompt
+            "prompt": prompt,
+            "client_request_id": clientRequestId
         ]
         
         // Add user identification and premium status
@@ -202,13 +277,12 @@ class SupabaseService: ObservableObject {
                 // CRITICAL: Update quota from backend response
                 if let quotaInfo = response.quotaInfo {
                     await HybridCreditManager.shared.updateFromBackendResponse(
-                        credits: quotaInfo.credits,
                         quotaUsed: quotaInfo.quotaUsed,
                         quotaLimit: quotaInfo.quotaLimit,
                         isPremium: quotaInfo.isPremium
                     )
                     #if DEBUG
-                    print("✅ Quota updated from backend: \(quotaInfo.quotaUsed)/\(quotaInfo.quotaLimit)")
+                    print("✅ [QUOTA] Updated from backend: \(quotaInfo.quotaUsed)/\(quotaInfo.quotaLimit)")
                     #endif
                 }
                 return response
@@ -229,13 +303,10 @@ class SupabaseService: ObservableObject {
         options: [String: Any] = [:]
     ) async throws -> AIProcessResponse {
         
-        // Check if user can process image (includes credits and quota validation)
+        // Check if user can process image (includes quota validation)
         guard await HybridCreditManager.shared.canProcessImage() else {
             throw SupabaseError.insufficientCredits
         }
-        
-        // ✅ DON'T spend credit yet - only after success
-        let creditsBefore = await HybridCreditManager.shared.credits
         
         // Get user state from hybrid auth service
         let userState = HybridAuthService.shared.userState
@@ -354,8 +425,6 @@ class SupabaseService: ObservableObject {
             throw SupabaseError.insufficientCredits
         }
         
-        let creditsBefore = await HybridCreditManager.shared.credits
-        
         // Get user state from hybrid auth service
         let userState = HybridAuthService.shared.userState
         
@@ -426,8 +495,8 @@ class SupabaseService: ObservableObject {
                 
                 let response = try decoder.decode(JobSubmissionResponse.self, from: responseData)
                 
-                // ✅ SPEND CREDIT IMMEDIATELY ON ACCEPTANCE
-                _ = try await HybridCreditManager.shared.spendCredit()
+                // ✅ CONSUME QUOTA IMMEDIATELY ON ACCEPTANCE
+                _ = try await HybridCreditManager.shared.spendCreditWithQuota()
                 
                 return response
             } else if httpResponse.statusCode == 429 {
@@ -765,21 +834,6 @@ struct SteveJobsProcessResponse: Codable {
     }
 }
 
-struct QuotaInfo: Codable {
-    let credits: Int
-    let quotaUsed: Int
-    let quotaLimit: Int
-    let quotaRemaining: Int
-    let isPremium: Bool
-    
-    enum CodingKeys: String, CodingKey {
-        case credits
-        case quotaUsed = "quota_used"
-        case quotaLimit = "quota_limit"
-        case quotaRemaining = "quota_remaining"
-        case isPremium = "is_premium"
-    }
-}
 
 struct RateLimitInfo: Codable {
     let requestsToday: Int
@@ -917,6 +971,7 @@ enum SupabaseError: Error, LocalizedError {
     case processingFailed(String)
     case timeout
     case rateLimitExceeded
+    case quotaExceeded
     case invalidURL
     
     var errorDescription: String? {
@@ -937,6 +992,8 @@ enum SupabaseError: Error, LocalizedError {
             return "Processing timed out. Please try again."
         case .rateLimitExceeded:
             return "You have too many jobs processing. Please wait for one to complete."
+        case .quotaExceeded:
+            return "Daily quota exceeded. Come back tomorrow or upgrade for unlimited access."
         case .invalidURL:
             return "Invalid URL configuration. Please contact support."
         }
@@ -954,6 +1011,8 @@ enum SupabaseError: Error, LocalizedError {
         case .processingFailed(let message):
             return .processingFailed(message)
         case .rateLimitExceeded:
+            return .dailyQuotaExceeded
+        case .quotaExceeded:
             return .dailyQuotaExceeded
         case .serverError(let message):
             return .unknown("Server error: \(message)")

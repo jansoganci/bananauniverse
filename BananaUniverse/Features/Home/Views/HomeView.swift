@@ -33,6 +33,13 @@ struct HomeView: View {
                     selectedCategory: $selectedCategory
                 )
                 
+                // Quota Warning Banner
+                if !creditManager.isPremiumUser && creditManager.remainingQuota <= 1 {
+                    QuotaWarningBanner()
+                        .padding(.horizontal, DesignTokens.Spacing.md)
+                        .padding(.top, DesignTokens.Spacing.sm)
+                }
+                
                 // Content Area
                 ScrollView {
                     VStack(spacing: DesignTokens.Spacing.lg) {
@@ -124,9 +131,9 @@ struct CategoryTabs: View {
     @EnvironmentObject var themeManager: ThemeManager
     
     private let categories = [
-        (id: "main_tools", icon: "wrench.and.screwdriver", label: "Main Tools"),
-        (id: "pro_looks", icon: "camera.fill", label: "Pro Looks"),
-        (id: "restoration", icon: "arrow.triangle.2.circlepath", label: "Restoration")
+        (id: "main_tools", icon: "wrench.and.screwdriver", label: "Photo Editor"),
+        (id: "pro_looks", icon: "camera.fill", label: "Pro Photos"),
+        (id: "restoration", icon: "arrow.triangle.2.circlepath", label: "Enhancer")
     ]
     
     var body: some View {
@@ -153,6 +160,57 @@ struct CategoryTabs: View {
             .padding(.vertical, DesignTokens.Spacing.sm)
         }
         .background(DesignTokens.Background.primary(themeManager.resolvedColorScheme))
+    }
+}
+
+// MARK: - Quota Warning Banner
+struct QuotaWarningBanner: View {
+    @StateObject private var creditManager = HybridCreditManager.shared
+    @State private var showPaywall = false
+    @EnvironmentObject var themeManager: ThemeManager
+    
+    var body: some View {
+        HStack(spacing: DesignTokens.Spacing.sm) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundColor(DesignTokens.Brand.warning)
+                .font(.system(size: 16))
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Daily Quota Almost Full")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
+                
+                Text("\(creditManager.remainingQuota) generation\(creditManager.remainingQuota == 1 ? "" : "s") left today")
+                    .font(.system(size: 12))
+                    .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
+            }
+            
+            Spacer()
+            
+            Button("Upgrade") {
+                showPaywall = true
+            }
+            .font(.system(size: 12, weight: .semibold))
+            .foregroundColor(.white)
+            .padding(.horizontal, DesignTokens.Spacing.sm)
+            .padding(.vertical, DesignTokens.Spacing.xs)
+            .background(DesignTokens.Brand.primary(.light))
+            .cornerRadius(8)
+        }
+        .padding(.horizontal, DesignTokens.Spacing.md)
+        .padding(.vertical, DesignTokens.Spacing.sm)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(DesignTokens.Brand.warning.opacity(0.1))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(DesignTokens.Brand.warning.opacity(0.3), lineWidth: 1)
+                )
+        )
+        .sheet(isPresented: $showPaywall) {
+            // TODO: Add paywall view
+            Text("Paywall View")
+        }
     }
 }
 

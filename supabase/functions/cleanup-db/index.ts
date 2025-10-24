@@ -11,6 +11,8 @@ interface CleanupResult {
   jobsDeleted: number;
   rateLimitDeleted: number;
   logsDeleted: number;
+  quotaLogsDeleted: number;
+  quotaRecordsDeleted: number;
   errors: string[];
   executionTime: number;
 }
@@ -66,6 +68,8 @@ Deno.serve(async (req: Request) => {
       jobsDeleted: 0,
       rateLimitDeleted: 0,
       logsDeleted: 0,
+      quotaLogsDeleted: 0,
+      quotaRecordsDeleted: 0,
       errors: [],
       executionTime: 0
     };
@@ -83,9 +87,11 @@ Deno.serve(async (req: Request) => {
       result.jobsDeleted = cleanupResults.jobsDeleted;
       result.rateLimitDeleted = cleanupResults.rateLimitDeleted;
       result.logsDeleted = cleanupResults.logsDeleted;
+      result.quotaLogsDeleted = cleanupResults.quotaLogsDeleted;
+      result.quotaRecordsDeleted = cleanupResults.quotaRecordsDeleted;
       result.errors.push(...cleanupResults.errors);
       
-      console.log(`✅ [CLEANUP-DB] Atomic cleanup completed: ${result.jobsDeleted} jobs, ${result.rateLimitDeleted} rate limits, ${result.logsDeleted} logs`);
+      console.log(`✅ [CLEANUP-DB] Atomic cleanup completed: ${result.jobsDeleted} jobs, ${result.rateLimitDeleted} rate limits, ${result.logsDeleted} logs, ${result.quotaLogsDeleted} quota logs, ${result.quotaRecordsDeleted} quota records`);
       
     } catch (error) {
       result.errors.push(`Atomic cleanup error: ${error.message}`);
@@ -104,7 +110,7 @@ Deno.serve(async (req: Request) => {
     });
 
     console.log(`✅ [CLEANUP-DB] Database cleanup completed in ${result.executionTime}ms`);
-    console.log(`📊 [CLEANUP-DB] Results: ${result.jobsDeleted} jobs, ${result.rateLimitDeleted} rate limits, ${result.logsDeleted} logs, ${result.errors.length} errors`);
+    console.log(`📊 [CLEANUP-DB] Results: ${result.jobsDeleted} jobs, ${result.rateLimitDeleted} rate limits, ${result.logsDeleted} logs, ${result.quotaLogsDeleted} quota logs, ${result.quotaRecordsDeleted} quota records, ${result.errors.length} errors`);
 
     return new Response(JSON.stringify(result), { 
       headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -117,6 +123,8 @@ Deno.serve(async (req: Request) => {
       jobsDeleted: 0,
       rateLimitDeleted: 0,
       logsDeleted: 0,
+      quotaLogsDeleted: 0,
+      quotaRecordsDeleted: 0,
       errors: [`Fatal error: ${error.message}`],
       executionTime: Date.now() - startTime
     };
@@ -132,11 +140,13 @@ Deno.serve(async (req: Request) => {
 // HELPER FUNCTIONS
 // ============================================
 
-async function executeAtomicCleanup(supabase: any): Promise<{jobsDeleted: number, rateLimitDeleted: number, logsDeleted: number, errors: string[]}> {
+async function executeAtomicCleanup(supabase: any): Promise<{jobsDeleted: number, rateLimitDeleted: number, logsDeleted: number, quotaLogsDeleted: number, quotaRecordsDeleted: number, errors: string[]}> {
   const errors: string[] = [];
   let jobsDeleted = 0;
   let rateLimitDeleted = 0;
   let logsDeleted = 0;
+  let quotaLogsDeleted = 0;
+  let quotaRecordsDeleted = 0;
   
   try {
     // 1. Clean up old jobs
@@ -187,12 +197,44 @@ async function executeAtomicCleanup(supabase: any): Promise<{jobsDeleted: number
       console.error('❌ [CLEANUP-DB] Logs cleanup error:', error);
     }
     
+    // 4. Clean up quota consumption logs
+    console.log('🗑️ [CLEANUP-DB] Cleaning up quota consumption logs...');
+    try {
+      const { data: quotaLogsResult, error: quotaLogsError } = await supabase.rpc('cleanup_quota_consumption_logs');
+      if (quotaLogsError) {
+        errors.push(`Quota logs cleanup error: ${quotaLogsError.message}`);
+        console.error('❌ [CLEANUP-DB] Quota logs cleanup failed:', quotaLogsError);
+      } else {
+        quotaLogsDeleted = quotaLogsResult?.[0]?.deleted_count || 0;
+        console.log(`✅ [CLEANUP-DB] Deleted ${quotaLogsDeleted} quota consumption logs`);
+      }
+    } catch (error) {
+      errors.push(`Quota logs cleanup error: ${error.message}`);
+      console.error('❌ [CLEANUP-DB] Quota logs cleanup error:', error);
+    }
+    
+    // 5. Clean up old daily quota records
+    console.log('🗑️ [CLEANUP-DB] Cleaning up old daily quota records...');
+    try {
+      const { data: quotaRecordsResult, error: quotaRecordsError } = await supabase.rpc('cleanup_old_daily_quotas');
+      if (quotaRecordsError) {
+        errors.push(`Quota records cleanup error: ${quotaRecordsError.message}`);
+        console.error('❌ [CLEANUP-DB] Quota records cleanup failed:', quotaRecordsError);
+      } else {
+        quotaRecordsDeleted = quotaRecordsResult?.[0]?.deleted_count || 0;
+        console.log(`✅ [CLEANUP-DB] Deleted ${quotaRecordsDeleted} daily quota records`);
+      }
+    } catch (error) {
+      errors.push(`Quota records cleanup error: ${error.message}`);
+      console.error('❌ [CLEANUP-DB] Quota records cleanup error:', error);
+    }
+    
   } catch (error) {
     errors.push(`Atomic cleanup execution error: ${error.message}`);
     console.error('❌ [CLEANUP-DB] Atomic cleanup execution failed:', error);
   }
   
-  return { jobsDeleted, rateLimitDeleted, logsDeleted, errors };
+  return { jobsDeleted, rateLimitDeleted, logsDeleted, quotaLogsDeleted, quotaRecordsDeleted, errors };
 }
 
 async function sendTelegramNotification(result: CleanupResult): Promise<void> {
@@ -209,6 +251,8 @@ async function sendTelegramNotification(result: CleanupResult): Promise<void> {
 • ${result.jobsDeleted} job records
 • ${result.rateLimitDeleted} rate limit records  
 • ${result.logsDeleted} log records
+• ${result.quotaLogsDeleted} quota consumption logs
+• ${result.quotaRecordsDeleted} daily quota records
 • ${result.errors.length} errors
 • ${(result.executionTime / 1000).toFixed(1)}s execution time`;
 
@@ -233,3 +277,4 @@ async function sendTelegramNotification(result: CleanupResult): Promise<void> {
     // Don't throw - we don't want Telegram failures to break cleanup
   }
 }
+

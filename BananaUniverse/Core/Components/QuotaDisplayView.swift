@@ -105,16 +105,25 @@ struct QuotaDisplayView: View {
     }
     
     private var valueView: some View {
-        Text(creditManager.isPremiumUser ? "Unlimited" : "\(creditManager.remainingQuota) / \(creditManager.dailyQuotaLimit)")
+        Text(creditManager.isPremiumUser ? "Unlimited" : "\(creditManager.dailyQuotaUsed) / \(creditManager.dailyQuotaLimit)")
             .font(.system(size: style == .compact ? 13 : 14))
             .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
     }
     
     private var textView: some View {
-        Text(creditManager.isPremiumUser ? "∞" : "Daily Credits: \(creditManager.remainingQuota) / \(creditManager.dailyQuotaLimit)")
-            .font(.system(size: 13, weight: .medium))
-            .lineLimit(1)
-            .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
+        HStack(spacing: 4) {
+            // Warning icon when quota is low
+            if creditManager.shouldShowQuotaWarning {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(.orange)
+            }
+            
+            Text(creditManager.isPremiumUser ? "∞" : "Daily Credits: \(creditManager.remainingQuota) / \(creditManager.dailyQuotaLimit)")
+                .font(.system(size: 13, weight: .medium))
+                .lineLimit(1)
+                .foregroundColor(creditManager.shouldShowQuotaWarning ? .orange : DesignTokens.Text.primary(themeManager.resolvedColorScheme))
+        }
     }
 }
 

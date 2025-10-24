@@ -23,6 +23,10 @@ struct BananaUniverseApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .task {
+                    // CRITICAL: Initialize quota system on app launch
+                    await HybridCreditManager.shared.initializeNewUser()
+                }
         }
     }
 }

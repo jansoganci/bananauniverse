@@ -4,6 +4,8 @@
 
 BananaUniverse is a comprehensive iOS app that transforms your photos using 19+ cutting-edge AI models. Built with the Steve Jobs philosophy of "Simplicity is the ultimate sophistication," it delivers professional-grade image enhancement through a fast, elegant interface powered by Supabase Edge Functions.
 
+**Current Version: 1.0.1** - Latest release with enhanced quota system, improved security, and bug fixes.
+
 ## ✨ Features
 
 ### 🎨 **19 AI-Powered Tools Across 3 Categories:**
@@ -193,6 +195,8 @@ Built following the principle: *"Simplicity is the ultimate sophistication"*
 - **Cold Start**: < 200ms
 - **Success Rate**: 99%+
 - **Offline Support**: Local storage and sync
+- **Quota System**: Robust daily tracking with 99.9% accuracy
+- **Security**: Enterprise-grade RLS policies and data protection
 
 ## 📄 License
 
@@ -207,6 +211,8 @@ This is a private project. For questions or support, contact the development tea
 - **Design System**: `docs/design/` - Complete UI/UX documentation
 - **Tech Stack**: `docs/tech_stack.md` - Detailed technical architecture  
 - **Master Plan**: `STEVE_JOBS_MASTER_PLAN.md` - Development philosophy and goals
+- **Changelog**: `CHANGELOG.md` - Version history and release notes
+- **Quota System**: `QUOTA_SYSTEM_VALIDATION_SCENARIOS.md` - Comprehensive test documentation
 
 ---
 

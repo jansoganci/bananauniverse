@@ -17,6 +17,7 @@ struct FeaturedToolCard: View {
     
     // MARK: - State
     @State private var isPressed = false
+    @StateObject private var creditManager = HybridCreditManager.shared
     @EnvironmentObject var themeManager: ThemeManager
     
     var body: some View {
@@ -85,6 +86,13 @@ struct FeaturedToolCard: View {
                         onUseTool()
                     }) {
                         HStack(spacing: DesignTokens.Spacing.xs) {
+                            // Warning icon when quota is low
+                            if creditManager.shouldShowQuotaWarning {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .font(.system(size: 10, weight: .semibold))
+                                    .foregroundColor(.orange)
+                            }
+                            
                             Image(systemName: "play.fill")
                                 .font(.system(size: 12, weight: .semibold))
                             

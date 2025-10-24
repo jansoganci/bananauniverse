@@ -40,11 +40,11 @@ struct ImageUpscalerView: View {
                             .font(.system(size: 16))
                             .foregroundColor(Color(hex: "A0A9B0"))
                         
-                        // Credits display
+                        // Quota display
                         HStack {
                             Image(systemName: "sparkles")
                                 .foregroundColor(Color(hex: "33C3A4"))
-                            Text("Credits: \(creditManager.credits)")
+                            Text("Quota: \(creditManager.quotaDisplayText)")
                                 .font(.system(size: 14, weight: .medium))
                                 .foregroundColor(.white)
                             
@@ -145,11 +145,6 @@ struct ImageUpscalerView: View {
                                         .progressViewStyle(CircularProgressViewStyle(tint: .white))
                                     Text("Processing...")
                                         .font(.system(size: 16, weight: .semibold))
-                                } else if !creditManager.creditsLoaded {
-                                    ProgressView()
-                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                    Text("Loading credits...")
-                                        .font(.system(size: 16, weight: .semibold))
                                 } else {
                                     Image(systemName: "arrow.up.backward.and.arrow.down.forward")
                                     Text("Upscale Image (\(upscaleFactor)x)")
@@ -159,11 +154,11 @@ struct ImageUpscalerView: View {
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
-                            .background((isProcessing || !creditManager.creditsLoaded) ? Color.gray : Color(hex: "33C3A4"))
+                            .background(isProcessing ? Color.gray : Color(hex: "33C3A4"))
                             .cornerRadius(12)
                         }
                         .padding(.horizontal, 20)
-                        .disabled(isProcessing || !creditManager.creditsLoaded)
+                        .disabled(isProcessing)
                     }
                     
                     // Error Message
@@ -295,9 +290,9 @@ struct ImageUpscalerView: View {
             return
         }
         
-        // Check credits first (works for both anonymous and authenticated users)
-        guard creditManager.hasCredits() else {
-            errorMessage = "You don't have enough credits. Purchase more to continue!"
+        // Check quota first (works for both anonymous and authenticated users)
+        guard creditManager.hasQuotaLeft else {
+            errorMessage = "Daily limit reached. Come back tomorrow or upgrade for unlimited access."
             showPaywall = true
             // TODO: insert Adapty Paywall ID here - placement: upscaler_pro_feature
             return
@@ -325,15 +320,15 @@ struct ImageUpscalerView: View {
                 debugInfo = "User: Anonymous"
                 debugInfo += "\nDevice ID: \(authService.identifier)"
             }
-            debugInfo += "\nCredits before: \(creditManager.credits)"
+            debugInfo += "\nQuota before: \(creditManager.quotaDisplayText)"
             
             let response = try await supabaseService.upscaleImage(
                 imageData: imageData,
                 upscaleFactor: upscaleFactor
             )
             
-            // Credits automatically spent in SupabaseService
-            debugInfo += "\nCredits after: \(creditManager.credits)"
+            // Quota automatically consumed in SupabaseService
+            debugInfo += "\nQuota after: \(creditManager.quotaDisplayText)"
             
             if let urlString = response.resultUrl,
                let url = URL(string: urlString) {
@@ -342,7 +337,7 @@ struct ImageUpscalerView: View {
                 // Show success info
                 usageInfo = """
                 ✅ Success! 
-                Credits remaining: \(creditManager.credits)
+                Quota remaining: \(creditManager.remainingQuota)
                 User type: \(authService.isAuthenticated ? "Authenticated (Synced)" : "Anonymous (Local)")
                 """
                 
