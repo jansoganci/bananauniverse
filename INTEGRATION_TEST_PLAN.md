@@ -17,10 +17,12 @@
    export SUPABASE_URL="https://jiorfutbmahpfgplkats.supabase.co"
    
    # Anon Key (for anonymous users)
-   export ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imppb3JmdXRibWFocGZncGxrYXRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAzMzIxNjIsImV4cCI6MjA3NTkwODE2Mn0.wZXlQ3r47PqURmOoMoXfhdbtlTKm-yb3FLW78JG2HyU"
+   export ANON_KEY="${ANON_KEY}"
    
    # Service Role Key (for admin operations)
-   export SERVICE_ROLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imppb3JmdXRibWFocGZncGxrYXRzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MDMzMjE2MiwiZXhwIjoyMDc1OTA4MTYyfQ.REDACTED_KEY_REMOVED"
+   # IMPORTANT: Never commit service role keys to git
+   # Set via environment variable or .env file
+   export SUPABASE_SERVICE_ROLE_KEY="${SUPABASE_SERVICE_ROLE_KEY}"
    ```
 
 2. **Get Edge Function URL:**
