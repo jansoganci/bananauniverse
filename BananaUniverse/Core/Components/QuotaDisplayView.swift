@@ -50,6 +50,15 @@ struct QuotaDisplayView: View {
                 RoundedRectangle(cornerRadius: 14)
                     .fill(DesignTokens.Surface.primary(themeManager.resolvedColorScheme))
             )
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(
+                        themeManager.resolvedColorScheme == .dark
+                            ? Color.white.opacity(0.15)
+                            : Color.clear,
+                        lineWidth: 0.5
+                    )
+            )
         }
         .buttonStyle(.plain)
     }

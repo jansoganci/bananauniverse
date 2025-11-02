@@ -12,7 +12,6 @@ import SwiftUI
 struct ToolGridSection: View {
     // MARK: - Properties
     let tools: [Tool]
-    let showPremiumBadge: Bool
     let onToolTap: (Tool) -> Void
     let category: String // New parameter to determine grid layout
     
@@ -29,8 +28,7 @@ struct ToolGridSection: View {
             ForEach(tools) { tool in
                 ToolCard(
                     tool: tool,
-                    onTap: { onToolTap(tool) },
-                    showPremiumBadge: showPremiumBadge
+                    onTap: { onToolTap(tool) }
                 )
             }
         }
@@ -84,20 +82,8 @@ struct ToolGridSection: View {
     
     /// Calculate number of columns based on screen width and category
     private func calculateColumns(for width: CGFloat) -> Int {
-        // All sections use 2 columns for consistent layout with new card design
-        if category == "main_tools" || category == "pro_looks" || category == "restoration" {
-            return 2
-        }
-        
-        // Default responsive behavior for other categories
-        switch width {
-        case 0..<375: return 2        // iPhone SE (3rd gen) - 375px
-        case 375..<390: return 2      // iPhone 13 mini - 390px
-        case 390..<428: return 3      // iPhone 14/15/16 - 393px
-        case 428..<430: return 4      // iPhone 14/15/16 Plus - 428px
-        case 430..<768: return 4      // iPhone 14/15/16 Pro Max - 430px
-        default: return 5             // iPad+ - 768px+
-        }
+        // Force 2 columns for all iPhone categories
+        return 2
     }
     
     /// Update screen width for responsive calculations
@@ -114,7 +100,6 @@ struct ToolGridSection: View {
         // iPhone SE (375px) - Main Tools: 2 columns, Others: 2 columns
         ToolGridSection(
             tools: Array(Tool.mainTools.prefix(6)),
-            showPremiumBadge: true,
             onToolTap: { _ in },
             category: "main_tools"
         )
@@ -125,7 +110,6 @@ struct ToolGridSection: View {
         // iPhone 14 (393px) - Main Tools: 2 columns, Others: 3 columns
         ToolGridSection(
             tools: Array(Tool.mainTools.prefix(6)),
-            showPremiumBadge: true,
             onToolTap: { _ in },
             category: "main_tools"
         )
@@ -136,7 +120,6 @@ struct ToolGridSection: View {
         // iPhone 14 Plus (428px) - Main Tools: 2 columns, Others: 4 columns
         ToolGridSection(
             tools: Array(Tool.mainTools.prefix(8)),
-            showPremiumBadge: true,
             onToolTap: { _ in },
             category: "main_tools"
         )
@@ -147,7 +130,6 @@ struct ToolGridSection: View {
         // iPad (768px) - Main Tools: 2 columns, Others: 5+ columns
         ToolGridSection(
             tools: Array(Tool.mainTools.prefix(10)),
-            showPremiumBadge: true,
             onToolTap: { _ in },
             category: "main_tools"
         )

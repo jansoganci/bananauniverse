@@ -8,30 +8,31 @@
 import SwiftUI
 
 struct HomeView: View {
-    @State private var selectedCategory: String = "main_tools"
     @State private var showPaywall = false
     @StateObject private var authService = HybridAuthService.shared
     @StateObject private var creditManager = HybridCreditManager.shared
     @EnvironmentObject var themeManager: ThemeManager
-    let onToolSelected: (String) -> Void // Callback for tool selection
+    let onToolSelected: (Tool) -> Void // Callback for tool selection
+    @State private var rawSearch: String = ""
+    @State private var searchQuery: String = ""
+    @State private var searchTimer: Timer?
+    @State private var hasSearchResults: Bool = true
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 0) {
                 // Header Bar
                 UnifiedHeaderBar(
                     title: "",
                     leftContent: .appLogo(32),
-                    rightContent: creditManager.isPremiumUser ? nil : .getProButton({ 
-                        showPaywall = true
-                        // TODO: insert Adapty Paywall ID here - placement: home_get_pro
-                    })
+                    rightContent: creditManager.isPremiumUser 
+                        ? .unlimitedBadge({})  // PRO badge (non-tappable for MVP)
+                        : .getProButton({ 
+                            showPaywall = true
+                            // TODO: Log analytics event
+                        })
                 )
                 
-                // Category Tabs
-                CategoryTabs(
-                    selectedCategory: $selectedCategory
-                )
                 
                 // Quota Warning Banner
                 if !creditManager.isPremiumUser && creditManager.remainingQuota <= 1 {
@@ -40,31 +41,103 @@ struct HomeView: View {
                         .padding(.top, DesignTokens.Spacing.sm)
                 }
                 
+                // Search Bar
+                HStack(spacing: DesignTokens.Spacing.sm) {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
+                        .font(.system(size: 16, weight: .medium))
+
+                    TextField("Search tools…", text: $rawSearch)
+                        .textInputAutocapitalization(.never)
+                        .disableAutocorrection(true)
+                        .font(.system(size: 16))
+                        .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
+                        .onChange(of: rawSearch) { newValue in
+                            searchTimer?.invalidate()
+                            searchTimer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: false) { _ in
+                                self.searchQuery = sanitizeSearch(newValue)
+                                // Optional console analytics:
+                                // print("📊 ANALYTICS", ["event":"search_performed","query": self.searchQuery])
+                            }
+                        }
+                        .accessibilityLabel("Search tools")
+                        .accessibilityHint("Type to filter available tools")
+
+                    if !rawSearch.isEmpty {
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                rawSearch = ""
+                                searchQuery = ""
+                            }
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
+                                .font(.system(size: 16))
+                        }
+                        .accessibilityLabel("Clear search")
+                        .transition(.scale.combined(with: .opacity))
+                    }
+                }
+                .padding(.horizontal, DesignTokens.Spacing.md)
+                .padding(.vertical, 12)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(DesignTokens.Background.secondary(themeManager.resolvedColorScheme))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(DesignTokens.Text.secondary(themeManager.resolvedColorScheme).opacity(0.1), lineWidth: 1)
+                )
+                .padding(.horizontal, DesignTokens.Spacing.md)
+                .padding(.vertical, DesignTokens.Spacing.sm)
+                
                 // Content Area
                 ScrollView {
-                    VStack(spacing: DesignTokens.Spacing.lg) {
-                        // Featured Tool Card
-                        if let featuredTool = featuredTool {
-                            FeaturedToolCard(
-                                tool: featuredTool,
-                                onUseTool: { handleToolTap(featuredTool) },
-                                onLearnMore: { showToolInfo(featuredTool) }
+                    VStack(spacing: DesignTokens.Spacing.xl) {
+                        // Featured Carousel (only show when not searching)
+                        if searchQuery.isEmpty && !featuredCarouselTools.isEmpty {
+                            FeaturedCarouselView(
+                                tools: featuredCarouselTools,
+                                onToolTap: handleToolTap
                             )
-                            .padding(.horizontal, DesignTokens.Spacing.md)
+                            .padding(.top, DesignTokens.Spacing.md)
                             .transition(.asymmetric(
                                 insertion: .opacity.combined(with: .scale(scale: 0.95)),
                                 removal: .opacity.combined(with: .scale(scale: 1.05))
                             ))
                         }
-                        
-                        // Tools Grid Section
-                        ToolGridSection(
-                            tools: remainingTools,
-                            showPremiumBadge: shouldShowPremiumBadge,
-                            onToolTap: handleToolTap,
-                            category: selectedCategory
-                        )
-                        .animation(DesignTokens.Animation.smooth, value: selectedCategory)
+
+                        // Empty State (when searching with no results)
+                        if !searchQuery.isEmpty && !hasSearchResults {
+                            VStack(spacing: DesignTokens.Spacing.md) {
+                                Image(systemName: "magnifyingglass")
+                                    .font(.system(size: 48, weight: .light))
+                                    .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
+                                    .padding(.top, 60)
+
+                                Text("No tools found")
+                                    .font(.system(size: 20, weight: .semibold))
+                                    .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
+
+                                Text("Try a different search term")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, 40)
+                            .transition(.opacity)
+                        }
+
+                        // Category Rows (Horizontal Scroll - Amazon Style)
+                        ForEach(categories, id: \.id) { category in
+                            CategoryRow(
+                                title: category.name,
+                                tools: CategoryFeaturedMapping.remainingTools(for: category.id),
+                                onToolTap: handleToolTap,
+                                onSeeAllTap: nil, // Placeholder for future "See All" functionality
+                                searchQuery: searchQuery.isEmpty ? nil : searchQuery
+                            )
+                        }
                     }
                     .padding(.top, DesignTokens.Spacing.md)
                     .padding(.bottom, DesignTokens.Spacing.lg)
@@ -72,7 +145,16 @@ struct HomeView: View {
             }
             .background(DesignTokens.Background.primary(themeManager.resolvedColorScheme))
             .navigationTitle("")
-            .navigationBarHidden(true)
+            .toolbar(.hidden, for: .navigationBar)
+            .onDisappear {
+                // Fix timer memory leak
+                searchTimer?.invalidate()
+                searchTimer = nil
+            }
+            .onChange(of: searchQuery) { _ in
+                // Update search results state
+                updateSearchResults()
+            }
         }
         .sheet(isPresented: $showPaywall) {
             PreviewPaywallView()
@@ -81,87 +163,65 @@ struct HomeView: View {
     
     // MARK: - Computed Properties
     
-    /// Featured tool for current category
-    private var featuredTool: Tool? {
-        CategoryFeaturedMapping.featuredTool(for: selectedCategory)
+    /// Featured tools for carousel (mixed from all categories)
+    private var featuredCarouselTools: [Tool] {
+        let mainTools = Array(Tool.mainTools.prefix(2))
+        let seasonalTools = Array(Tool.seasonalTools.prefix(1))
+        let proTools = Array(Tool.proLooksTools.prefix(1))
+        let restorationTools = Array(Tool.restorationTools.prefix(1))
+        
+        return (mainTools + seasonalTools + proTools + restorationTools).prefix(5).map { $0 }
     }
     
-    /// Remaining tools (excluding featured)
-    private var remainingTools: [Tool] {
-        CategoryFeaturedMapping.remainingTools(for: selectedCategory)
+    /// Categories for horizontal scroll rows
+    private var categories: [(id: String, name: String)] {
+        [
+            (id: "main_tools", name: "Photo Editor"),
+            (id: "seasonal", name: "Seasonal"),
+            (id: "pro_looks", name: "Pro Photos"),
+            (id: "restoration", name: "Enhancer")
+        ]
     }
     
-    /// All tools for current category (for backward compatibility)
-    private var currentTools: [Tool] {
-        CategoryFeaturedMapping.currentTools(for: selectedCategory)
-    }
-    
-    private var shouldShowPremiumBadge: Bool {
-        // Hide badges for premium-only sections to reduce visual clutter
-        switch selectedCategory {
-        case "pro_looks":
-            return false // All Pro Looks tools are premium, no need for individual badges
-        default:
-            return true // Show badges for mixed sections (Main Tools, Restoration)
-        }
-    }
     
     // MARK: - Helper Methods
-    
+
     private func handleToolTap(_ tool: Tool) {
-        if tool.requiresPro {
-            showPaywall = true
-            // TODO: insert Adapty Paywall ID here - placement: home_tool_lock
-        } else {
-            // Navigate to Chat tab with the tool's prompt
-            onToolSelected(tool.prompt)
-        }
+        DesignTokens.Haptics.impact(.light)
+        
+        // All tools are accessible to everyone (premium users have unlimited quota)
+        // Navigate to Chat tab with the tool
+        onToolSelected(tool)
     }
-    
-    private func showToolInfo(_ tool: Tool) {
-        // TODO: Implement tool info modal or navigation
-        // For now, just show an alert or navigate to tool details
-        print("Show tool info for: \(tool.title)")
+
+    private func sanitizeSearch(_ input: String) -> String {
+        let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        let capped = String(trimmed.prefix(100))
+        // allow alphanumeric, space, dot, dash, underscore
+        return capped.filter { $0.isLetter || $0.isNumber || " .-_".contains($0) }
+    }
+
+    private func updateSearchResults() {
+        guard !searchQuery.isEmpty else {
+            hasSearchResults = true
+            return
+        }
+
+        // Check if any category has matching tools
+        let allTools = Tool.mainTools + Tool.seasonalTools + Tool.proLooksTools + Tool.restorationTools
+        let matchingTools = allTools.filter { tool in
+            // Search in id, prompt, and category
+            tool.id.localizedCaseInsensitiveContains(searchQuery) ||
+            tool.prompt.localizedCaseInsensitiveContains(searchQuery) ||
+            tool.category.localizedCaseInsensitiveContains(searchQuery)
+        }
+
+        withAnimation(.easeInOut(duration: 0.2)) {
+            hasSearchResults = !matchingTools.isEmpty
+        }
     }
 }
 
-// MARK: - Category Tabs Component
-struct CategoryTabs: View {
-    @Binding var selectedCategory: String
-    @EnvironmentObject var themeManager: ThemeManager
-    
-    private let categories = [
-        (id: "main_tools", icon: "wrench.and.screwdriver", label: "Photo Editor"),
-        (id: "pro_looks", icon: "camera.fill", label: "Pro Photos"),
-        (id: "restoration", icon: "arrow.triangle.2.circlepath", label: "Enhancer")
-    ]
-    
-    var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: DesignTokens.Spacing.sm) {
-                ForEach(categories, id: \.id) { category in
-                    TabButton(
-                        icon: category.icon,
-                        label: category.label,
-                        isActive: selectedCategory == category.id,
-                        onTap: {
-                            // Add haptic feedback for category switching
-                            DesignTokens.Haptics.selectionChanged()
-                            
-                            // Enhanced animation for category switching
-                            withAnimation(DesignTokens.Animation.spring) {
-                                selectedCategory = category.id
-                            }
-                        }
-                    )
-                }
-            }
-            .padding(.horizontal, DesignTokens.Spacing.md)
-            .padding(.vertical, DesignTokens.Spacing.sm)
-        }
-        .background(DesignTokens.Background.primary(themeManager.resolvedColorScheme))
-    }
-}
 
 // MARK: - Quota Warning Banner
 struct QuotaWarningBanner: View {
@@ -172,7 +232,7 @@ struct QuotaWarningBanner: View {
     var body: some View {
         HStack(spacing: DesignTokens.Spacing.sm) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundColor(DesignTokens.Brand.warning)
+                .foregroundColor(DesignTokens.Semantic.warning(themeManager.resolvedColorScheme))
                 .font(.system(size: 16))
             
             VStack(alignment: .leading, spacing: 2) {
@@ -201,10 +261,10 @@ struct QuotaWarningBanner: View {
         .padding(.vertical, DesignTokens.Spacing.sm)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(DesignTokens.Brand.warning.opacity(0.1))
+                .fill(DesignTokens.Semantic.warning(themeManager.resolvedColorScheme).opacity(0.1))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(DesignTokens.Brand.warning.opacity(0.3), lineWidth: 1)
+                        .stroke(DesignTokens.Semantic.warning(themeManager.resolvedColorScheme).opacity(0.3), lineWidth: 1)
                 )
         )
         .sheet(isPresented: $showPaywall) {

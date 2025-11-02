@@ -17,6 +17,9 @@ struct CategoryFeaturedMapping {
     /// - Returns: The featured tool for the category, or nil if not found
     static func featuredTool(for category: String) -> Tool? {
         switch category {
+        case "seasonal":
+            let seasonalToolId = SeasonalManager.featuredToolId()
+            return Tool.seasonalTools.first { $0.id == seasonalToolId }
         case "main_tools":
             return Tool.mainTools.first { $0.id == "remove_object" }
         case "pro_looks":
@@ -44,6 +47,8 @@ struct CategoryFeaturedMapping {
     /// - Returns: Array of all tools in the category
     static func currentTools(for category: String) -> [Tool] {
         switch category {
+        case "seasonal":
+            return Tool.seasonalTools
         case "main_tools":
             return Tool.mainTools
         case "pro_looks":
@@ -60,7 +65,7 @@ struct CategoryFeaturedMapping {
     /// - Parameter category: The category ID to validate
     /// - Returns: True if the category is valid, false otherwise
     static func isValidCategory(_ category: String) -> Bool {
-        return ["main_tools", "pro_looks", "restoration"].contains(category)
+        return ["seasonal", "main_tools", "pro_looks", "restoration"].contains(category)
     }
     
     // MARK: - Featured Tool Reasons
@@ -69,6 +74,8 @@ struct CategoryFeaturedMapping {
     /// - Returns: A description of why the tool is featured
     static func featuredToolReason(for category: String) -> String {
         switch category {
+        case "seasonal":
+            return SeasonalManager.shared.currentEventDisplayName()
         case "main_tools":
             return "Most Popular This Week"
         case "pro_looks":
@@ -86,6 +93,8 @@ struct CategoryFeaturedMapping {
     /// - Returns: The display name for the category
     static func categoryDisplayName(for category: String) -> String {
         switch category {
+        case "seasonal":
+            return "Seasonal"
         case "main_tools":
             return "Photo Editor"
         case "pro_looks":
@@ -107,6 +116,7 @@ extension CategoryFeaturedMapping {
     /// - Restoration: "Image Upscaler" - Most useful restoration tool, broad appeal
     
     static let featuredToolIds: [String: String] = [
+        "seasonal": "thanksgiving_magic",
         "main_tools": "remove_object",
         "pro_looks": "linkedin_headshot", 
         "restoration": "image_upscaler"
@@ -117,5 +127,31 @@ extension CategoryFeaturedMapping {
     /// - Returns: The featured tool ID, or nil if not found
     static func featuredToolId(for category: String) -> String? {
         return featuredToolIds[category]
+    }
+    
+    /// Returns exactly 5 tools for carousel display, with fallback logic
+    /// - Parameter category: The category ID
+    /// - Returns: Array of exactly 5 tools for carousel
+    static func getCarouselTools(for category: String) -> [Tool] {
+        var tools: [Tool] = []
+
+        if let featured = featuredTool(for: category) {
+            tools.append(featured)
+        }
+        let remaining = remainingTools(for: category)
+        if !remaining.isEmpty {
+            tools.append(contentsOf: remaining.prefix(max(0, 5 - tools.count)))
+        }
+
+        if tools.count < 5 {
+            // Build a global pool (adjust lists to match your Tool collections)
+            let all = (Tool.mainTools + Tool.proLooksTools + Tool.restorationTools + Tool.seasonalTools)
+            let dedup = all.filter { candidate in
+                !tools.contains(where: { $0.id == candidate.id })
+            }
+            tools.append(contentsOf: dedup.prefix(max(0, 5 - tools.count)))
+        }
+
+        return Array(tools.prefix(5))
     }
 }

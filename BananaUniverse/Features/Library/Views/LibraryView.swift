@@ -13,7 +13,8 @@ struct LibraryView: View {
     @State private var selectedImageURL: URL? = nil
     
     var body: some View {
-        NavigationView {
+        // MARK: - Phase 1 Navigation & Visual Foundation
+        NavigationStack {
             VStack(spacing: 0) {
                 // Header Bar
                 UnifiedHeaderBar(
@@ -39,30 +40,66 @@ struct LibraryView: View {
                     // Empty State
                     EmptyHistoryView()
                 } else {
-                    // History List
-                    HistoryList(
-                        items: viewModel.historyItems,
-                        isRefreshing: viewModel.isRefreshing,
-                        onRefresh: { await viewModel.refreshHistory() },
-                        onItemTap: { item in viewModel.navigateToResult(item) },
-                        onSelect: { item in
-                            if let resultURL = item.resultURL {
-                                selectedImageURL = resultURL
+                    // MARK: - Phase 3 Recent Activity Section
+                    ScrollView {
+                        VStack(spacing: DesignTokens.Spacing.lg) {
+                            // Recent Activity Section
+                            if !viewModel.recentActivityItems.isEmpty {
+                                VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+                                    // Section Header
+                                    Text("Recent Activity")
+                                        .font(DesignTokens.Typography.title3)
+                                        .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
+                                    
+                                    // Horizontal Scroll of Preview Cards
+                                    ScrollView(.horizontal, showsIndicators: false) {
+                                        HStack(spacing: DesignTokens.Spacing.md) {
+                                            ForEach(viewModel.recentActivityItems.prefix(4)) { item in
+                                                RecentActivityCard(item: item) {
+                                                    if let resultURL = item.resultURL {
+                                                        selectedImageURL = resultURL
+                                                    }
+                                                    viewModel.navigateToResult(item)
+                                                }
+                                            }
+                                        }
+                                        .padding(.horizontal, DesignTokens.Spacing.md)
+                                    }
+                                    .padding(.horizontal, -DesignTokens.Spacing.md)
+                                }
+                                .padding(.top, DesignTokens.Spacing.md)
+                                .padding(.horizontal, DesignTokens.Spacing.md)
                             }
-                        },
-                        onRerun: { item in await viewModel.rerunJob(item) },
-                        onShare: { item in viewModel.shareResult(item) },
-                        onDownload: { item in await viewModel.downloadImage(item) },
-                        onDelete: { item in 
-                            viewModel.itemToDelete = item
-                            viewModel.showingDeleteConfirmation = true
+                            
+                            // History List Content
+                            HistoryListContentView(
+                                items: viewModel.historyItems,
+                                groupedItems: viewModel.groupedHistoryItems,
+                                onItemTap: { item in viewModel.navigateToResult(item) },
+                                onSelect: { item in
+                                    if let resultURL = item.resultURL {
+                                        selectedImageURL = resultURL
+                                    }
+                                },
+                                onRerun: { item in await viewModel.rerunJob(item) },
+                                onShare: { item in viewModel.shareResult(item) },
+                                onDownload: { item in await viewModel.downloadImage(item) },
+                                onDelete: { item in 
+                                    viewModel.itemToDelete = item
+                                    viewModel.showingDeleteConfirmation = true
+                                }
+                            )
+                            .environmentObject(themeManager)
                         }
-                    )
+                    }
+                    .refreshable {
+                        await viewModel.refreshHistory()
+                    }
                 }
             }
             .background(DesignTokens.Background.primary(themeManager.resolvedColorScheme))
             .navigationTitle("")
-            .navigationBarHidden(true)
+            .toolbar(.hidden, for: .navigationBar)
         }
         .onAppear {
             Task {

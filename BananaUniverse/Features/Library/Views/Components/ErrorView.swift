@@ -18,7 +18,7 @@ struct ErrorView: View {
         VStack(spacing: DesignTokens.Spacing.md) {
             Image(systemName: "exclamationmark.triangle")
                 .font(.system(size: 64))
-                .foregroundColor(DesignTokens.Semantic.error)
+                .foregroundColor(DesignTokens.Semantic.error(themeManager.resolvedColorScheme))
                 .accessibilityHidden(true)
             
             Text("Something went wrong")

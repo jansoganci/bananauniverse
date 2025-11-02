@@ -26,9 +26,9 @@ enum JobStatus: String, Codable {
     
     func badgeColor(for colorScheme: ColorScheme) -> Color {
         switch self {
-        case .completed: return DesignTokens.Semantic.success
+        case .completed: return DesignTokens.Brand.secondary(colorScheme)
         case .processing: return DesignTokens.Brand.primary(.light)
-        case .failed: return DesignTokens.Semantic.error
+        case .failed: return DesignTokens.Semantic.error(colorScheme)
         case .cancelled: return DesignTokens.Text.quaternary(colorScheme)
         }
     }

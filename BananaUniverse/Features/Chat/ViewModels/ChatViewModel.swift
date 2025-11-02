@@ -71,7 +71,7 @@ class ChatViewModel: ObservableObject {
     var dailyQuotaLimit: Int {
         return creditManager.dailyQuotaLimit
     }
-    @Published var currentPrompt: String? = nil // Current prompt for processing
+    @Published var currentPrompt: String = "" // Current prompt for processing
     @Published var messages: [ChatMessage] = [] // Chat messages for displaying results
     @Published var currentJobID: String? = nil // Current job being processed
     
@@ -94,6 +94,7 @@ class ChatViewModel: ObservableObject {
     private let supabaseService = SupabaseService.shared
     // private let adaptyService = AdaptyService.shared
     private let creditManager = HybridCreditManager.shared
+    private var inFlightTasks: [Task<Void, Never>] = []
     
     init() {
         // Quota management is now handled by HybridCreditManager
@@ -196,7 +197,11 @@ class ChatViewModel: ObservableObject {
             }
         }
         
-        await processImage(image)
+        let task = Task {
+            await processImage(image)
+        }
+        inFlightTasks.append(task)
+        await task.value
     }
     
     private func processImage(_ image: UIImage) async {
@@ -223,8 +228,8 @@ class ChatViewModel: ObservableObject {
         
         // Add user message with the prompt and image
         let promptContent: String
-        if let prompt = currentPrompt, !prompt.isEmpty {
-            promptContent = prompt
+        if !currentPrompt.isEmpty {
+            promptContent = currentPrompt
         } else {
             promptContent = "Enhance this image"
         }
@@ -259,8 +264,8 @@ class ChatViewModel: ObservableObject {
             
             // Use original prompt directly
             let originalPrompt: String
-            if let prompt = currentPrompt, !prompt.isEmpty {
-                originalPrompt = prompt
+            if !currentPrompt.isEmpty {
+                originalPrompt = currentPrompt
             } else {
                 originalPrompt = "Enhance this image"
             }
@@ -312,8 +317,10 @@ class ChatViewModel: ObservableObject {
                 )
             }
             
-            // Quota updates are handled by backend and HybridCreditManager
-            
+            // Refresh quota after successful processing
+            await creditManager.loadQuota()
+            // Trigger UI update for quota display
+            objectWillChange.send()
             
         } catch {
             let appError = AppError.from(error)
@@ -435,10 +442,19 @@ class ChatViewModel: ObservableObject {
         processedImage = nil
         errorMessage = nil
         uploadProgress = 0.0
-        currentPrompt = nil
+        currentPrompt = ""
         messages = []
         jobStatus = .idle
         currentJobID = nil
+        for task in inFlightTasks {
+            task.cancel()
+        }
+        inFlightTasks.removeAll()
+    }
+    
+    func apply(_ prompt: String?) {
+        self.currentPrompt = prompt ?? ""
+        // NOTE: Image picker open is driven by AppState.sessionId change (outside this class)
     }
     
     func clearError() {

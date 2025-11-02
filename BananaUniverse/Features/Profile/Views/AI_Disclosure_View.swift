@@ -125,7 +125,7 @@ struct AI_Disclosure_View: View {
                     icon: "text.bubble",
                     title: "OpenAI / Gemini APIs",
                     description: "Text and prompt generation",
-                    color: DesignTokens.Brand.secondary
+                    color: DesignTokens.Brand.secondary(themeManager.resolvedColorScheme)
                 )
                 
                 // Local Processing

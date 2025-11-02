@@ -49,7 +49,12 @@ Deno.serve(async (req: Request) => {
     
     const requestData: ProcessImageRequest = await req.json();
     let { image_url, prompt, device_id, user_id, is_premium, client_request_id } = requestData;
-    
+
+    // ✅ FIX #4: Generate UUID once for both consume_quota and refund_quota
+    // This ensures idempotency works correctly across the entire request lifecycle
+    const requestId = client_request_id || crypto.randomUUID();
+    console.log('🔑 [STEVE-JOBS] Request ID:', requestId);
+
     // CRITICAL FIX: Also try to get device_id from header if not in body
     if (!device_id) {
       const deviceIdHeader = req.headers.get('device-id');
@@ -185,8 +190,8 @@ Deno.serve(async (req: Request) => {
       const { data, error } = await supabase.rpc('consume_quota', {
         p_user_id: userType === 'authenticated' ? userIdentifier : null,
         p_device_id: userType === 'anonymous' ? userIdentifier : null,
-        p_is_premium: isPremium,
-        p_client_request_id: client_request_id || crypto.randomUUID()
+        // ⚠️ REMOVED p_is_premium: Server checks subscriptions table instead
+        p_client_request_id: requestId  // ✅ FIX #4: Use consistent UUID
       });
       
       if (error) {
@@ -195,6 +200,12 @@ Deno.serve(async (req: Request) => {
       } else {
         quotaResult = data;
         console.log('✅ [QUOTA] New quota system success:', JSON.stringify(quotaResult));
+        
+        // ✅ FIX: Extract is_premium from server response
+        if (quotaResult?.is_premium !== undefined) {
+          isPremium = quotaResult.is_premium;
+          console.log('🔍 [QUOTA] Server premium status:', isPremium);
+        }
       }
     } catch (error: any) {
       console.warn('⚠️ [QUOTA] New quota system exception, falling back to old system:', error.message);
@@ -277,12 +288,12 @@ Deno.serve(async (req: Request) => {
         }
         
         creditConsumption = data;
-      } else {
-        const { data, error } = await supabase.rpc('consume_credit_with_quota', {
-          p_user_id: null,
-          p_device_id: userIdentifier,
-          p_is_premium: isPremium
-        });
+    } else {
+      const { data, error } = await supabase.rpc('consume_credit_with_quota', {
+        p_user_id: null,
+        p_device_id: userIdentifier,
+        p_is_premium: false  // ✅ FIX: Always false for old system fallback
+      });
         
         if (error) {
           console.error('❌ [STEVE-JOBS] Credit consumption error:', error);
@@ -378,31 +389,57 @@ Deno.serve(async (req: Request) => {
     };
     
     console.log('📤 [STEVE-JOBS] Fal.AI request:', JSON.stringify(falAIRequest, null, 2));
-    
-    // Call Fal.AI directly (synchronous)
-    const falResponse = await fetch('https://fal.run/fal-ai/nano-banana/edit', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Key ${falAIKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(falAIRequest),
-    });
-    
-    if (!falResponse.ok) {
-      const errorText = await falResponse.text();
-      console.error('❌ [STEVE-JOBS] Fal.AI error:', falResponse.status, errorText);
-      throw new Error(`Fal.AI processing failed: ${falResponse.status}`);
+
+    // ============================================
+    // 8. CALL FAL.AI WITH REFUND ON FAILURE
+    // ============================================
+    let processedImageUrl: string;
+
+    try {
+      // Call Fal.AI directly (synchronous)
+      const falResponse = await fetch('https://fal.run/fal-ai/nano-banana/edit', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Key ${falAIKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(falAIRequest),
+      });
+
+      if (!falResponse.ok) {
+        const errorText = await falResponse.text();
+        console.error('❌ [STEVE-JOBS] Fal.AI error:', falResponse.status, errorText);
+        throw new Error(`Fal.AI processing failed: ${falResponse.status}`);
+      }
+
+      const falResult = await falResponse.json();
+      console.log('✅ [STEVE-JOBS] Fal.AI processing completed');
+
+      if (!falResult.images || falResult.images.length === 0) {
+        throw new Error('No processed images returned from Fal.AI');
+      }
+
+      processedImageUrl = falResult.images[0].url;
+
+    } catch (falError) {
+      console.error('❌ [REFUND] Fal.AI processing failed, initiating quota refund:', falError);
+
+      // Refund quota since AI processing failed
+      const { error: refundError } = await supabase.rpc('refund_quota', {
+        p_user_id: userType === 'authenticated' ? userIdentifier : null,
+        p_device_id: userType === 'anonymous' ? userIdentifier : null,
+        p_client_request_id: requestId  // ✅ FIX #4: Use same UUID as consume_quota
+      });
+
+      if (refundError) {
+        console.error('⚠️ [REFUND] Quota refund failed:', refundError);
+      } else {
+        console.log('💰 [REFUND] Quota refunded successfully');
+      }
+
+      // Re-throw the original error to the client
+      throw falError;
     }
-    
-    const falResult = await falResponse.json();
-    console.log('✅ [STEVE-JOBS] Fal.AI processing completed');
-    
-    if (!falResult.images || falResult.images.length === 0) {
-      throw new Error('No processed images returned from Fal.AI');
-    }
-    
-    const processedImageUrl = falResult.images[0].url;
     
     // ============================================
     // 9. SAVE PROCESSED IMAGE TO STORAGE

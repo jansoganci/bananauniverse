@@ -31,12 +31,12 @@ struct FeaturedToolCard: View {
                 HStack(spacing: DesignTokens.Spacing.xs) {
                     Image(systemName: "crown.fill")
                         .font(.system(size: 12, weight: .semibold))
-                        .foregroundColor(DesignTokens.Text.onGold)
-                    
+                        .foregroundColor(DesignTokens.Text.onBrand(themeManager.resolvedColorScheme))
+
                     Text("FEATURED")
                         .font(DesignTokens.Typography.caption1)
                         .fontWeight(.bold)
-                        .foregroundColor(DesignTokens.Text.onGold)
+                        .foregroundColor(DesignTokens.Text.onBrand(themeManager.resolvedColorScheme))
                 }
                 .padding(.horizontal, DesignTokens.Spacing.sm)
                 .padding(.vertical, DesignTokens.Spacing.xs)
@@ -100,7 +100,7 @@ struct FeaturedToolCard: View {
                                 .font(DesignTokens.Typography.callout)
                                 .fontWeight(.semibold)
                         }
-                        .foregroundColor(DesignTokens.Text.onGold)
+                        .foregroundColor(DesignTokens.Text.onBrand(themeManager.resolvedColorScheme))
                         .padding(.horizontal, DesignTokens.Spacing.md)
                         .padding(.vertical, DesignTokens.Spacing.sm)
                         .background(
@@ -179,7 +179,7 @@ struct FeaturedToolCard: View {
                 title: "LinkedIn Headshot",
                 imageURL: nil as URL?,
                 category: "pro_looks",
-                requiresPro: true,
+                requiresPro: false,
                 modelName: "professional-headshot",
                 placeholderIcon: "person.crop.square",
                 prompt: "Create a professional LinkedIn headshot"

@@ -16,13 +16,24 @@ struct ProfileView: View {
     @State private var showSignIn = false
     @State private var showAI_Disclosure = false
     @State private var authStateRefreshTrigger = false
+    @State private var mockNotificationEnabled = true
     @Environment(\.openURL) var openURL
-    
+    @Environment(\.colorScheme) var colorScheme
+
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 0) {
                 // Header Bar
-                UnifiedHeaderBar(title: "Profile")
+                UnifiedHeaderBar(
+                    title: "Profile",
+                    leftContent: nil,
+                    rightContent: creditManager.isPremiumUser 
+                        ? .unlimitedBadge({})  // PRO badge (non-tappable for MVP)
+                        : .getProButton { 
+                            showPaywall = true
+                            // TODO: Log analytics event - placement: profile_header
+                        }
+                )
                 
                 // Main Content
                 ScrollView {
@@ -30,9 +41,9 @@ struct ProfileView: View {
                         .id(authStateRefreshTrigger) // Force refresh when auth state changes
                 }
             }
-            .background(DesignTokens.Background.primary(themeManager.resolvedColorScheme))
+            .background(DesignTokens.Background.primary(colorScheme))
             .navigationTitle("")
-            .navigationBarHidden(true)
+            .toolbar(.hidden, for: .navigationBar)
         }
         .sheet(isPresented: $showPaywall) {
             PreviewPaywallView()
@@ -80,7 +91,7 @@ struct ProfileView: View {
     
     @ViewBuilder
     private var profileContent: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: DesignTokens.Spacing.lg) {
             // Pro Card
             ProCard(
                 isProActive: viewModel.isPremiumUser,
@@ -105,13 +116,11 @@ struct ProfileView: View {
                 }
             )
             .padding(.horizontal, DesignTokens.Spacing.md)
-            .padding(.top, DesignTokens.Spacing.lg)
             
             // Premium Status Banner (for premium users)
             if viewModel.isPremiumUser {
                 PremiumStatusBanner()
                     .padding(.horizontal, DesignTokens.Spacing.md)
-                    .padding(.top, DesignTokens.Spacing.sm)
             }
             
             // Sign In or Create Account Button (for anonymous users)
@@ -128,305 +137,340 @@ struct ProfileView: View {
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)
-                    .background(DesignTokens.Brand.primary(.light))
+                    .background(DesignTokens.Brand.primary(colorScheme))
                     .cornerRadius(12)
                 }
                 .padding(.horizontal, DesignTokens.Spacing.md)
-                .padding(.top, DesignTokens.Spacing.md)
             }
             
-            // User State Section
-            VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
-                VStack(spacing: 0) {
-                    
-                }
-                .background(DesignTokens.Background.tertiary(themeManager.resolvedColorScheme))
-                .cornerRadius(16)
-                .padding(.horizontal, DesignTokens.Spacing.md)
-                .padding(.bottom, DesignTokens.Spacing.sm)
-            
-            // Spacing between offer and account info (reduced)
+            // Account Section (for authenticated users)
             if authService.isAuthenticated {
-                Spacer()
-                    .frame(height: DesignTokens.Spacing.sm)
-            }
-                
-                // User Info Section (for authenticated users)
-                if authService.isAuthenticated {
-                    VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
-                        Text("Account Info")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
-                            .padding(.horizontal, DesignTokens.Spacing.md)
-                            .padding(.top, DesignTokens.Spacing.md)
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+                    // Section Header
+                    Text("Account")
+                        .font(DesignTokens.Typography.title3)
+                        .foregroundColor(DesignTokens.Text.primary(colorScheme))
+                        .padding(.horizontal, DesignTokens.Spacing.md)
+                    
+                    // Account Card
+                    VStack(spacing: 0) {
+                        // Email Row
+                        ProfileRow(
+                            icon: "envelope.fill",
+                            title: "Email",
+                            subtitle: authService.currentUser?.email ?? "Unknown",
+                            iconColor: DesignTokens.Brand.primary(colorScheme),
+                            showChevron: false
+                        )
                         
-                        VStack(spacing: 0) {
-                            // User Email
-                            HStack {
-                                Image(systemName: "envelope")
-                                    .font(.system(size: 20))
-                                    .foregroundColor(DesignTokens.Brand.primary(.light))
-                                    .frame(width: 24)
-                                
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("Email")
-                                        .font(.system(size: 16))
-                                        .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
-                                    
-                                    Text(authService.currentUser?.email ?? "Unknown")
-                                        .font(.system(size: 14))
-                                        .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
+                        Divider()
+                            .background(DesignTokens.Surface.secondary(colorScheme))
+                            .padding(.leading, 56)
+                        
+                        // Quota Display
+                        QuotaDisplayView(style: .detailed)
+                        
+                        Divider()
+                            .background(DesignTokens.Surface.secondary(colorScheme))
+                            .padding(.leading, 56)
+                        
+                        // Sign Out Row
+                        ProfileRow(
+                            icon: "arrow.right.square",
+                            title: "Sign Out",
+                            iconColor: DesignTokens.Semantic.warning(colorScheme),
+                            showChevron: true,
+                            action: {
+                                Task {
+                                    try? await authService.signOut()
                                 }
+                            }
+                        )
+                    }
+                    .background(DesignTokens.Surface.secondary(colorScheme))
+                    .cornerRadius(DesignTokens.CornerRadius.md)
+                    .padding(.horizontal, DesignTokens.Spacing.md)
+                }
+            }
+            
+            // Settings Section
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+                // Section Header
+                Text("Settings")
+                    .font(DesignTokens.Typography.title3)
+                    .foregroundColor(DesignTokens.Text.primary(colorScheme))
+                    .padding(.horizontal, DesignTokens.Spacing.md)
+                
+                // Settings Card
+                VStack(spacing: 0) {
+                    // Theme Selector
+                    HStack(spacing: 16) {
+                        Image(systemName: "paintbrush.fill")
+                            .font(.system(size: 20))
+                            .foregroundColor(DesignTokens.Brand.primary(colorScheme))
+                            .frame(width: 24)
+                        
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Theme")
+                                .font(.system(size: 16))
+                                .foregroundColor(DesignTokens.Text.primary(colorScheme))
+                            
+                            // Show subtitle only for Auto mode
+                            if themeManager.preference == .system {
+                                Text("(Follow System)")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(DesignTokens.Text.secondary(colorScheme))
+                            }
+                        }
+                        
+                        Spacer()
+                        
+                        // Fixed dropdown picker with proper width and no background
+                        Menu {
+                            Button(action: {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    themeManager.preference = .light
+                                }
+                            }) {
+                                HStack {
+                                    Image(systemName: "sun.max.fill")
+                                        .foregroundColor(.orange)
+                                    Text("Light")
+                                    if themeManager.preference == .light {
+                                        Spacer()
+                                        Image(systemName: "checkmark")
+                                            .foregroundColor(DesignTokens.Brand.primary(colorScheme))
+                                    }
+                                }
+                            }
+                            
+                            Button(action: {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    themeManager.preference = .dark
+                                }
+                            }) {
+                                HStack {
+                                    Image(systemName: "moon.fill")
+                                        .foregroundColor(.blue)
+                                    Text("Dark")
+                                    if themeManager.preference == .dark {
+                                        Spacer()
+                                        Image(systemName: "checkmark")
+                                            .foregroundColor(DesignTokens.Brand.primary(colorScheme))
+                                    }
+                                }
+                            }
+                            
+                            Button(action: {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    themeManager.preference = .system
+                                }
+                            }) {
+                                HStack {
+                                    Image(systemName: "circle.lefthalf.filled")
+                                        .foregroundColor(.gray)
+                                    Text("Auto")
+                                    if themeManager.preference == .system {
+                                        Spacer()
+                                        Image(systemName: "checkmark")
+                                            .foregroundColor(DesignTokens.Brand.primary(colorScheme))
+                                    }
+                                }
+                            }
+                        } label: {
+                            HStack(spacing: 6) {
+                                // Theme icon
+                                Image(systemName: themeManager.preference.icon)
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundColor(DesignTokens.Brand.primary(colorScheme))
+                                
+                                Text(themeManager.preference.displayName)
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundColor(DesignTokens.Text.primary(colorScheme))
+                                    .lineLimit(1)
+                                    .fixedSize(horizontal: true, vertical: false)
+                                
+                                Image(systemName: "chevron.down")
+                                    .font(.system(size: 10, weight: .semibold))
+                                    .foregroundColor(DesignTokens.Text.secondary(colorScheme))
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .frame(minWidth: 80)
+                        }
+                        .menuStyle(BorderlessButtonMenuStyle())
+                    }
+                    .padding(.horizontal, DesignTokens.Spacing.md)
+                    .frame(height: 50)
+                    
+                    Divider()
+                        .background(DesignTokens.Surface.secondary(colorScheme))
+                        .padding(.leading, 56)
+                    
+                    // Language Row
+                    ProfileRow(
+                        icon: "globe",
+                        title: "Language",
+                        subtitle: "English",
+                        iconColor: DesignTokens.Brand.primary(colorScheme),
+                        showChevron: true,
+                        action: {
+                            // Mock action
+                            print("Language settings tapped")
+                        }
+                    )
+                    
+                    Divider()
+                        .background(DesignTokens.Surface.secondary(colorScheme))
+                        .padding(.leading, 56)
+                    
+                    // Notifications Row
+                    ProfileRow(
+                        icon: "bell.fill",
+                        title: "Notifications",
+                        subtitle: mockNotificationEnabled ? "Enabled" : "Disabled",
+                        iconColor: DesignTokens.Brand.secondary(colorScheme),
+                        showChevron: true,
+                        action: {
+                            // Mock toggle
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                mockNotificationEnabled.toggle()
+                            }
+                        }
+                    )
+                    
+                    // Only show Delete Account for authenticated users
+                    if authService.isAuthenticated {
+                        Divider()
+                            .background(DesignTokens.Surface.secondary(colorScheme))
+                            .padding(.leading, 56)
+                        
+                        Button(action: {
+                            if !viewModel.isDeletingAccount {
+                                viewModel.showDeleteAccountConfirmation()
+                            }
+                        }) {
+                            HStack(spacing: 16) {
+                                if viewModel.isDeletingAccount {
+                                    ProgressView()
+                                        .scaleEffect(0.8)
+                                        .frame(width: 24, height: 24)
+                                } else {
+                                    Image(systemName: "trash")
+                                        .font(.system(size: 20))
+                                        .foregroundColor(DesignTokens.Semantic.error(colorScheme))
+                                        .frame(width: 24)
+                                }
+                                
+                                Text(viewModel.isDeletingAccount ? "Deleting Account..." : "Delete Account")
+                                    .font(.system(size: 16))
+                                    .foregroundColor(DesignTokens.Semantic.error(colorScheme))
                                 
                                 Spacer()
                             }
                             .padding(.horizontal, DesignTokens.Spacing.md)
-                            .padding(.vertical, DesignTokens.Spacing.md)
-                            
-                            Divider()
-                                .background(Color.white.opacity(0.06))
-                            
-                            // Quota Display
-                            QuotaDisplayView(style: .detailed)
-                            
-                            Divider()
-                                .background(Color.white.opacity(0.06))
-                            
-                            // Logout Button
-                            Button(action: {
-                                Task {
-                                    try? await authService.signOut()
-                                }
-                            }) {
-                                HStack(spacing: 16) {
-                                    Image(systemName: "arrow.right.square")
-                                        .font(.system(size: 20))
-                                        .foregroundColor(DesignTokens.Semantic.warning)
-                                        .frame(width: 24)
-                                    
-                                    Text("Sign Out")
-                                        .font(.system(size: 16))
-                                        .foregroundColor(DesignTokens.Semantic.warning)
-                                    
-                                    Spacer()
-                                }
-                                .padding(.horizontal, DesignTokens.Spacing.md)
-                                .frame(height: 50)
-                            }
-                            .buttonStyle(PlainButtonStyle())
+                            .frame(height: 50)
                         }
-                        .background(DesignTokens.Background.tertiary(themeManager.resolvedColorScheme))
-                        .cornerRadius(16)
-                        .padding(.horizontal, DesignTokens.Spacing.md)
-                        .padding(.bottom, DesignTokens.Spacing.sm)
+                        .buttonStyle(PlainButtonStyle())
+                        .disabled(viewModel.isDeletingAccount)
                     }
                 }
+                .background(DesignTokens.Surface.secondary(colorScheme))
+                .cornerRadius(DesignTokens.CornerRadius.md)
+                .padding(.horizontal, DesignTokens.Spacing.md)
+            }
+            
+            // Support Section
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+                // Section Header
+                Text("Support")
+                    .font(DesignTokens.Typography.title3)
+                    .foregroundColor(DesignTokens.Text.primary(colorScheme))
+                    .padding(.horizontal, DesignTokens.Spacing.md)
                 
-                // Spacing before Settings section (reduced)
-                Spacer()
-                    .frame(height: DesignTokens.Spacing.sm)
-                
-                // Settings Section
-                VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
-                    Text("Settings")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
-                        .padding(.horizontal, DesignTokens.Spacing.md)
-                        .padding(.top, DesignTokens.Spacing.md)
-                    
-                    VStack(spacing: 0) {
-                        SettingsRow(icon: "questionmark.circle", title: "Help & Support") {
+                // Support Card
+                VStack(spacing: 0) {
+                    ProfileRow(
+                        icon: "questionmark.circle.fill",
+                        title: "Help & Support",
+                        iconColor: DesignTokens.Brand.primary(colorScheme),
+                        showChevron: true,
+                        action: {
                             if let url = URL(string: Config.supportURL) {
                                 UIApplication.shared.open(url)
                             }
                         }
-                        
-                        Divider()
-                            .background(Color.white.opacity(0.06))
-                            .padding(.leading, 56)
-                        
-                        SettingsRow(icon: "hand.raised", title: "Privacy Policy") {
+                    )
+                    
+                    Divider()
+                        .background(DesignTokens.Surface.secondary(colorScheme))
+                        .padding(.leading, 56)
+                    
+                    ProfileRow(
+                        icon: "hand.raised.fill",
+                        title: "Privacy Policy",
+                        iconColor: DesignTokens.Brand.primary(colorScheme),
+                        showChevron: true,
+                        action: {
                             if let url = URL(string: Config.privacyPolicyURL) {
                                 UIApplication.shared.open(url)
                             }
                         }
-                        
-                        Divider()
-                            .background(Color.white.opacity(0.06))
-                            .padding(.leading, 56)
-                        
-                        SettingsRow(icon: "doc.text", title: "Terms of Service") {
+                    )
+                    
+                    Divider()
+                        .background(DesignTokens.Surface.secondary(colorScheme))
+                        .padding(.leading, 56)
+                    
+                    ProfileRow(
+                        icon: "doc.text.fill",
+                        title: "Terms of Service",
+                        iconColor: DesignTokens.Brand.primary(colorScheme),
+                        showChevron: true,
+                        action: {
                             if let url = URL(string: Config.termsOfServiceURL) {
                                 UIApplication.shared.open(url)
                             }
                         }
-                        
-                        Divider()
-                            .background(Color.white.opacity(0.06))
-                            .padding(.leading, 56)
-                        
-                        SettingsRow(icon: "brain.head.profile", title: "AI Service Disclosure") {
+                    )
+                    
+                    Divider()
+                        .background(DesignTokens.Surface.secondary(colorScheme))
+                        .padding(.leading, 56)
+                    
+                    ProfileRow(
+                        icon: "brain.head.profile",
+                        title: "AI Service Disclosure",
+                        iconColor: DesignTokens.Brand.secondary(colorScheme),
+                        showChevron: true,
+                        action: {
                             showAI_Disclosure = true
                         }
-                        
-                        Divider()
-                            .background(Color.white.opacity(0.06))
-                            .padding(.leading, 56)
-                        
-                        // Restore Purchases Button (always visible)
-                        SettingsRow(icon: "arrow.clockwise", title: "Restore Purchases") {
+                    )
+                    
+                    Divider()
+                        .background(DesignTokens.Surface.secondary(colorScheme))
+                        .padding(.leading, 56)
+                    
+                    // Restore Purchases Button (always visible)
+                    ProfileRow(
+                        icon: "arrow.clockwise.circle.fill",
+                        title: "Restore Purchases",
+                        iconColor: DesignTokens.Brand.accent(colorScheme),
+                        showChevron: true,
+                        action: {
                             Task {
                                 await viewModel.restorePurchases()
                             }
                         }
-                        
-                        Divider()
-                            .background(Color.white.opacity(0.06))
-                            .padding(.leading, 56)
-                        
-                        // Theme Selector
-                        HStack(spacing: 16) {
-                            Image(systemName: "paintbrush.fill")
-                                .font(.system(size: 20))
-                                .foregroundColor(DesignTokens.Brand.primary(.light))
-                                .frame(width: 24)
-                            
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Theme")
-                                    .font(.system(size: 16))
-                                    .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
-                                
-                                // Show subtitle only for Auto mode
-                                if themeManager.preference == .system {
-                                    Text("(Follow System)")
-                                        .font(.system(size: 12))
-                                        .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
-                                }
-                            }
-                            
-                            Spacer()
-                            
-                            // Fixed dropdown picker with proper width and no background
-                            Menu {
-                                Button(action: {
-                                    withAnimation(.easeInOut(duration: 0.2)) {
-                                        themeManager.preference = .light
-                                    }
-                                }) {
-                                    HStack {
-                                        Image(systemName: "sun.max.fill")
-                                            .foregroundColor(.orange)
-                                        Text("Light")
-                                        if themeManager.preference == .light {
-                                            Spacer()
-                                            Image(systemName: "checkmark")
-                                                .foregroundColor(DesignTokens.Brand.primary(.light))
-                                        }
-                                    }
-                                }
-                                
-                                Button(action: {
-                                    withAnimation(.easeInOut(duration: 0.2)) {
-                                        themeManager.preference = .dark
-                                    }
-                                }) {
-                                    HStack {
-                                        Image(systemName: "moon.fill")
-                                            .foregroundColor(.blue)
-                                        Text("Dark")
-                                        if themeManager.preference == .dark {
-                                            Spacer()
-                                            Image(systemName: "checkmark")
-                                                .foregroundColor(DesignTokens.Brand.primary(.light))
-                                        }
-                                    }
-                                }
-                                
-                                Button(action: {
-                                    withAnimation(.easeInOut(duration: 0.2)) {
-                                        themeManager.preference = .system
-                                    }
-                                }) {
-                                    HStack {
-                                        Image(systemName: "circle.lefthalf.filled")
-                                            .foregroundColor(.gray)
-                                        Text("Auto")
-                                        if themeManager.preference == .system {
-                                            Spacer()
-                                            Image(systemName: "checkmark")
-                                                .foregroundColor(DesignTokens.Brand.primary(.light))
-                                        }
-                                    }
-                                }
-                            } label: {
-                                HStack(spacing: 6) {
-                                    // Theme icon
-                                    Image(systemName: themeManager.preference.icon)
-                                        .font(.system(size: 14, weight: .medium))
-                                        .foregroundColor(DesignTokens.Brand.primary(.light))
-                                    
-                                    Text(themeManager.preference.displayName)
-                                        .font(.system(size: 16, weight: .medium))
-                                        .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
-                                        .lineLimit(1)
-                                        .fixedSize(horizontal: true, vertical: false)
-                                    
-                                    Image(systemName: "chevron.down")
-                                        .font(.system(size: 10, weight: .semibold))
-                                        .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
-                                }
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
-                                .frame(minWidth: 80)
-                            }
-                            .menuStyle(BorderlessButtonMenuStyle())
-                        }
-                        .padding(.horizontal, DesignTokens.Spacing.md)
-                        .frame(height: 50)
-                        
-                        // Only show Delete Account for authenticated users
-                        if authService.isAuthenticated {
-                            Divider()
-                                .background(Color.white.opacity(0.06))
-                                .padding(.leading, 56)
-                            
-                            Button(action: {
-                                if !viewModel.isDeletingAccount {
-                                    viewModel.showDeleteAccountConfirmation()
-                                }
-                            }) {
-                                HStack(spacing: 16) {
-                                    if viewModel.isDeletingAccount {
-                                        ProgressView()
-                                            .scaleEffect(0.8)
-                                            .frame(width: 24, height: 24)
-                                    } else {
-                                        Image(systemName: "trash")
-                                            .font(.system(size: 20))
-                                            .foregroundColor(DesignTokens.Semantic.error)
-                                            .frame(width: 24)
-                                    }
-                                    
-                                    Text(viewModel.isDeletingAccount ? "Deleting Account..." : "Delete Account")
-                                        .font(.system(size: 16))
-                                        .foregroundColor(DesignTokens.Semantic.error)
-                                    
-                                    Spacer()
-                                }
-                                .padding(.horizontal, DesignTokens.Spacing.md)
-                                .frame(height: 50)
-                            }
-                            .buttonStyle(PlainButtonStyle())
-                            .disabled(viewModel.isDeletingAccount)
-                        }
-                    }
-                    .background(DesignTokens.Background.tertiary(themeManager.resolvedColorScheme))
-                    .cornerRadius(16)
-                    .padding(.horizontal, DesignTokens.Spacing.md)
-                    .padding(.bottom, DesignTokens.Spacing.lg)
+                    )
                 }
+                .background(DesignTokens.Surface.secondary(colorScheme))
+                .cornerRadius(DesignTokens.CornerRadius.md)
+                .padding(.horizontal, DesignTokens.Spacing.md)
             }
         }
+        .padding(.horizontal, DesignTokens.Spacing.md)
     }
 }
 
@@ -439,79 +483,81 @@ struct ProCard: View {
     let onUpgradeTap: () -> Void
     let onManageTap: () -> Void
     let onRefreshTap: () -> Void
-    
+
+    @Environment(\.colorScheme) var colorScheme
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(isProActive ? "Unlimited Mode" : "Upgrade to Pro")
                         .font(.system(size: 20, weight: .bold))
-                        .foregroundColor(.white)
-                    
+                        .foregroundColor(colorScheme == .light ? Color(hex: "1A1A1A") : .white)
+
                     Text(isProActive ? "You have unlimited access" : "Get unlimited edits")
                         .font(.system(size: 14))
-                        .foregroundColor(.white.opacity(0.8))
+                        .foregroundColor(colorScheme == .light ? Color(hex: "1A1A1A").opacity(0.7) : .white.opacity(0.8))
                 }
-                
+
                 Spacer()
-                
+
                 Image(systemName: "crown.fill")
                     .font(.system(size: 24))
-                    .foregroundColor(DesignTokens.Brand.gold)
+                    .foregroundColor(DesignTokens.Brand.primary(colorScheme))
             }
-            
+
             if !isProActive {
                 VStack(alignment: .leading, spacing: 8) {
                     ForEach(features, id: \.self) { feature in
                         HStack(spacing: 8) {
                             Image(systemName: "checkmark.circle.fill")
-                                .foregroundColor(DesignTokens.Brand.secondary)
+                                .foregroundColor(colorScheme == .light ? Color(hex: "00E5FF") : DesignTokens.Brand.secondary(colorScheme))
                             Text(feature)
                                 .font(.system(size: 14))
-                                .foregroundColor(.white.opacity(0.9))
+                                .foregroundColor(colorScheme == .light ? Color(hex: "1A1A1A").opacity(0.8) : .white.opacity(0.9))
                         }
                     }
                 }
-                
+
                 Button(action: onUpgradeTap) {
                     Text("Upgrade Now")
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.black)
+                        .foregroundColor(Color(hex: "FFFFFF"))
                         .frame(maxWidth: .infinity)
                         .frame(height: 44)
-                        .background(DesignTokens.Brand.gold)
+                        .background(Color(hex: "6B21C0"))
                         .cornerRadius(12)
                 }
             } else {
                 Button(action: onManageTap) {
                     Text("Manage Subscription")
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.white)
+                        .foregroundColor(colorScheme == .light ? Color(hex: "6B21C0") : .white)
                         .frame(maxWidth: .infinity)
                         .frame(height: 44)
-                        .background(Color.white.opacity(0.2))
+                        .background(colorScheme == .light ? Color(hex: "6B21C0").opacity(0.1) : Color.white.opacity(0.2))
                         .cornerRadius(12)
                 }
-                
+
                 // Subscription Status Display
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         Text(subscriptionStatusText)
                             .font(.system(size: 14))
-                            .foregroundColor(.white.opacity(0.8))
+                            .foregroundColor(colorScheme == .light ? Color(hex: "1A1A1A").opacity(0.6) : .white.opacity(0.8))
                             .multilineTextAlignment(.leading)
-                        
+
                         Spacer()
-                        
+
                         Button(action: onRefreshTap) {
                             if isLoadingSubscription {
                                 ProgressView()
-                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    .progressViewStyle(CircularProgressViewStyle(tint: colorScheme == .light ? Color(hex: "6B21C0") : .white))
                                     .scaleEffect(0.8)
                             } else {
                                 Image(systemName: "arrow.clockwise")
                                     .font(.system(size: 14))
-                                    .foregroundColor(.white.opacity(0.6))
+                                    .foregroundColor(colorScheme == .light ? Color(hex: "1A1A1A").opacity(0.5) : .white.opacity(0.6))
                             }
                         }
                         .disabled(isLoadingSubscription)
@@ -523,70 +569,39 @@ struct ProCard: View {
         .padding(20)
         .background(
             LinearGradient(
-                colors: [DesignTokens.Brand.purple, DesignTokens.Brand.primary(.light)],
+                colors: colorScheme == .light
+                    ? [Color(hex: "EDEBFF"), Color(hex: "FFFFFF")]
+                    : [DesignTokens.Brand.purple, DesignTokens.Brand.primary(colorScheme)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
         )
         .cornerRadius(16)
-    }
-}
-
-// MARK: - Settings Row Component
-struct SettingsRow: View {
-    let icon: String
-    let title: String
-    let isDestructive: Bool
-    let onTap: () -> Void
-    @EnvironmentObject var themeManager: ThemeManager
-    
-    init(icon: String, title: String, isDestructive: Bool = false, onTap: @escaping () -> Void) {
-        self.icon = icon
-        self.title = title
-        self.isDestructive = isDestructive
-        self.onTap = onTap
-    }
-    
-    var body: some View {
-        Button(action: onTap) {
-            HStack(spacing: 16) {
-                Image(systemName: icon)
-                    .font(.system(size: 20))
-                    .foregroundColor(isDestructive ? DesignTokens.Semantic.error : DesignTokens.Text.accent(themeManager.resolvedColorScheme))
-                    .frame(width: 24)
-                
-                Text(title)
-                    .font(.system(size: 16))
-                    .foregroundColor(isDestructive ? DesignTokens.Semantic.error : DesignTokens.Text.accent(themeManager.resolvedColorScheme))
-                
-                Spacer()
-                
-                if !isDestructive {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 14))
-                        .foregroundColor(DesignTokens.Text.quaternary(themeManager.resolvedColorScheme))
-                }
-            }
-            .padding(.horizontal, DesignTokens.Spacing.md)
-            .frame(height: 50)
-        }
-        .buttonStyle(PlainButtonStyle())
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(
+                    colorScheme == .light
+                        ? Color(hex: "9D7FD6").opacity(0.25)
+                        : Color.clear,
+                    lineWidth: 1
+                )
+        )
     }
 }
 
 // MARK: - Premium Status Banner Component
 struct PremiumStatusBanner: View {
-    @EnvironmentObject var themeManager: ThemeManager
-    
+    @Environment(\.colorScheme) var colorScheme
+
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: "crown.fill")
                 .font(.system(size: 16))
-                .foregroundColor(DesignTokens.Brand.gold)
+                .foregroundColor(DesignTokens.Brand.primary(colorScheme))
             
             Text("You're Premium! Enjoy unlimited access.")
                 .font(.system(size: 14, weight: .medium))
-                .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
+                .foregroundColor(DesignTokens.Text.primary(colorScheme))
             
             Spacer()
         }
@@ -594,10 +609,10 @@ struct PremiumStatusBanner: View {
         .padding(.vertical, 12)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(DesignTokens.Brand.gold.opacity(0.1))
+                .fill(DesignTokens.Brand.primary(colorScheme).opacity(0.1))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(DesignTokens.Brand.gold.opacity(0.3), lineWidth: 1)
+                        .stroke(DesignTokens.Brand.primary(colorScheme).opacity(0.3), lineWidth: 1)
                 )
         )
     }

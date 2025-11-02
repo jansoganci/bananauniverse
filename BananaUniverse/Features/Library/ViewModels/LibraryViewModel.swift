@@ -10,6 +10,7 @@ import Foundation
 import SwiftUI
 import Photos
 import PhotosUI
+import Supabase
 
 // MARK: - Library Error Types
 enum LibraryError: LocalizedError {
@@ -32,6 +33,25 @@ enum LibraryError: LocalizedError {
         case .networkError:
             return "Network error. Please check your connection and try again."
         }
+    }
+}
+
+// MARK: - History Date Group
+struct HistoryDateGroup {
+    let header: String
+    let items: [HistoryItem]
+}
+
+// MARK: - Signed URL Cache Actor
+actor SignedURLCache {
+    private var cache: [String: URL] = [:]
+    
+    func get(url: String) -> URL? {
+        return cache[url]
+    }
+    
+    func set(url: String, signedURL: URL) {
+        cache[url] = signedURL
     }
 }
 
@@ -73,6 +93,49 @@ class LibraryViewModel: ObservableObject {
         !isLoadingOrRefreshing && hasHistoryItems
     }
     
+    // MARK: - Phase 2 Date Grouping
+    
+    /// Recent items for horizontal preview section (top 6 items)
+    var recentActivityItems: [HistoryItem] {
+        Array(historyItems.prefix(6))
+    }
+    
+    /// Groups history items by date: Today, This Week, Earlier
+    var groupedHistoryItems: [HistoryDateGroup] {
+        let calendar = Calendar.current
+        let now = Date()
+        
+        var groups: [HistoryDateGroup] = []
+        var todayItems: [HistoryItem] = []
+        var thisWeekItems: [HistoryItem] = []
+        var earlierItems: [HistoryItem] = []
+        
+        for item in historyItems {
+            let daysSince = calendar.dateComponents([.day], from: item.createdAt, to: now).day ?? 0
+            
+            if calendar.isDateInToday(item.createdAt) {
+                todayItems.append(item)
+            } else if daysSince <= 7 {
+                thisWeekItems.append(item)
+            } else {
+                earlierItems.append(item)
+            }
+        }
+        
+        // Add groups only if they have items
+        if !todayItems.isEmpty {
+            groups.append(HistoryDateGroup(header: "Today", items: todayItems))
+        }
+        if !thisWeekItems.isEmpty {
+            groups.append(HistoryDateGroup(header: "This Week", items: thisWeekItems))
+        }
+        if !earlierItems.isEmpty {
+            groups.append(HistoryDateGroup(header: "Earlier", items: earlierItems))
+        }
+        
+        return groups
+    }
+    
     init(
         supabaseService: SupabaseService? = nil,
         authService: HybridAuthService? = nil,
@@ -109,49 +172,76 @@ class LibraryViewModel: ObservableObject {
             // Get current user state
             let userState = authService.userState
             
-            
             // Fetch jobs from database
             let jobs = try await supabaseService.fetchUserJobs(
                 userState: userState,
                 limit: 50
             )
             
+            // Capture client reference while still on main actor
+            let supabaseClient = supabaseService.client
             
-            // Transform jobs to history items
-            var newHistoryItems: [HistoryItem] = []
-            for job in jobs {
-                guard let completedAt = job.completedAt else { continue }
+            // Move network-heavy URL generation off main actor
+            let newHistoryItems = await Task.detached { [weak self] in
+                guard let self = self else { return [HistoryItem]() }
                 
-                let thumbnailURL: URL?
-                if let outputURL = job.outputURL {
-                    thumbnailURL = await generateSignedURL(from: outputURL)
-                } else {
-                    thumbnailURL = nil
+                let urlCache = SignedURLCache()
+                var results: [HistoryItem] = []
+                
+                await withTaskGroup(of: HistoryItem?.self) { group in
+                    for job in jobs {
+                        group.addTask {
+                            // Skip jobs without completion date
+                            guard let completedAt = job.completedAt else { return nil }
+                            
+                            // Get or generate signed URL
+                            let signedURL: URL?
+                            if let outputURL = job.outputURL {
+                                // Check cache first
+                                if let cached = await urlCache.get(url: outputURL) {
+                                    signedURL = cached
+                                } else {
+                                    // Generate new signed URL
+                                    if let generated = await self.nonActorSignedURL(for: outputURL, client: supabaseClient) {
+                                        await urlCache.set(url: outputURL, signedURL: generated)
+                                        signedURL = generated
+                                    } else {
+                                        signedURL = nil
+                                    }
+                                }
+                            } else {
+                                signedURL = nil
+                            }
+                            
+                            // Create history item with single signed URL reused for both
+                            let historyItem = HistoryItem(
+                                id: job.id.uuidString,
+                                thumbnailURL: signedURL,
+                                effectTitle: self.extractEffectTitle(from: job),
+                                effectId: job.model,
+                                status: self.mapJobStatus(job.status),
+                                createdAt: completedAt,
+                                resultURL: signedURL,
+                                originalImageKey: job.inputURL
+                            )
+                            
+                            return historyItem
+                        }
+                    }
+                    
+                    // Collect results as they complete
+                    for await item in group {
+                        if let item = item {
+                            results.append(item)
+                        }
+                    }
                 }
                 
-                let resultURL: URL?
-                if let outputURL = job.outputURL {
-                    resultURL = await generateSignedURL(from: outputURL)
-                } else {
-                    resultURL = nil
-                }
-                
-                let historyItem = HistoryItem(
-                    id: job.id.uuidString,
-                    thumbnailURL: thumbnailURL,
-                    effectTitle: extractEffectTitle(from: job),
-                    effectId: job.model,
-                    status: mapJobStatus(job.status),
-                    createdAt: completedAt,
-                    resultURL: resultURL,
-                    originalImageKey: job.inputURL
-                )
-                newHistoryItems.append(historyItem)
-            }
+                return results
+            }.value
             
             // Update UI on main thread
             historyItems = newHistoryItems
-            
             
         } catch {
             let appError = AppError.from(error)
@@ -243,7 +333,8 @@ class LibraryViewModel: ObservableObject {
     
     // MARK: - Helper Methods
     
-    private func extractEffectTitle(from job: JobRecord) -> String {
+    /// Non-isolated helper method for extracting effect title (pure function, no actor isolation needed)
+    nonisolated private func extractEffectTitle(from job: JobRecord) -> String {
         // Try to get from prompt first
         if let prompt = job.options?.prompt, !prompt.isEmpty {
             // Take first 40 chars of prompt as title
@@ -262,7 +353,8 @@ class LibraryViewModel: ObservableObject {
         }
     }
     
-    private func mapJobStatus(_ status: String) -> JobStatus {
+    /// Non-isolated helper method for mapping job status (pure function, no actor isolation needed)
+    nonisolated private func mapJobStatus(_ status: String) -> JobStatus {
         switch status.lowercased() {
         case "completed":
             return .completed
@@ -282,6 +374,25 @@ class LibraryViewModel: ObservableObject {
         do {
             let signedURLString = try await supabaseService.getSignedURL(for: path)
             return URL(string: signedURLString)
+        } catch {
+            // Fallback to public URL if signed URL fails
+            let baseURL = "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/\(Config.supabaseBucket)"
+            let fullPath = "\(baseURL)/\(path)"
+            return URL(string: fullPath)
+        }
+    }
+    
+    // MARK: - Non-Actor Signed URL Generation
+    
+    /// Non-isolated helper for parallel signed URL generation off the main actor
+    nonisolated private func nonActorSignedURL(for path: String, client: SupabaseClient) async -> URL? {
+        do {
+            // Use provided client to generate signed URL (thread-safe operation)
+            let signedURL = try await client.storage
+                .from(Config.supabaseBucket)
+                .createSignedURL(path: path, expiresIn: 2592000) // 30 days expiration
+            
+            return signedURL
         } catch {
             // Fallback to public URL if signed URL fails
             let baseURL = "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/\(Config.supabaseBucket)"

@@ -57,7 +57,7 @@ struct PrimaryButton: View {
                     .font(DesignTokens.Typography.headline)
                     .fontWeight(.semibold)
             }
-            .foregroundColor(isEnabled ? DesignTokens.Text.onGold : DesignTokens.Text.quaternary(colorScheme))
+            .foregroundColor(isEnabled ? DesignTokens.Text.onBrand(colorScheme) : DesignTokens.Text.quaternary(colorScheme))
             .frame(maxWidth: .infinity)
             .frame(height: DesignTokens.Layout.buttonHeight)
             .background(
@@ -343,7 +343,9 @@ struct QuotaBadge: View {
     let remaining: Int
     let isPro: Bool
     let onTap: () -> Void
-    
+
+    @Environment(\.colorScheme) var colorScheme
+
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: DesignTokens.Spacing.xs) {
@@ -361,7 +363,16 @@ struct QuotaBadge: View {
             .padding(.vertical, DesignTokens.Spacing.xs)
             .background(
                 Capsule()
-                    .fill(isPro ? DesignTokens.Brand.accent(.light) : DesignTokens.Brand.secondary)
+                    .fill(isPro ? DesignTokens.Brand.accent(.light) : DesignTokens.Brand.secondary(colorScheme))
+            )
+            .overlay(
+                Capsule()
+                    .stroke(
+                        colorScheme == .dark
+                            ? Color.white.opacity(0.15)
+                            : Color.clear,
+                        lineWidth: 0.5
+                    )
             )
         }
         .buttonStyle(PlainButtonStyle())
@@ -381,11 +392,11 @@ struct ToastNotification: View {
         case error
         case info
         
-        var color: Color {
+        func color(_ colorScheme: ColorScheme) -> Color {
             switch self {
-            case .success: return DesignTokens.Semantic.success
-            case .error: return DesignTokens.Semantic.error
-            case .info: return DesignTokens.Semantic.info
+            case .success: return DesignTokens.Semantic.success(colorScheme)
+            case .error: return DesignTokens.Semantic.error(colorScheme)
+            case .info: return DesignTokens.Semantic.info(colorScheme)
             }
         }
         
@@ -402,7 +413,7 @@ struct ToastNotification: View {
         HStack(spacing: DesignTokens.Spacing.sm) {
             Image(systemName: type.icon)
                 .font(.system(size: 16, weight: .semibold))
-                .foregroundColor(type.color)
+                .foregroundColor(type.color(colorScheme))
             
             Text(message)
                 .font(DesignTokens.Typography.callout)

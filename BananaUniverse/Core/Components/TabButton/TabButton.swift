@@ -30,7 +30,7 @@ struct TabButton: View {
             .foregroundColor(isActive ? .white : DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
             .padding(.horizontal, DesignTokens.Spacing.md)
             .padding(.vertical, DesignTokens.Spacing.sm)
-            .background(isActive ? DesignTokens.Brand.secondary : DesignTokens.Surface.secondary(themeManager.resolvedColorScheme))
+            .background(isActive ? DesignTokens.Brand.secondary(themeManager.resolvedColorScheme) : DesignTokens.Surface.secondary(themeManager.resolvedColorScheme))
             .cornerRadius(DesignTokens.CornerRadius.round)
         }
         .buttonStyle(PlainButtonStyle())

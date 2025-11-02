@@ -79,33 +79,33 @@ class HybridCreditManager: ObservableObject {
     }
     
     // MARK: - New Quota System Integration
-    
+
     /// Check and consume quota using the new backend system
-    func checkAndConsumeQuota(isPremium: Bool) async throws -> QuotaInfo {
+    /// Server validates premium status by checking subscriptions table
+    func checkAndConsumeQuota() async throws -> QuotaInfo {
         print("🆕 [QUOTA] Using new quota system...")
-        
+
         let userState = HybridAuthService.shared.userState
-        
+
         let quotaInfo = try await supabase.consumeQuota(
             userId: userState.isAuthenticated ? userState.identifier : nil,
-            deviceId: userState.isAuthenticated ? nil : userState.identifier,
-            isPremium: isPremium
+            deviceId: userState.isAuthenticated ? nil : userState.identifier
         )
-        
+
         // Update local state from backend response
         await updateFromBackendResponse(
             quotaUsed: quotaInfo.quotaUsed,
             quotaLimit: quotaInfo.quotaLimit,
             isPremium: quotaInfo.isPremium
         )
-        
+
         return quotaInfo
     }
-    
+
     /// Main entry point for quota consumption
     func spendCreditWithQuota() async throws -> Bool {
         do {
-            let quotaInfo = try await checkAndConsumeQuota(isPremium: isPremiumUser)
+            let quotaInfo = try await checkAndConsumeQuota()
             
             // Check if quota is available
             guard quotaInfo.quotaRemaining > 0 || quotaInfo.isPremium else {

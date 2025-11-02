@@ -13,21 +13,23 @@ struct ContentView: View {
     @StateObject private var creditManager = HybridCreditManager.shared
     @StateObject private var themeManager = ThemeManager()
     // @StateObject private var adaptyService = AdaptyService.shared
-    @State private var chatPrompt: String? = nil // For passing prompts to ChatView
+    @StateObject private var appState = AppState()
+    @StateObject private var chatViewModel = ChatViewModel()
     
     @Environment(\.colorScheme) var systemColorScheme
     
     var body: some View {
         TabView(selection: $selectedTab) {
             // Home Tab - Welcome screen with quick actions
-            HomeView(onToolSelected: navigateToChatWithPrompt)
+            HomeView(onToolSelected: navigateToChatWithTool)
                 .tabItem {
                     Label("Home", systemImage: "house.fill")
                 }
                 .tag(0)
             
             // Chat Tab - Main photo processing feature
-            ChatView(initialPrompt: chatPrompt)
+            ChatView(viewModel: chatViewModel)
+                .id(appState.sessionId)
                 .tabItem {
                     Label("Chat", systemImage: "message.fill")
                 }
@@ -52,6 +54,7 @@ struct ContentView: View {
         .preferredColorScheme(themeManager.preference == .system ? nil : (themeManager.preference == .dark ? .dark : .light))
         .environmentObject(authService)
         .environmentObject(themeManager)
+        .environmentObject(appState)
         .onChange(of: systemColorScheme) { newScheme in
             themeManager.updateResolvedScheme(systemScheme: newScheme)
             updateTabBarAppearance(for: themeManager.resolvedColorScheme)
@@ -60,6 +63,10 @@ struct ContentView: View {
             let resolvedScheme = themeManager.resolveTheme(systemScheme: systemColorScheme)
             themeManager.updateResolvedScheme(systemScheme: systemColorScheme)
             updateTabBarAppearance(for: resolvedScheme)
+        }
+        .onChange(of: appState.sessionId) { _ in
+            chatViewModel.reset()
+            chatViewModel.apply(appState.currentPrompt)
         }
         .onAppear {
             themeManager.updateResolvedScheme(systemScheme: systemColorScheme)
@@ -118,9 +125,9 @@ struct ContentView: View {
         UITabBar.appearance().scrollEdgeAppearance = appearance
     }
     
-    // Function to handle navigation to Chat with prompt
-    private func navigateToChatWithPrompt(_ prompt: String) {
-        chatPrompt = prompt
+    // Function to handle navigation to Chat with tool
+    private func navigateToChatWithTool(_ tool: Tool) {
+        appState.selectPreset(id: tool.id, prompt: tool.prompt)
         selectedTab = 1 // Switch to Chat tab
     }
 }

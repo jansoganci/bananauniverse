@@ -12,16 +12,14 @@ import PhotosUI
 // MARK: - 🎯 MAIN CHAT CONTAINER VIEW
 
 struct ChatView: View {
-    @StateObject private var viewModel = ChatViewModel()
+    @ObservedObject var viewModel: ChatViewModel
+    @EnvironmentObject var appState: AppState
     @Environment(\.colorScheme) var colorScheme
     @EnvironmentObject var themeManager: ThemeManager
-    
-    let initialPrompt: String?
-    
+
     var body: some View {
         ChatContainerView(
-            viewModel: viewModel,
-            initialPrompt: initialPrompt
+            viewModel: viewModel
         )
         .photosPicker(
             isPresented: $viewModel.showingImagePicker,
@@ -49,101 +47,92 @@ struct ChatView: View {
 
 struct ChatContainerView: View {
     @ObservedObject var viewModel: ChatViewModel
+    @ObservedObject private var creditManager = HybridCreditManager.shared
     @EnvironmentObject var themeManager: ThemeManager
+    @EnvironmentObject var appState: AppState
     @FocusState private var isInputFocused: Bool
     @State private var showToast = false
     @State private var toastMessage = ""
     @State private var toastType: ToastType = .success
     @State private var showPermissionAlert = false
     
-    let initialPrompt: String?
-    
     var body: some View {
-        GeometryReader { geometry in
-            ZStack {
-                // Background
-                DesignTokens.Background.primary(themeManager.resolvedColorScheme)
-                    .ignoresSafeArea()
-                
-                VStack(spacing: 0) {
-                    // Header
-                    UnifiedHeaderBar(
-                        title: "",  // Empty title since logo serves as identifier
-                        leftContent: .appLogo(32),
-                        rightContent: viewModel.isPremiumUser 
-                            ? .unlimitedBadge({ 
-                                // PRO users can tap to see subscription details
-                                // Could open manage subscription or show info
-                            })
-                            : .quotaBadge(viewModel.remainingQuota, viewModel.dailyQuotaLimit, { 
-                                viewModel.showingPaywall = true
-                                // TODO: insert Adapty Paywall ID here - placement: chat_quota_exceeded
-                            })
-                    )
-                    
-                    // Messages Area
-                    ChatMessagesView(
-                        messages: viewModel.messages,
-                        isProcessing: viewModel.isProcessing,
-                        uploadProgress: viewModel.uploadProgress,
-                        selectedImage: viewModel.selectedImage,
-                        onUploadTap: handleUploadTap,
-                        onSaveMessage: handleSaveMessage,
-                        onShareMessage: viewModel.shareMessageImage
-                    )
-                    
-                    // Input Area
-                    ChatInputView(
-                        text: Binding(
-                            get: { viewModel.currentPrompt ?? "" },
-                            set: { viewModel.currentPrompt = $0 }
-                        ),
-                        hasImageSelected: viewModel.selectedImage != nil,
-                        canSend: canSendMessage,
-                        isProcessing: viewModel.isProcessing,
-                        isFocused: $isInputFocused,
-                        onImageTap: handleUploadTap,
-                        onSendTap: handleSendMessage
-                    )
-                }
-                
-                // Toast Overlay
-                if showToast {
-                    VStack {
-                        ToastView(message: toastMessage, type: toastType)
-                            .padding(.top, geometry.safeAreaInsets.top + 16)
-                        Spacer()
-                    }
+        VStack(spacing: 0) {
+            // Header
+            UnifiedHeaderBar(
+                title: "",  // Empty title since logo serves as identifier
+                leftContent: .appLogo(32),
+                rightContent: creditManager.isPremiumUser 
+                    ? .unlimitedBadge({ 
+                        // PRO users can tap to see subscription details
+                        // Could open manage subscription or show info
+                    })
+                    : .quotaBadge(creditManager.remainingQuota, creditManager.dailyQuotaLimit, { 
+                        viewModel.showingPaywall = true
+                        // TODO: insert Adapty Paywall ID here - placement: chat_quota_exceeded
+                    })
+            )
+            
+            // Messages Area
+            ChatMessagesView(
+                messages: viewModel.messages,
+                isProcessing: viewModel.isProcessing,
+                uploadProgress: viewModel.uploadProgress,
+                selectedImage: viewModel.selectedImage,
+                onUploadTap: handleUploadTap,
+                onSaveMessage: handleSaveMessage,
+                onShareMessage: viewModel.shareMessageImage
+            )
+            
+            // Input Area
+            ChatInputView(
+                text: $viewModel.currentPrompt,
+                hasImageSelected: viewModel.selectedImage != nil,
+                canSend: canSendMessage,
+                isProcessing: viewModel.isProcessing,
+                isFocused: $isInputFocused,
+                onImageTap: handleUploadTap,
+                onSendTap: handleSendMessage
+            )
+        }
+        .background(
+            DesignTokens.Background.primary(themeManager.resolvedColorScheme)
+                .ignoresSafeArea()
+        )
+        .overlay(alignment: .top) {
+            // Toast Overlay
+            if showToast {
+                ToastView(message: toastMessage, type: toastType)
+                    .padding(.top, 16)
                     .transition(.move(edge: .top).combined(with: .opacity))
                     .animation(DesignTokens.Animation.smooth, value: showToast)
+            }
+        }
+        .onTapGesture {
+            // Dismiss keyboard on tap outside
+            isInputFocused = false
+        }
+        .onChange(of: appState.sessionId) { _ in
+            if appState.currentPrompt != nil && !appState.currentPrompt!.isEmpty {
+                viewModel.showingImagePicker = true
+            }
+        }
+        .alert("Photo Library Access Required", isPresented: $showPermissionAlert) {
+            Button("Open Settings") {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
                 }
             }
-            .onTapGesture {
-                // Dismiss keyboard on tap outside
-                isInputFocused = false
-            }
-            .onAppear {
-                if let prompt = initialPrompt {
-                    viewModel.setInitialPrompt(prompt)
-                }
-            }
-            .alert("Photo Library Access Required", isPresented: $showPermissionAlert) {
-                Button("Open Settings") {
-                    if let url = URL(string: UIApplication.openSettingsURLString) {
-                        UIApplication.shared.open(url)
-                    }
-                }
-                Button("Cancel", role: .cancel) { }
-            } message: {
-                Text("Please enable photo library access in Settings to save images to your Photos library.")
-            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Please enable photo library access in Settings to save images to your Photos library.")
         }
     }
     
     // MARK: - Computed Properties
     
     private var canSendMessage: Bool {
-        guard let prompt = viewModel.currentPrompt, !prompt.isEmpty else { return false }
+        guard !viewModel.currentPrompt.isEmpty else { return false }
         return viewModel.selectedImage != nil && viewModel.remainingQuota > 0 && !viewModel.isProcessing
     }
     
@@ -160,9 +149,9 @@ struct ChatContainerView: View {
     
     private func handleSendMessage() {
         guard canSendMessage else { return }
-        
+
         // Haptic feedback
-        DesignTokens.Haptics.impact(.medium)
+        DesignTokens.Haptics.impact(.light)
         
         // Send message with original prompt
         Task {
@@ -170,7 +159,7 @@ struct ChatContainerView: View {
             
             // Clear input field (WhatsApp-style) - only after processing completes
             await MainActor.run {
-                viewModel.currentPrompt = nil
+                viewModel.currentPrompt = ""
             }
         }
         
@@ -234,58 +223,40 @@ struct ChatMessagesView: View {
     
     var body: some View {
         ScrollViewReader { proxy in
-            List {
-                // Empty state / Upload area
-                if messages.isEmpty {
-                    EmptyStateView(
-                        selectedImage: selectedImage,
-                        isProcessing: isProcessing,
-                        uploadProgress: uploadProgress,
-                        onTap: onUploadTap
-                    )
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets())
-                }
-                
-                // Messages
-                ForEach(messages) { message in
-                    MessageBubbleView(
-                        message: message,
-                        onSave: onSaveMessage,
-                        onShare: onShareMessage
-                    )
-                    .id(message.id)
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets(
-                        top: 4,
-                        leading: 0,
-                        bottom: 4,
-                        trailing: 0
-                    ))
-                    .transition(.asymmetric(
-                        insertion: .scale(scale: 0.8).combined(with: .opacity),
-                        removal: .opacity
-                    ))
-                }
-                
-                // Processing indicator
-                if isProcessing {
-                    ProcessingBubbleView(progress: uploadProgress)
-                        .id("processing")
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets(
-                            top: 4,
-                            leading: 0,
-                            bottom: 4,
-                            trailing: 0
+            ScrollView {
+                LazyVStack(spacing: 8) {
+                    // Empty state / Upload area
+                    if messages.isEmpty {
+                        EmptyStateView(
+                            selectedImage: selectedImage,
+                            isProcessing: isProcessing,
+                            uploadProgress: uploadProgress,
+                            onTap: onUploadTap
+                        )
+                    }
+                    
+                    // Messages
+                    ForEach(messages) { message in
+                        MessageBubbleView(
+                            message: message,
+                            onSave: onSaveMessage,
+                            onShare: onShareMessage
+                        )
+                        .id(message.id)
+                        .transition(.asymmetric(
+                            insertion: .scale(scale: 0.8).combined(with: .opacity),
+                            removal: .opacity
                         ))
+                    }
+                    
+                    // Processing indicator
+                    if isProcessing {
+                        ProcessingBubbleView(progress: uploadProgress)
+                            .id("processing")
+                    }
                 }
+                .padding(.horizontal, DesignTokens.Spacing.md)
             }
-            .listStyle(.plain)
-            .scrollContentBackground(.hidden)
             .background(DesignTokens.Background.primary(themeManager.resolvedColorScheme))
             .onChange(of: messages.count) { _ in
                 scrollToBottom(proxy: proxy)
@@ -333,7 +304,15 @@ struct ChatInputView: View {
                     .frame(width: 36, height: 36)
                     .background(
                         Circle()
-                            .fill(DesignTokens.Surface.inputBackground(themeManager.resolvedColorScheme))
+                            .fill(DesignTokens.Surface.input(themeManager.resolvedColorScheme))
+                            .shadow(
+                                color: themeManager.resolvedColorScheme == .dark
+                                    ? Color(hex: "9D7FD6").opacity(0.15)
+                                    : Color.clear,
+                                radius: 8,
+                                x: 0,
+                                y: 0
+                            )
                     )
             }
             .buttonStyle(PlainButtonStyle())
@@ -349,7 +328,15 @@ struct ChatInputView: View {
                 .padding(.vertical, 10)
                 .background(
                     RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.lg)
-                        .fill(DesignTokens.Surface.inputBackground(themeManager.resolvedColorScheme))
+                        .fill(DesignTokens.Surface.input(themeManager.resolvedColorScheme))
+                        .shadow(
+                            color: themeManager.resolvedColorScheme == .dark
+                                ? Color(hex: "9D7FD6").opacity(0.15)
+                                : Color.clear,
+                            radius: 8,
+                            x: 0,
+                            y: 0
+                        )
                 )
                 .disabled(isProcessing)
             
@@ -367,20 +354,34 @@ struct ChatInputView: View {
         .padding(.horizontal, DesignTokens.Spacing.md)
         .padding(.vertical, DesignTokens.Spacing.sm)
         .background(
-            DesignTokens.Surface.primary(themeManager.resolvedColorScheme)
-                .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: -1)
+            // iMessage-style blurred background
+            ZStack {
+                DesignTokens.Surface.primary(themeManager.resolvedColorScheme)
+                    .opacity(0.95)
+                Rectangle()
+                    .fill(.ultraThinMaterial)
+            }
+            .shadow(
+                color: .black.opacity(themeManager.resolvedColorScheme == .dark ? 0.3 : 0.05),
+                radius: 8,
+                x: 0,
+                y: -2
+            )
         )
     }
 }
 
 // MARK: - 💭 MESSAGE BUBBLE VIEW
 
+// MARK: - Visual Enhancements from ChatPreview (Gradient, Blur, Shadow, FontWeight)
+
 struct MessageBubbleView: View {
     let message: ChatMessage
     let onSave: (UUID) -> Void
     let onShare: (UUID) -> Void
     @EnvironmentObject var themeManager: ThemeManager
-    
+    @State private var showingFullScreenImage = false
+
     private var isFromUser: Bool { message.type == .user }
     
     var body: some View {
@@ -394,13 +395,34 @@ struct MessageBubbleView: View {
                 VStack(alignment: isFromUser ? .trailing : .leading, spacing: 8) {
                     // Text content
                     Text(message.content)
-                        .font(DesignTokens.Typography.body)
+                        .font(.system(size: 17, weight: .medium))
                         .foregroundColor(isFromUser ? .white : DesignTokens.Text.primary(themeManager.resolvedColorScheme))
                         .padding(.horizontal, 14)
                         .padding(.vertical, 10)
                         .background(
-                            ChatBubbleShape(isFromUser: isFromUser)
-                                .fill(bubbleColor)
+                            Group {
+                                if isFromUser {
+                                    // User bubble with premium gradient
+                                    LinearGradient(
+                                        gradient: Gradient(colors: [
+                                            DesignTokens.Gradients.premiumStart(themeManager.resolvedColorScheme),
+                                            DesignTokens.Gradients.premiumEnd(themeManager.resolvedColorScheme)
+                                        ]),
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                } else {
+                                    // AI bubble with existing color logic
+                                    bubbleColor
+                                }
+                            }
+                            .clipShape(ChatBubbleShape(isFromUser: isFromUser))
+                            .shadow(
+                                color: .black.opacity(themeManager.resolvedColorScheme == .dark ? 0.3 : 0.1),
+                                radius: 4,
+                                x: 0,
+                                y: 2
+                            )
                         )
                     
                     // Image if present
@@ -414,7 +436,11 @@ struct MessageBubbleView: View {
                                 RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.md)
                                     .stroke(Color.black.opacity(0.1), lineWidth: 1)
                             )
-                        
+                            .onTapGesture {
+                                DesignTokens.Haptics.impact(.light)
+                                showingFullScreenImage = true
+                            }
+
                         // Action buttons for AI messages with images
                         if !isFromUser && message.image != nil {
                             MessageActionButtons(
@@ -438,16 +464,21 @@ struct MessageBubbleView: View {
                 Spacer(minLength: 60)
             }
         }
+        .fullScreenCover(isPresented: $showingFullScreenImage) {
+            if let image = message.image {
+                FullScreenImageViewer(image: image, isPresented: $showingFullScreenImage)
+            }
+        }
     }
-    
+
     private var bubbleColor: Color {
         switch message.type {
         case .user:
             return DesignTokens.Brand.primary(.light)
         case .assistant:
-            return DesignTokens.Surface.messageBubbleIncoming(themeManager.resolvedColorScheme)
+            return DesignTokens.Surface.chatBubbleIncoming(themeManager.resolvedColorScheme)
         case .error:
-            return DesignTokens.Semantic.error.opacity(0.15)
+            return DesignTokens.Semantic.error(themeManager.resolvedColorScheme).opacity(0.15)
         }
     }
     
@@ -573,7 +604,7 @@ struct MessageActionButtons: View {
                 .padding(.vertical, 7)
                 .background(
                     Capsule()
-                        .fill(isSaving ? DesignTokens.Brand.secondary : DesignTokens.Brand.primary(.light))
+                        .fill(isSaving ? DesignTokens.Brand.secondary(themeManager.resolvedColorScheme) : DesignTokens.Brand.primary(.light))
                 )
             }
             .buttonStyle(PlainButtonStyle())
@@ -634,7 +665,7 @@ struct ProcessingBubbleView: View {
             .padding(.vertical, 12)
             .background(
                 ChatBubbleShape(isFromUser: false)
-                    .fill(DesignTokens.Surface.messageBubbleIncoming(themeManager.resolvedColorScheme))
+                    .fill(DesignTokens.Surface.chatBubbleIncoming(themeManager.resolvedColorScheme))
             )
             .padding(.horizontal, DesignTokens.Spacing.md)
             
@@ -730,10 +761,10 @@ enum ToastType {
         }
     }
     
-    var color: Color {
+    func color(_ colorScheme: ColorScheme) -> Color {
         switch self {
-        case .success: return DesignTokens.Brand.secondary
-        case .error: return DesignTokens.Semantic.error
+        case .success: return DesignTokens.Brand.secondary(colorScheme)
+        case .error: return DesignTokens.Semantic.error(colorScheme)
         case .info: return DesignTokens.Brand.primary(.light)
         }
     }
@@ -748,7 +779,7 @@ struct ToastView: View {
         HStack(spacing: 10) {
             Image(systemName: type.icon)
                 .font(.system(size: 16, weight: .semibold))
-                .foregroundColor(type.color)
+                .foregroundColor(type.color(themeManager.resolvedColorScheme))
             
             Text(message)
                 .font(DesignTokens.Typography.callout)
@@ -767,8 +798,93 @@ struct ToastView: View {
 
 // Color(hex:) extension is already defined in Color+DesignSystem.swift
 
+// MARK: - 🖼️ FULL SCREEN IMAGE VIEWER
+
+struct FullScreenImageViewer: View {
+    let image: UIImage
+    @Binding var isPresented: Bool
+    @State private var scale: CGFloat = 1.0
+    @State private var lastScale: CGFloat = 1.0
+    @State private var offset: CGSize = .zero
+    @State private var lastOffset: CGSize = .zero
+    @GestureState private var dragOffset: CGSize = .zero
+
+    var body: some View {
+        ZStack {
+            // Background
+            Color.black
+                .ignoresSafeArea()
+                .onTapGesture {
+                    DesignTokens.Haptics.impact(.light)
+                    isPresented = false
+                }
+
+            // Image with zoom and pan
+            Image(uiImage: image)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .scaleEffect(scale)
+                .offset(x: offset.width + dragOffset.width, y: offset.height + dragOffset.height)
+                .gesture(
+                    MagnificationGesture()
+                        .onChanged { value in
+                            scale = lastScale * value
+                        }
+                        .onEnded { value in
+                            lastScale = scale
+                            // Reset if zoomed out too far
+                            if scale < 1.0 {
+                                withAnimation(.spring()) {
+                                    scale = 1.0
+                                    lastScale = 1.0
+                                    offset = .zero
+                                    lastOffset = .zero
+                                }
+                            }
+                        }
+                )
+                .gesture(
+                    DragGesture()
+                        .updating($dragOffset) { value, state, _ in
+                            state = value.translation
+                        }
+                        .onEnded { value in
+                            offset.width += value.translation.width
+                            offset.height += value.translation.height
+                            lastOffset = offset
+
+                            // Dismiss if swiped down significantly
+                            if value.translation.height > 150 && scale <= 1.0 {
+                                DesignTokens.Haptics.impact(.light)
+                                isPresented = false
+                            }
+                        }
+                )
+
+            // Close button
+            VStack {
+                HStack {
+                    Spacer()
+                    Button(action: {
+                        DesignTokens.Haptics.impact(.light)
+                        isPresented = false
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 32))
+                            .foregroundColor(.white.opacity(0.8))
+                            .padding()
+                    }
+                }
+                Spacer()
+            }
+        }
+    }
+}
+
 // MARK: - 🎨 PREVIEW
 
 #Preview {
-    ChatView(initialPrompt: nil)
+    ChatView(viewModel: ChatViewModel())
+        .environmentObject(AppState())
+        .environmentObject(ThemeManager())
 }

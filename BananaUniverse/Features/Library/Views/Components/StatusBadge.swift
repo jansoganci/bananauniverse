@@ -13,13 +13,34 @@ struct StatusBadge: View {
     let status: JobStatus
     @EnvironmentObject var themeManager: ThemeManager
     
+    private var badgeBackgroundColor: Color {
+        status.badgeColor(for: themeManager.resolvedColorScheme)
+    }
+    
+    private var badgeTextColor: Color {
+        if status == .completed {
+            // Adaptive text color for "Completed" badge readability
+            // DesignTokens.Text.onSuccess not available, using fallback
+            if themeManager.resolvedColorScheme == .dark {
+                // Bright cyan background in dark mode → use black text for contrast
+                return Color.black
+            } else {
+                // Dark teal background in light mode → use black text
+                return Color.black
+            }
+        } else {
+            // Other statuses maintain white text for consistency
+            return .white
+        }
+    }
+    
     var body: some View {
         Text(status.displayText)
             .font(DesignTokens.Typography.caption2)
-            .foregroundColor(.white)
+            .foregroundColor(badgeTextColor)
             .padding(.horizontal, DesignTokens.Spacing.sm)
             .padding(.vertical, DesignTokens.Spacing.xs)
-            .background(status.badgeColor(for: themeManager.resolvedColorScheme))
+            .background(badgeBackgroundColor)
             .cornerRadius(DesignTokens.CornerRadius.round)
             .accessibilityLabel("Status: \(status.displayText)")
             .accessibilityAddTraits(.isStaticText)

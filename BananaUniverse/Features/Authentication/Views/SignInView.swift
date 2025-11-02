@@ -89,7 +89,7 @@ struct SignInView: View {
                     if !errorMessage.isEmpty {
                         Text(errorMessage)
                             .font(.system(size: 14))
-                            .foregroundColor(DesignTokens.Semantic.error)
+                            .foregroundColor(DesignTokens.Semantic.error(themeManager.resolvedColorScheme))
                             .padding(.horizontal, 20)
                     }
                     

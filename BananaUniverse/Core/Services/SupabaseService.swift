@@ -109,16 +109,16 @@ class SupabaseService: ObservableObject {
     // MARK: - Quota Management
     
     /// Consume quota using the new quota system
-    func consumeQuota(userId: String?, deviceId: String?, isPremium: Bool) async throws -> QuotaInfo {
+    /// Server validates premium status by checking subscriptions table
+    func consumeQuota(userId: String?, deviceId: String?) async throws -> QuotaInfo {
         // Generate client request ID for idempotency
         let clientRequestId = UUID().uuidString
-        
+
         // Prepare request body
         var body: [String: Any] = [
-            "client_request_id": clientRequestId,
-            "is_premium": isPremium
+            "client_request_id": clientRequestId
         ]
-        
+
         if let userId = userId {
             body["user_id"] = userId
         }
@@ -210,7 +210,7 @@ class SupabaseService: ObservableObject {
             "client_request_id": clientRequestId
         ]
         
-        // Add user identification and premium status
+        // Add user identification
         if userState.isAuthenticated {
             body["user_id"] = userState.identifier
             // Also add device_id as fallback for authenticated users
@@ -218,10 +218,7 @@ class SupabaseService: ObservableObject {
         } else {
             body["device_id"] = userState.identifier
         }
-        
-        // Add premium status
-        body["is_premium"] = await HybridCreditManager.shared.isPremiumUser
-        
+
         
         let jsonData = try JSONSerialization.data(withJSONObject: body)
         
@@ -331,10 +328,7 @@ class SupabaseService: ObservableObject {
         } else {
             body["device_id"] = userState.identifier
         }
-        
-        // Add premium status
-        body["is_premium"] = await HybridCreditManager.shared.isPremiumUser
-        
+
         
         let jsonData = try JSONSerialization.data(withJSONObject: body)
         
@@ -445,10 +439,7 @@ class SupabaseService: ObservableObject {
         } else {
             body["device_id"] = userState.identifier
         }
-        
-        // Add premium status
-        body["is_premium"] = await HybridCreditManager.shared.isPremiumUser
-        
+
         
         let jsonData = try JSONSerialization.data(withJSONObject: body)
         

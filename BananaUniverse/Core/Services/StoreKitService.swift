@@ -71,14 +71,17 @@ class StoreKitService: ObservableObject {
             case .success(let verification):
                 let transaction = try checkVerified(verification)
                 await transaction.finish()
-                
+
                 // Update purchased products
                 purchasedProducts.insert(product.id)
                 await updateSubscriptionStatus()
-                
+
+                // Sync subscription to Supabase
+                await syncSubscriptionToSupabase(transaction: transaction, productId: product.id)
+
                 // Trigger premium status refresh in HybridCreditManager
                 await HybridCreditManager.shared.refreshPremiumStatus()
-                
+
                 #if DEBUG
                 print("✅ Purchase successful and verified: \(product.id)")
                 #endif
@@ -159,28 +162,31 @@ class StoreKitService: ObservableObject {
     func updateSubscriptionStatus() async {
         var hasActiveSubscription = false
         var latestRenewalDate: Date?
-        
+
         for await result in Transaction.currentEntitlements {
             if case .verified(let transaction) = result {
                 if transaction.productType == .autoRenewable {
                     hasActiveSubscription = true
                     purchasedProducts.insert(transaction.productID)
-                    
+
                     // Get renewal date from transaction
                     if let renewalDate = transaction.expirationDate {
                         latestRenewalDate = renewalDate
                     }
-                    
+
+                    // Sync subscription to Supabase
+                    await syncSubscriptionToSupabase(transaction: transaction, productId: transaction.productID)
+
                     #if DEBUG
                     print("✅ Active subscription found: \(transaction.productID)")
                     #endif
                 }
             }
         }
-        
+
         isPremiumUser = hasActiveSubscription
         subscriptionRenewalDate = latestRenewalDate
-        
+
         #if DEBUG
         print("📊 Premium status: \(isPremiumUser ? "Active" : "Inactive")")
         if let renewalDate = latestRenewalDate {
@@ -189,8 +195,62 @@ class StoreKitService: ObservableObject {
         #endif
     }
     
+    // MARK: - Supabase Sync
+
+    /// Syncs StoreKit subscription to Supabase subscriptions table
+    private func syncSubscriptionToSupabase(transaction: StoreKit.Transaction, productId: String) async {
+        #if DEBUG
+        print("🔄 [SUBSCRIPTION] Syncing to Supabase...")
+        print("   Transaction ID: \(transaction.id)")
+        print("   Product ID: \(productId)")
+        if let expirationDate = transaction.expirationDate {
+            print("   Expires: \(expirationDate)")
+        }
+        #endif
+
+        do {
+            // Get user state
+            let userState = HybridAuthService.shared.userState
+            let userId: String? = userState.isAuthenticated ? userState.identifier : nil
+            let deviceId: String? = userState.isAuthenticated ? nil : await HybridCreditManager.shared.getDeviceUUID()
+
+            // Prepare parameters for RPC call (must be Encodable - all String values)
+            var params: [String: String] = [
+                "p_product_id": productId,
+                "p_transaction_id": String(transaction.id),
+                "p_platform": "ios"
+            ]
+
+            if let userId = userId {
+                params["p_user_id"] = userId
+            }
+            if let deviceId = deviceId {
+                params["p_device_id"] = deviceId
+            }
+            if let expirationDate = transaction.expirationDate {
+                params["p_expires_at"] = ISO8601DateFormatter().string(from: expirationDate)
+            }
+
+            // Call sync_subscription RPC function
+            let _ = try await SupabaseService.shared.client
+                .rpc("sync_subscription", params: params)
+                .execute()
+
+            #if DEBUG
+            print("✅ [SUBSCRIPTION] Synced to Supabase successfully")
+            #endif
+
+        } catch {
+            // Log error but don't fail purchase
+            #if DEBUG
+            print("⚠️ [SUBSCRIPTION] Failed to sync to Supabase: \(error.localizedDescription)")
+            print("   This won't affect the purchase, subscription will sync on next app launch")
+            #endif
+        }
+    }
+
     // MARK: - Helper Methods
-    
+
     private func checkVerified<T>(_ result: VerificationResult<T>) throws -> T {
         switch result {
         case .unverified:
