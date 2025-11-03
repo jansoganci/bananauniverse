@@ -101,9 +101,25 @@ Thumbs.db
 .env
 .env.local
 .env.production
+.env.*
+!.env.example
+supabase/volumes/
+
+# Deno/Edge Functions
+deno.lock
+.deno/
 
 # Node modules (if any)
 node_modules/
+
+# IDE
+.vscode/
+.idea/
+
+# Editor backups
+*.swp
+*~
+.swo
 
 # Logs
 *.log

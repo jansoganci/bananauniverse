@@ -2,15 +2,15 @@
 
 **Professional AI Image Processing Suite for iOS**
 
-BananaUniverse is a comprehensive iOS app that transforms your photos using 19+ cutting-edge AI models. Built with the Steve Jobs philosophy of "Simplicity is the ultimate sophistication," it delivers professional-grade image enhancement through a fast, elegant interface powered by Supabase Edge Functions.
+BananaUniverse is a comprehensive iOS app that transforms your photos using 27+ cutting-edge AI models. Built with the Steve Jobs philosophy of "Simplicity is the ultimate sophistication," it delivers professional-grade image enhancement through a fast, elegant WhatsApp-style chat interface powered by Supabase Edge Functions.
 
 **Current Version: 1.0.1** - Latest release with enhanced quota system, improved security, and bug fixes.
 
 ## ✨ Features
 
-### 🎨 **19 AI-Powered Tools Across 3 Categories:**
+### 🎨 **27 AI-Powered Tools Across 4 Categories:**
 
-**Main Tools (7 Free Tools):**
+**Photo Editor (7 Tools):**
 - Remove Object from Image
 - Remove Background  
 - Put Items on Models
@@ -19,25 +19,42 @@ BananaUniverse is a comprehensive iOS app that transforms your photos using 19+ 
 - Generate Image Series
 - Style Transfers
 
-**Pro Looks (10 Premium Tools):**
+**Pro Photos (10 Tools):**
 - LinkedIn Headshot Generator
 - Passport Photo Creator
 - Twitter/X Avatar Maker
+- Gradient Headshot
 - Resume Photo Generator
+- Slide Background Maker
 - YouTube Thumbnail Creator
-- Professional Headshots
-- And 4 more professional tools
+- CV/Portfolio Portrait
+- Profile Banner Generator
+- Designer-Style ID Photo
 
-**Restoration (2 Tools):**
+**Enhancer (2 Tools):**
 - Image Upscaler (2x-4x)
 - Historical Photo Restore
 
+**Seasonal (8 Tools):**
+- Thanksgiving Magic Edit
+- Thanksgiving Family Portrait
+- Autumn Color Enhancer
+- Christmas Magic Edit
+- Holiday Portrait
+- Winter Wonderland
+- Santa Hat Overlay
+- New Year Glamour
+- Confetti Celebration
+
 ### 🚀 **Core Capabilities:**
+- **WhatsApp-Style Chat Interface**: Modern, intuitive messaging UI for AI interactions
 - **Instant Processing**: < 35 seconds total processing time
-- **Smart Credit System**: 10 free requests/day, 100 for premium users
+- **Smart Quota System**: 5 free requests/day, unlimited for premium users
 - **Real-time Rate Limiting**: Built-in usage tracking and limits
-- **Local History**: Offline storage of processed images
-- **Dark Theme**: Beautiful iOS-optimized interface
+- **Image Library**: Complete history of processed images with save/share functionality
+- **Search & Discovery**: Quick search across all 27 tools
+- **Theme Support**: Light, Dark, and Auto modes
+- **Premium Subscriptions**: Weekly ($4.99/week) and Yearly ($79.99/year) with 3-day free trial
 - **Steve Jobs Architecture**: Single edge function, direct processing, no polling
 
 ## 🏗️ Tech Stack
@@ -45,24 +62,27 @@ BananaUniverse is a comprehensive iOS app that transforms your photos using 19+ 
 ### **Frontend (iOS)**
 - **Language**: Swift 5.9+ + SwiftUI (iOS 15.0+)
 - **Architecture**: Feature-based MVVM with Combine
+- **UI Framework**: SwiftUI with custom design system
 - **Libraries**: 
-  - Supabase Swift SDK (auth + storage)
-  - Adapty iOS (subscription management)
+  - Supabase Swift SDK (auth + database + storage)
+  - StoreKit 2 (native subscription management)
+  - Adapty iOS (subscription analytics & optimization)
   - Kingfisher (image loading/caching)
   - FalClient (AI model integration)
 
 ### **Backend (Serverless)**
 - **Runtime**: Supabase Edge Functions (Deno 1.x + TypeScript)
-- **AI Provider**: fal.ai (19+ production models)
+- **AI Provider**: fal.ai (27+ production models)
 - **Database**: Supabase PostgreSQL with RLS policies
 - **Storage**: Supabase Storage with organized file structure
-- **Rate Limiting**: Database-driven daily counters
+- **Rate Limiting**: Database-driven daily quota tracking
 
 ### **Key Libraries**
 | Library | Purpose | Integration |
 |---------|---------|-------------|
 | **Supabase-Swift** | Auth + database + storage | SPM |
-| **Adapty-iOS** | Subscription management | SPM |
+| **StoreKit 2** | Native Apple subscriptions | Native |
+| **Adapty-iOS** | Subscription analytics | SPM |
 | **Kingfisher** | Image loading/caching | SPM |
 | **FalClient** | AI model integration | SPM |
 
@@ -72,15 +92,16 @@ BananaUniverse is a comprehensive iOS app that transforms your photos using 19+ 
 
 - **Xcode 15.0+** with iOS 15.0+ target
 - **Supabase account** with project created
-- **Adapty account** (for subscription management)
+- **Adapty account** (optional, for subscription analytics)
 - **fal.ai account** with API access
+- **App Store Connect** account (for subscriptions)
 
 ### Installation
 
 1. **Clone the repository:**
 ```bash
 git clone https://github.com/jansoganci/banana.universe.git
-cd BananaUniverse
+cd banana.universe
 ```
 
 2. **Open the project:**
@@ -94,15 +115,22 @@ open BananaUniverse.xcodeproj
    - Deploy Edge Function: `supabase functions deploy process-image`
    - Update `Config.swift` with your Supabase URL and keys
 
-4. **Configure Adapty:**
+4. **Configure Storage Bucket:**
+   - Create `noname-banana-images-prod` bucket in Supabase
+   - Set up RLS policies for user access
+
+5. **Configure Adapty (Optional):**
    - Create Adapty project and get API key
-   - Update `Config.swift` with Adapty public key
+   - Adapty is used for analytics; subscriptions use StoreKit 2
 
-5. **Configure fal.ai:**
+6. **Configure fal.ai:**
    - Get API key from fal.ai dashboard
-   - Update Edge Function environment variables
+   - Update Edge Function environment variables:
+   ```bash
+   supabase secrets set FAL_KEY=your-fal-ai-key
+   ```
 
-6. **Build and run:**
+7. **Build and run:**
 ```bash
 # Clean build folder
 Cmd + Shift + K
@@ -116,20 +144,26 @@ Cmd + R
 ```
 BananaUniverse/
 ├── App/                    # Main app entry point
+│   ├── BananaUniverseApp.swift
+│   ├── AppDelegate.swift
+│   └── ContentView.swift   # Tab navigation
 ├── Core/                   # Core components and services
-│   ├── Components/         # Reusable UI components
+│   ├── Components/        # Reusable UI components
+│   ├── Config/            # App configuration
 │   ├── Design/            # Design system and tokens
 │   ├── Models/            # Data models
 │   ├── Services/          # Business logic services
-│   └── Networking/        # API communication
+│   └── Utils/             # Utility functions
 ├── Features/              # Feature-specific modules
 │   ├── Authentication/    # User auth flows
-│   ├── Chat/             # AI processing interface
-│   ├── Home/             # Main dashboard
-│   ├── Library/          # Image history
-│   ├── Profile/          # User settings
-│   └── Paywall/          # Subscription management
+│   ├── Chat/             # WhatsApp-style AI processing interface
+│   ├── Home/             # Main dashboard with search & categories
+│   ├── Library/          # Image history with save/share
+│   ├── Profile/          # User settings & subscription management
+│   └── Paywall/          # Premium subscription UI
 └── supabase/             # Backend functions and migrations
+    ├── functions/        # Edge Functions
+    └── migrations/       # Database migrations
 ```
 
 ## 🔧 Configuration
@@ -154,7 +188,7 @@ supabase functions deploy process-image
 ```
 
 4. **Configure Storage Bucket:**
-   - Create `bananauniverse-images-prod` bucket
+   - Create `noname-banana-images-prod` bucket
    - Set up RLS policies for user access
 
 ### Environment Configuration
@@ -164,7 +198,8 @@ supabase functions deploy process-image
 struct Config {
     static let supabaseURL = "your-supabase-url"
     static let supabaseAnonKey = "your-anon-key"
-    static let adaptyPublicKey = "your-adapty-key"
+    static let supabaseBucket = "noname-banana-images-prod"
+    static let edgeFunctionURL = "your-edge-function-url"
 }
 ```
 
@@ -175,10 +210,16 @@ supabase secrets set FAL_KEY=your-fal-ai-key
 
 ### Rate Limiting & Credits
 
-- **Free Users**: 10 requests/day
-- **Premium Users**: 100 requests/day  
+- **Free Users**: 5 requests/day
+- **Premium Users**: Unlimited requests
 - **Reset**: Daily at midnight UTC
-- **Storage**: `daily_request_counts` table
+- **Storage**: `daily_quotas` table with idempotency tracking
+
+### Subscription Plans
+
+- **Weekly Pro**: $4.99/week (3-day free trial available)
+- **Yearly Pro**: $79.99/year (3-day free trial, save 70%)
+- **Benefits**: Unlimited quota, faster processing, all tools unlocked
 
 ## 🎯 Performance & Architecture
 
@@ -186,8 +227,9 @@ supabase secrets set FAL_KEY=your-fal-ai-key
 Built following the principle: *"Simplicity is the ultimate sophistication"*
 
 - **Single Edge Function**: One function handles all AI processing
-- **Direct Processing**: No polling, immediate results
-- **Local Credit Management**: Instant credit checks, no server calls
+- **Direct Processing**: No polling, immediate results via WebSocket-style updates
+- **WhatsApp-Style UI**: Familiar chat interface for natural interaction
+- **Local Quota Management**: Instant quota checks, server validation on processing
 - **Clean Separation**: iOS handles UI, Edge Function handles AI
 
 ### **Performance Metrics**
@@ -195,8 +237,15 @@ Built following the principle: *"Simplicity is the ultimate sophistication"*
 - **Cold Start**: < 200ms
 - **Success Rate**: 99%+
 - **Offline Support**: Local storage and sync
-- **Quota System**: Robust daily tracking with 99.9% accuracy
+- **Quota System**: Robust daily tracking with idempotency protection
 - **Security**: Enterprise-grade RLS policies and data protection
+
+### **UI/UX Features**
+- **Modern Design System**: Consistent tokens for colors, spacing, typography
+- **Theme Support**: Light/Dark/Auto with smooth transitions
+- **Search Functionality**: Quick tool discovery across all categories
+- **Image Management**: Save to Photos, share, full-screen viewing
+- **Quota Warnings**: Smart notifications when approaching daily limit
 
 ## 📄 License
 
@@ -212,7 +261,7 @@ This is a private project. For questions or support, contact the development tea
 - **Tech Stack**: `docs/tech_stack.md` - Detailed technical architecture  
 - **Master Plan**: `STEVE_JOBS_MASTER_PLAN.md` - Development philosophy and goals
 - **Changelog**: `CHANGELOG.md` - Version history and release notes
-- **Quota System**: `QUOTA_SYSTEM_VALIDATION_SCENARIOS.md` - Comprehensive test documentation
+- **Quota System**: Database migrations include comprehensive quota tracking
 
 ---
 

@@ -30,7 +30,7 @@ struct ChatView: View {
             viewModel.handleImageItemSelection()
         }
         .sheet(isPresented: $viewModel.showingPaywall) {
-            PreviewPaywallView()
+            PaywallPreview()
         }
         .sheet(isPresented: $viewModel.showingLogin) {
             LoginView()

@@ -157,7 +157,7 @@ struct HomeView: View {
             }
         }
         .sheet(isPresented: $showPaywall) {
-            PreviewPaywallView()
+            PaywallPreview()
         }
     }
     
@@ -268,8 +268,7 @@ struct QuotaWarningBanner: View {
                 )
         )
         .sheet(isPresented: $showPaywall) {
-            // TODO: Add paywall view
-            Text("Paywall View")
+            PaywallPreview()
         }
     }
 }

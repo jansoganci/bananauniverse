@@ -46,7 +46,7 @@ struct ProfileView: View {
             .toolbar(.hidden, for: .navigationBar)
         }
         .sheet(isPresented: $showPaywall) {
-            PreviewPaywallView()
+            PaywallPreview()
         }
         .sheet(isPresented: $showSignIn) {
             SignInView()
