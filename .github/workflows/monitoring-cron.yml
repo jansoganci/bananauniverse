@@ -6,26 +6,30 @@
 
 name: Monitoring Cron Jobs
 
+# =====================================================
+# WORKFLOW DISABLED
+# =====================================================
+# This workflow is currently disabled to prevent automatic runs and reduce costs.
+# To re-enable: Uncomment the 'on:' section below and remove the DISABLED condition from jobs.
+
+# DISABLED - Commented out to prevent workflow from running
+# on:
+#   workflow_dispatch: # Allow manual triggering
+#     inputs:
+#       job_type:
+#         description: 'Type of job to run'
+#         required: true
+#         default: 'all'
+#         type: choice
+#         options:
+#           - all
+#           - health-check
+#           - log-monitor
+#           - log-alert
+
+# Empty on: section prevents workflow from being triggered
 on:
-  schedule:
-    # Health check every 15 minutes
-    - cron: '*/15 * * * *'
-    # Log monitor daily at 2 AM UTC
-    - cron: '0 2 * * *'
-    # Log alert daily at 3 AM UTC
-    - cron: '0 3 * * *'
-  workflow_dispatch: # Allow manual triggering
-    inputs:
-      job_type:
-        description: 'Type of job to run'
-        required: true
-        default: 'all'
-        type: choice
-        options:
-          - all
-          - health-check
-          - log-monitor
-          - log-alert
+  workflow_dispatch:
 
 env:
   SUPABASE_URL: https://jiorfutbmahpfgplkats.supabase.co
@@ -39,7 +43,8 @@ jobs:
   health-check:
     name: Health Check
     runs-on: ubuntu-latest
-    if: github.event_name == 'schedule' || github.event.inputs.job_type == 'all' || github.event.inputs.job_type == 'health-check'
+    # DISABLED - Remove this condition to re-enable
+    if: false && (github.event_name == 'schedule' || github.event.inputs.job_type == 'all' || github.event.inputs.job_type == 'health-check')
     
     steps:
       - name: Health Check
@@ -66,7 +71,8 @@ jobs:
   log-monitor:
     name: Log Monitor
     runs-on: ubuntu-latest
-    if: github.event_name == 'schedule' || github.event.inputs.job_type == 'all' || github.event.inputs.job_type == 'log-monitor'
+    # DISABLED - Remove this condition to re-enable
+    if: false && (github.event_name == 'schedule' || github.event.inputs.job_type == 'all' || github.event.inputs.job_type == 'log-monitor')
     
     steps:
       - name: Log Monitor
@@ -93,7 +99,8 @@ jobs:
   log-alert:
     name: Log Alert
     runs-on: ubuntu-latest
-    if: github.event_name == 'schedule' || github.event.inputs.job_type == 'all' || github.event.inputs.job_type == 'log-alert'
+    # DISABLED - Remove this condition to re-enable
+    if: false && (github.event_name == 'schedule' || github.event.inputs.job_type == 'all' || github.event.inputs.job_type == 'log-alert')
     
     steps:
       - name: Log Alert

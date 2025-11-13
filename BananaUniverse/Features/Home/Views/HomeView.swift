@@ -10,7 +10,7 @@ import SwiftUI
 struct HomeView: View {
     @State private var showPaywall = false
     @StateObject private var authService = HybridAuthService.shared
-    @StateObject private var creditManager = HybridCreditManager.shared
+    @StateObject private var creditManager = CreditManager.shared
     @EnvironmentObject var themeManager: ThemeManager
     let onToolSelected: (Tool) -> Void // Callback for tool selection
     @State private var rawSearch: String = ""
@@ -225,7 +225,7 @@ struct HomeView: View {
 
 // MARK: - Quota Warning Banner
 struct QuotaWarningBanner: View {
-    @StateObject private var creditManager = HybridCreditManager.shared
+    @StateObject private var creditManager = CreditManager.shared
     @State private var showPaywall = false
     @EnvironmentObject var themeManager: ThemeManager
     

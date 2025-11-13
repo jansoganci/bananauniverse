@@ -63,7 +63,7 @@ class ChatViewModel: ObservableObject {
     @Published var uploadProgress: Double = 0.0
     @Published var showingPaywall = false
     @Published var showingLogin = false
-    // Quota properties now connected to HybridCreditManager
+    // Quota properties now connected to CreditManager
     var dailyQuotaUsed: Int {
         return creditManager.dailyQuotaUsed
     }
@@ -74,13 +74,13 @@ class ChatViewModel: ObservableObject {
     @Published var currentPrompt: String = "" // Current prompt for processing
     @Published var messages: [ChatMessage] = [] // Chat messages for displaying results
     @Published var currentJobID: String? = nil // Current job being processed
-    
+
     // Computed property for backward compatibility
     var isProcessing: Bool {
         return jobStatus.isActive
     }
     
-    // MARK: - Quota Management (Connected to HybridCreditManager)
+    // MARK: - Quota Management (Connected to CreditManager)
     var remainingQuota: Int {
         return creditManager.remainingQuota
     }
@@ -93,11 +93,11 @@ class ChatViewModel: ObservableObject {
     private let storageService = StorageService.shared
     private let supabaseService = SupabaseService.shared
     // private let adaptyService = AdaptyService.shared
-    private let creditManager = HybridCreditManager.shared
+    private let creditManager = CreditManager.shared
     private var inFlightTasks: [Task<Void, Never>] = []
     
     init() {
-        // Quota management is now handled by HybridCreditManager
+        // Quota management is now handled by CreditManager
         // No need to load quota separately
     }
     
@@ -203,7 +203,21 @@ class ChatViewModel: ObservableObject {
         inFlightTasks.append(task)
         await task.value
     }
-    
+
+    private func extractPathFromURL(_ urlString: String) -> String {
+        // Extract path from Supabase Storage URL
+        // This is a simplified implementation - adjust based on your URL structure
+        let url = URL(string: urlString)
+        let pathComponents = url?.pathComponents ?? []
+
+        // Skip the first "/" component
+        return pathComponents.dropFirst().joined(separator: "/")
+    }
+
+    // MARK: - Image Processing
+
+    /// Process image using webhook architecture (async)
+    /// Submits the job and waits for webhook completion
     private func processImage(_ image: UIImage) async {
         // Check network connectivity before making API calls
         guard NetworkMonitor.shared.checkConnectivity() else {
@@ -211,7 +225,7 @@ class ChatViewModel: ObservableObject {
             jobStatus = .failed(error: NetworkMonitor.shared.networkErrorMessage)
             return
         }
-        
+
         // Check image size limit (10MB)
         let maxSize = 10_000_000 // 10 MB
         if let data = image.jpegData(compressionQuality: 1.0),
@@ -220,12 +234,12 @@ class ChatViewModel: ObservableObject {
             jobStatus = .failed(error: "Image too large")
             return
         }
-        
+
         jobStatus = .submitting
         errorMessage = nil
         uploadProgress = 0.0
         currentJobID = nil
-        
+
         // Add user message with the prompt and image
         let promptContent: String
         if !currentPrompt.isEmpty {
@@ -237,31 +251,29 @@ class ChatViewModel: ObservableObject {
             content: promptContent,
             image: image
         )
-        
+
         do {
             // Step 1: Compress image efficiently using Core Image
             guard let imageData = storageService.compressImageToData(image, maxDimension: 1024, quality: 0.8) else {
                 throw ChatError.processingFailed
             }
-            
+
             uploadProgress = 0.1
-            
+
             // Step 2: Upload image to Supabase Storage first
             let imageURL = try await supabaseService.uploadImageToStorage(imageData: imageData)
-            
+
             uploadProgress = 0.2
-            
-            
-            // Step 3: 🍎 STEVE JOBS STYLE - Direct processing (no polling!)
-            jobStatus = .processing(elapsedTime: 0)
+
+            // Step 3: Submit job to async queue (webhook architecture)
+            jobStatus = .queued
             uploadProgress = 0.3
-            
-            // Add status message
+
             addAssistantMessage(
-                content: "🤖 Processing your image with AI...",
+                content: "🚀 Submitting job to AI queue...",
                 image: nil
             )
-            
+
             // Use original prompt directly
             let originalPrompt: String
             if !currentPrompt.isEmpty {
@@ -269,69 +281,96 @@ class ChatViewModel: ObservableObject {
             } else {
                 originalPrompt = "Enhance this image"
             }
-            
-            // Call the Steve Jobs style function - returns result directly!
-            let steveJobsResult = try await supabaseService.processImageSteveJobsStyle(
+
+            // Submit job and get job_id + estimated_time
+            let submitResponse = try await supabaseService.submitImageJob(
                 imageURL: imageURL,
                 prompt: originalPrompt
             )
-            
-            uploadProgress = 0.8
-            
-            
-            // Step 4: Download processed image directly (no polling needed!)
-            guard let processedImageURL = steveJobsResult.processedImageURL else {
-                throw ChatError.invalidResult
+
+            guard submitResponse.success else {
+                throw ChatError.processingFailed
             }
-            
-            uploadProgress = 0.9
-            
-            // Download the processed image
-            guard let url = URL(string: processedImageURL) else {
-                throw ChatError.invalidResult
-            }
-            let (processedImageData, _) = try await URLSession.shared.data(from: url)
-            
-            guard let processedUIImage = UIImage(data: processedImageData) else {
-                throw ChatError.invalidResult
-            }
-            
-            processedImage = processedUIImage
-            jobStatus = .completed
-            uploadProgress = 1.0
-            
-            // Update assistant message with the processed image
+
+            currentJobID = submitResponse.jobId
+            let estimatedTime = submitResponse.estimatedTime ?? 15
+
+            uploadProgress = 0.4
+
+            // Update message to show waiting
             if let lastMessage = messages.last, lastMessage.type == .assistant {
-                // Update the last message
                 messages[messages.count - 1] = ChatMessage(
                     type: .assistant,
-                    content: "✨ Your image has been processed successfully!",
-                    image: processedUIImage,
+                    content: "⏳ Job submitted! Waiting ~\(estimatedTime) seconds for processing...",
+                    image: nil,
                     timestamp: Date()
                 )
-            } else {
-                // Add new message
-                addAssistantMessage(
-                    content: "✨ Your image has been processed successfully!",
-                    image: processedUIImage
-                )
             }
-            
-            // Refresh quota after successful processing
-            await creditManager.loadQuota()
-            // Trigger UI update for quota display
-            objectWillChange.send()
-            
+
+            // Step 4: Wait estimated time before checking result
+            jobStatus = .processing(elapsedTime: 0)
+            try await Task.sleep(nanoseconds: UInt64(estimatedTime) * 1_000_000_000)
+
+            uploadProgress = 0.6
+
+            // Step 5: Fetch result from database (single call, no polling!)
+            let resultResponse = try await supabaseService.getJobResult(jobId: submitResponse.jobId)
+
+            guard resultResponse.success else {
+                throw ChatError.processingFailed
+            }
+
+            uploadProgress = 0.7
+
+            // Check if job is completed
+            if resultResponse.status == "completed", let processedImageURL = resultResponse.imageUrl {
+
+                uploadProgress = 0.8
+
+                // Step 6: Download the processed image
+                guard let url = URL(string: processedImageURL) else {
+                    throw ChatError.invalidResult
+                }
+                let (processedImageData, _) = try await URLSession.shared.data(from: url)
+
+                guard let processedUIImage = UIImage(data: processedImageData) else {
+                    throw ChatError.invalidResult
+                }
+
+                processedImage = processedUIImage
+                jobStatus = .completed
+                uploadProgress = 1.0
+
+                // Update assistant message with the processed image
+                if let lastMessage = messages.last, lastMessage.type == .assistant {
+                    messages[messages.count - 1] = ChatMessage(
+                        type: .assistant,
+                        content: "✨ Your image has been processed successfully!",
+                        image: processedUIImage,
+                        timestamp: Date()
+                    )
+                } else {
+                    addAssistantMessage(
+                        content: "✨ Your image has been processed successfully!",
+                        image: processedUIImage
+                    )
+                }
+
+            } else if resultResponse.status == "failed" {
+                throw ChatError.processingFailed
+            } else {
+                // Still pending - could add retry logic here if needed
+                throw ChatError.processingFailed
+            }
+
         } catch {
             let appError = AppError.from(error)
-            errorMessage = appError.errorDescription ?? "Processing failed"
+            errorMessage = appError.errorDescription
             jobStatus = .failed(error: appError.errorDescription ?? "Processing failed")
             uploadProgress = 0.0
-            
-            
+
             // Update or add error message to chat
             if let lastMessage = messages.last, lastMessage.type == .assistant, lastMessage.image == nil {
-                // Update the waiting message with error
                 messages[messages.count - 1] = ChatMessage(
                     type: .error,
                     content: "❌ Processing failed: \(error.localizedDescription)",
@@ -339,14 +378,13 @@ class ChatViewModel: ObservableObject {
                     timestamp: Date()
                 )
             } else {
-                // Add error message to chat
                 addErrorMessage(content: "❌ Processing failed: \(error.localizedDescription)")
             }
         }
-        
+
         // Clean up temporary image data after processing
         storageService.cleanupTemporaryImageData()
-        
+
         // Reset after a delay
         Task {
             try? await Task.sleep(nanoseconds: 2_000_000_000)
@@ -355,17 +393,7 @@ class ChatViewModel: ObservableObject {
             }
         }
     }
-    
-    private func extractPathFromURL(_ urlString: String) -> String {
-        // Extract path from Supabase Storage URL
-        // This is a simplified implementation - adjust based on your URL structure
-        let url = URL(string: urlString)
-        let pathComponents = url?.pathComponents ?? []
-        
-        // Skip the first "/" component
-        return pathComponents.dropFirst().joined(separator: "/")
-    }
-    
+
     // MARK: - Save to Photos
     func saveProcessedImage() {
         guard let image = processedImage else {
@@ -462,7 +490,7 @@ class ChatViewModel: ObservableObject {
     }
     
     // MARK: - Quota Management
-    // Legacy local quota implementation removed. Quota is now managed by HybridCreditManager.
+    // Legacy local quota implementation removed. Quota is now managed by CreditManager.
     
     // MARK: - Paywall Flow
     func showPaywall() {

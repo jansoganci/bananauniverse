@@ -12,7 +12,7 @@ import CryptoKit
 struct SignInView: View {
     @Environment(\.dismiss) var dismiss
     @StateObject private var authService = HybridAuthService.shared
-    @StateObject private var creditManager = HybridCreditManager.shared
+    @StateObject private var creditManager = CreditManager.shared
     @EnvironmentObject var themeManager: ThemeManager
     
     @State private var email = ""

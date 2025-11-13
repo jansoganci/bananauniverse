@@ -12,7 +12,7 @@ import CryptoKit
 /// Quick authentication view shown during purchase flow
 struct QuickAuthView: View {
     @StateObject private var authService = HybridAuthService.shared
-    @StateObject private var creditManager = HybridCreditManager.shared
+    @StateObject private var creditManager = CreditManager.shared
     @EnvironmentObject var themeManager: ThemeManager
     
     @State private var email = ""

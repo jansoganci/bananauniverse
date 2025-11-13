@@ -25,7 +25,7 @@ struct BananaUniverseApp: App {
             ContentView()
                 .task {
                     // CRITICAL: Initialize quota system on app launch
-                    await HybridCreditManager.shared.initializeNewUser()
+                    await CreditManager.shared.initializeNewUser()
                 }
         }
     }

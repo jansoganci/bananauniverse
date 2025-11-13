@@ -11,7 +11,7 @@ import PhotosUI
 struct ImageUpscalerView: View {
     @Environment(\.dismiss) var dismiss
     @StateObject private var supabaseService = SupabaseService.shared
-    @StateObject private var creditManager = HybridCreditManager.shared
+    @StateObject private var creditManager = CreditManager.shared
     @StateObject private var authService = HybridAuthService.shared
     
     @State private var selectedImage: UIImage?

@@ -106,192 +106,8 @@ class SupabaseService: ObservableObject {
         return publicURL.absoluteString
     }
     
-    // MARK: - Quota Management
-    
-    /// Consume quota using the new quota system
-    /// Server validates premium status by checking subscriptions table
-    func consumeQuota(userId: String?, deviceId: String?) async throws -> QuotaInfo {
-        // Generate client request ID for idempotency
-        let clientRequestId = UUID().uuidString
-
-        // Prepare request body
-        var body: [String: Any] = [
-            "client_request_id": clientRequestId
-        ]
-
-        if let userId = userId {
-            body["user_id"] = userId
-        }
-        if let deviceId = deviceId {
-            body["device_id"] = deviceId
-        }
-        
-        let jsonData = try JSONSerialization.data(withJSONObject: body)
-        
-        guard let functionURL = URL(string: "\(Config.supabaseURL)/functions/v1/process-image") else {
-            throw SupabaseError.invalidURL
-        }
-        
-        var request = URLRequest(url: functionURL)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue(deviceId ?? "", forHTTPHeaderField: "device-id")
-        request.httpBody = jsonData
-        
-        // Set authorization header
-        if let userId = userId {
-            // Authenticated user - try to get session token
-            if let session = try? await client.auth.session {
-                request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
-            } else {
-                request.setValue("Bearer \(Config.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
-            }
-        } else {
-            // Anonymous user
-            request.setValue("Bearer \(Config.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
-        }
-        
-        request.timeoutInterval = 30
-        
-        let (responseData, urlResponse) = try await URLSession.shared.data(for: request)
-        
-        guard let httpResponse = urlResponse as? HTTPURLResponse else {
-            throw SupabaseError.invalidResponse
-        }
-        
-        if httpResponse.statusCode == 429 {
-            throw SupabaseError.quotaExceeded
-        }
-        
-        if httpResponse.statusCode != 200 {
-            throw SupabaseError.serverError("Quota consumption failed with status: \(httpResponse.statusCode)")
-        }
-        
-        // Parse response
-        let response = try JSONDecoder().decode(SteveJobsProcessResponse.self, from: responseData)
-        
-        guard let quotaInfo = response.quotaInfo else {
-            throw SupabaseError.invalidResponse
-        }
-        
-        return quotaInfo
-    }
-
     // MARK: - AI Processing
-    
-    /// 🍎 STEVE JOBS STYLE: Direct image processing with new process-image edge function
-    /// Works for both authenticated and anonymous users
-    /// Returns processed image URL directly - no polling needed!
-    func processImageSteveJobsStyle(
-        imageURL: String,
-        prompt: String,
-        options: [String: Any] = [:]
-    ) async throws -> SteveJobsProcessResponse {
-        
-        // Check if user can process image using quota system
-        guard await HybridCreditManager.shared.canProcessImage() else {
-            throw SupabaseError.insufficientCredits
-        }
-        
-        // Get user state from hybrid auth service
-        let userState = HybridAuthService.shared.userState
-        
-        if userState.isAuthenticated {
-        } else {
-        }
-        
-        // Generate client request ID for idempotency
-        let clientRequestId = UUID().uuidString
-        
-        // Prepare request body
-        var body: [String: Any] = [
-            "image_url": imageURL,
-            "prompt": prompt,
-            "client_request_id": clientRequestId
-        ]
-        
-        // Add user identification
-        if userState.isAuthenticated {
-            body["user_id"] = userState.identifier
-            // Also add device_id as fallback for authenticated users
-            body["device_id"] = await HybridCreditManager.shared.getDeviceUUID()
-        } else {
-            body["device_id"] = userState.identifier
-        }
 
-        
-        let jsonData = try JSONSerialization.data(withJSONObject: body)
-        
-        do {
-            // Call the new Steve Jobs style edge function
-            guard let functionURL = URL(string: "\(Config.supabaseURL)/functions/v1/process-image") else {
-                throw SupabaseError.invalidURL
-            }
-            var request = URLRequest(url: functionURL)
-            request.httpMethod = "POST"
-            
-            // CRITICAL FIX: Use actual user session token for authenticated users
-            if userState.isAuthenticated {
-                // Get the user's session token
-                if let session = try? await client.auth.session {
-                    request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
-                    #if DEBUG
-                    print("🔑 Using authenticated user token for API call")
-                    #endif
-                } else {
-                    // Fallback to anon key if session retrieval fails
-                    request.setValue("Bearer \(Config.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
-                    #if DEBUG
-                    print("⚠️ Failed to get session, using anon key")
-                    #endif
-                }
-            } else {
-                // Anonymous users use anon key
-                request.setValue("Bearer \(Config.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
-                #if DEBUG
-                print("🔓 Using anon key for anonymous user")
-                #endif
-            }
-            
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.setValue(userState.identifier, forHTTPHeaderField: "device-id") // For anonymous users
-            request.httpBody = jsonData
-            
-            // Set timeout to 60 seconds for processing
-            request.timeoutInterval = 60
-            
-            let (responseData, urlResponse) = try await URLSession.shared.data(for: request)
-            
-            guard let httpResponse = urlResponse as? HTTPURLResponse else {
-                throw SupabaseError.invalidResponse
-            }
-            
-            
-            // Parse response
-            let response = try JSONDecoder().decode(SteveJobsProcessResponse.self, from: responseData)
-            
-            if response.success {
-                // CRITICAL: Update quota from backend response
-                if let quotaInfo = response.quotaInfo {
-                    await HybridCreditManager.shared.updateFromBackendResponse(
-                        quotaUsed: quotaInfo.quotaUsed,
-                        quotaLimit: quotaInfo.quotaLimit,
-                        isPremium: quotaInfo.isPremium
-                    )
-                    #if DEBUG
-                    print("✅ [QUOTA] Updated from backend: \(quotaInfo.quotaUsed)/\(quotaInfo.quotaLimit)")
-                    #endif
-                }
-                return response
-            } else {
-                throw SupabaseError.processingFailed(response.error ?? "Processing failed")
-            }
-            
-        } catch {
-            throw error
-        }
-    }
-    
     /// Process image with AI using raw image data (recommended for iOS)
     /// Works for both authenticated and anonymous users
     func processImageData(
@@ -301,7 +117,7 @@ class SupabaseService: ObservableObject {
     ) async throws -> AIProcessResponse {
         
         // Check if user can process image (includes quota validation)
-        guard await HybridCreditManager.shared.canProcessImage() else {
+        guard await CreditManager.shared.canProcessImage() else {
             throw SupabaseError.insufficientCredits
         }
         
@@ -404,6 +220,148 @@ class SupabaseService: ObservableObject {
         }
     }
     
+    // MARK: - Async Polling (Phase 2 Migration)
+
+    /// Submit image job to async queue (new polling architecture)
+    /// Returns job_id immediately for polling
+    func submitImageJob(
+        imageURL: String,
+        prompt: String
+    ) async throws -> SubmitJobResponse {
+
+        // Get user state from hybrid auth service
+        let userState = HybridAuthService.shared.userState
+
+        // Generate client request ID for idempotency
+        let clientRequestId = UUID().uuidString
+
+        // Prepare request body
+        var body: [String: Any] = [
+            "image_url": imageURL,
+            "prompt": prompt,
+            "client_request_id": clientRequestId
+        ]
+
+        // Add user identification
+        if userState.isAuthenticated {
+            body["user_id"] = userState.identifier
+            body["device_id"] = await CreditManager.shared.getDeviceUUID()
+        } else {
+            body["device_id"] = userState.identifier
+        }
+
+        let jsonData = try JSONSerialization.data(withJSONObject: body)
+
+        // Call submit-job Edge Function
+        guard let functionURL = URL(string: "\(Config.supabaseURL)/functions/v1/submit-job") else {
+            throw SupabaseError.invalidURL
+        }
+
+        var request = URLRequest(url: functionURL)
+        request.httpMethod = "POST"
+
+        // Set authorization header
+        if userState.isAuthenticated {
+            if let session = try? await client.auth.session {
+                request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
+            } else {
+                request.setValue("Bearer \(Config.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+            }
+        } else {
+            request.setValue("Bearer \(Config.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+        }
+
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(userState.identifier, forHTTPHeaderField: "device-id")
+        request.httpBody = jsonData
+        request.timeoutInterval = 30
+
+        let (responseData, urlResponse) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = urlResponse as? HTTPURLResponse else {
+            throw SupabaseError.invalidResponse
+        }
+
+        if httpResponse.statusCode == 402 {
+            throw SupabaseError.insufficientCredits
+        }
+
+        if httpResponse.statusCode != 200 {
+            throw SupabaseError.serverError("Job submission failed with status: \(httpResponse.statusCode)")
+        }
+
+        // Parse response
+        let response = try JSONDecoder().decode(SubmitJobResponse.self, from: responseData)
+
+        return response
+    }
+
+    /// Fetch job result from webhook architecture
+    /// Returns status and image URL if completed
+    func getJobResult(jobId: String) async throws -> GetResultResponse {
+
+        // Get user state from hybrid auth service
+        let userState = HybridAuthService.shared.userState
+
+        // Prepare request body
+        var body: [String: Any] = [
+            "job_id": jobId
+        ]
+
+        // Add user identification
+        if userState.isAuthenticated {
+            body["user_id"] = userState.identifier
+            body["device_id"] = await CreditManager.shared.getDeviceUUID()
+        } else {
+            body["device_id"] = userState.identifier
+        }
+
+        let jsonData = try JSONSerialization.data(withJSONObject: body)
+
+        // Call get-result Edge Function
+        guard let functionURL = URL(string: "\(Config.supabaseURL)/functions/v1/get-result") else {
+            throw SupabaseError.invalidURL
+        }
+
+        var request = URLRequest(url: functionURL)
+        request.httpMethod = "POST"
+
+        // Set authorization header
+        if userState.isAuthenticated {
+            if let session = try? await client.auth.session {
+                request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
+            } else {
+                request.setValue("Bearer \(Config.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+            }
+        } else {
+            request.setValue("Bearer \(Config.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+        }
+
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(userState.identifier, forHTTPHeaderField: "device-id")
+        request.httpBody = jsonData
+        request.timeoutInterval = 30
+
+        let (responseData, urlResponse) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = urlResponse as? HTTPURLResponse else {
+            throw SupabaseError.invalidResponse
+        }
+
+        if httpResponse.statusCode == 404 {
+            throw SupabaseError.serverError("Job not found")
+        }
+
+        if httpResponse.statusCode != 200 {
+            throw SupabaseError.serverError("Failed to fetch job result with status: \(httpResponse.statusCode)")
+        }
+
+        // Parse response
+        let response = try JSONDecoder().decode(GetResultResponse.self, from: responseData)
+
+        return response
+    }
+
     // MARK: - Async Processing (V2)
     
     /// Process image with AI using V2 async API (returns 202 immediately)
@@ -415,7 +373,7 @@ class SupabaseService: ObservableObject {
     ) async throws -> JobSubmissionResponse {
         
         // Check if user can process image (includes credits and quota validation)
-        guard await HybridCreditManager.shared.canProcessImage() else {
+        guard await CreditManager.shared.canProcessImage() else {
             throw SupabaseError.insufficientCredits
         }
         
@@ -485,16 +443,16 @@ class SupabaseService: ObservableObject {
                 }
                 
                 let response = try decoder.decode(JobSubmissionResponse.self, from: responseData)
-                
-                // ✅ CONSUME QUOTA IMMEDIATELY ON ACCEPTANCE
-                _ = try await HybridCreditManager.shared.spendCreditWithQuota()
-                
+
+                // Note: Credit consumption is now handled server-side in submit-job Edge Function
+                // No client-side credit deduction needed
+
                 return response
-            } else if httpResponse.statusCode == 429 {
-                // Rate limit or concurrent limit exceeded
+            } else if httpResponse.statusCode == 402 {
+                // Insufficient credits
                 if let errorString = String(data: responseData, encoding: .utf8) {
                 }
-                throw SupabaseError.rateLimitExceeded
+                throw SupabaseError.insufficientCredits
             } else {
                 // Other errors
                 if let errorString = String(data: responseData, encoding: .utf8) {
@@ -805,36 +763,6 @@ struct AIProcessResponse: Codable {
         case modelUsed = "model_used"
         case usage
         case userType = "user_type"
-    }
-}
-
-// 🍎 STEVE JOBS STYLE RESPONSE MODEL
-struct SteveJobsProcessResponse: Codable {
-    let success: Bool
-    let processedImageURL: String?
-    let error: String?
-    let rateLimitInfo: RateLimitInfo?  // Deprecated, keeping for backward compatibility
-    let quotaInfo: QuotaInfo?
-    
-    enum CodingKeys: String, CodingKey {
-        case success
-        case processedImageURL = "processed_image_url"
-        case error
-        case rateLimitInfo = "rate_limit_info"
-        case quotaInfo = "quota_info"
-    }
-}
-
-
-struct RateLimitInfo: Codable {
-    let requestsToday: Int
-    let limit: Int
-    let resetTime: String
-    
-    enum CodingKeys: String, CodingKey {
-        case requestsToday = "requests_today"
-        case limit
-        case resetTime = "reset_time"
     }
 }
 

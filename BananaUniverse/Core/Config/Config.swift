@@ -1,16 +1,35 @@
 import Foundation
 
 struct Config {
+    // MARK: - Info.plist Helper
+    /// Safely reads a value from Info.plist
+    private static func infoPlistValue(for key: String) -> String? {
+        return Bundle.main.object(forInfoDictionaryKey: key) as? String
+    }
+    
     // MARK: - Supabase Configuration
-    static let supabaseURL = "https://jiorfutbmahpfgplkats.supabase.co"
-    static let supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imppb3JmdXRibWFocGZncGxrYXRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAzMzIxNjIsImV4cCI6MjA3NTkwODE2Mn0.wZXlQ3r47PqURmOoMoXfhdbtlTKm-yb3FLW78JG2HyU"
+    static let supabaseURL: String = {
+        guard let url = infoPlistValue(for: "SUPABASE_URL") else {
+            fatalError("SUPABASE_URL not found in Info.plist. Please ensure INFOPLIST_KEY_SUPABASE_URL is set in build settings.")
+        }
+        return url
+    }()
+    
+    static let supabaseAnonKey: String = {
+        guard let key = infoPlistValue(for: "SUPABASE_ANON_KEY") else {
+            fatalError("SUPABASE_ANON_KEY not found in Info.plist. Please ensure INFOPLIST_KEY_SUPABASE_ANON_KEY is set in build settings.")
+        }
+        return key
+    }()
     
     // MARK: - Edge Function Configuration
-    static let edgeFunctionURL = "https://jiorfutbmahpfgplkats.supabase.co/functions/v1"
+    static var edgeFunctionURL: String {
+        return "\(supabaseURL)/functions/v1"
+    }
     
     // MARK: - AI Configuration
     static let falAIModel = "fal-ai/nano-banana/edit"
-    
+
     // MARK: - Storage Configuration
     static let supabaseBucket = "noname-banana-images-prod"
     

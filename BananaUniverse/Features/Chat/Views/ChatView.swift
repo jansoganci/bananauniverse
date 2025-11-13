@@ -47,7 +47,7 @@ struct ChatView: View {
 
 struct ChatContainerView: View {
     @ObservedObject var viewModel: ChatViewModel
-    @ObservedObject private var creditManager = HybridCreditManager.shared
+    @ObservedObject private var creditManager = CreditManager.shared
     @EnvironmentObject var themeManager: ThemeManager
     @EnvironmentObject var appState: AppState
     @FocusState private var isInputFocused: Bool

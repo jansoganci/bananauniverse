@@ -1,0 +1,319 @@
+-- =====================================================
+-- Migration 051: Rollback Robust Quota System
+-- Purpose: Reverse all changes from migration 050
+-- =====================================================
+
+-- =====================================================
+-- STEP 1: Drop idempotency_keys table
+-- =====================================================
+DROP TABLE IF EXISTS idempotency_keys CASCADE;
+
+-- =====================================================
+-- STEP 2: Remove is_premium column from daily_quotas
+-- =====================================================
+DO $$ 
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'daily_quotas' AND column_name = 'is_premium'
+    ) THEN
+        ALTER TABLE daily_quotas DROP COLUMN is_premium;
+    END IF;
+END $$;
+
+-- =====================================================
+-- STEP 3: Revert quota limit default (if changed)
+-- =====================================================
+-- Note: Reverting to default 5 (original value)
+-- If you had a different default, change this value
+ALTER TABLE daily_quotas ALTER COLUMN limit_value SET DEFAULT 5;
+
+-- =====================================================
+-- STEP 4: Drop the new consume_quota function
+-- =====================================================
+DROP FUNCTION IF EXISTS consume_quota(UUID, TEXT, TEXT);
+
+-- =====================================================
+-- STEP 5: Restore original consume_quota function (from migration 035)
+-- =====================================================
+-- This restores the version that uses p_client_request_id instead of p_idempotency_key
+CREATE OR REPLACE FUNCTION consume_quota(
+    p_user_id UUID DEFAULT NULL,
+    p_device_id TEXT DEFAULT NULL,
+    p_client_request_id UUID DEFAULT NULL
+)
+RETURNS JSONB AS $$
+DECLARE
+    v_today DATE;
+    v_used INTEGER;
+    v_limit INTEGER := 5;  -- Free tier limit
+    v_is_premium BOOLEAN := false;
+    v_existing_response JSONB;
+BEGIN
+    -- Set device_id session for RLS
+    IF p_device_id IS NOT NULL THEN
+        PERFORM set_config('request.device_id', p_device_id, true);
+    END IF;
+
+    -- Validate inputs
+    IF p_user_id IS NULL AND p_device_id IS NULL THEN
+        RETURN jsonb_build_object(
+            'success', false,
+            'error', 'Either user_id or device_id required',
+            'quota_used', 0,
+            'quota_limit', v_limit,
+            'quota_remaining', 0
+        );
+    END IF;
+
+    v_today := CURRENT_DATE;
+
+    -- IDEMPOTENCY CHECK
+    IF p_client_request_id IS NOT NULL THEN
+        SELECT
+            jsonb_build_object(
+                'success', success,
+                'idempotent', true,
+                'quota_used', quota_used,
+                'quota_limit', quota_limit,
+                'quota_remaining', quota_limit - quota_used
+            )
+        INTO v_existing_response
+        FROM quota_consumption_log
+        WHERE request_id = p_client_request_id;
+
+        IF FOUND THEN
+            RAISE LOG '[QUOTA] Returning cached response for request_id=%', p_client_request_id;
+            RETURN v_existing_response;
+        END IF;
+    END IF;
+
+    -- PREMIUM CHECK
+    SELECT EXISTS(
+        SELECT 1 FROM subscriptions
+        WHERE (
+            (p_user_id IS NOT NULL AND user_id = p_user_id)
+            OR (p_device_id IS NOT NULL AND device_id = p_device_id)
+        )
+        AND status = 'active'
+        AND expires_at > NOW()
+    ) INTO v_is_premium;
+
+    RAISE LOG '[QUOTA] Premium check: user_id=%, device_id=%, is_premium=%',
+        p_user_id, p_device_id, v_is_premium;
+
+    -- Premium users bypass quota
+    IF v_is_premium THEN
+        IF p_client_request_id IS NOT NULL THEN
+            INSERT INTO quota_consumption_log (
+                request_id, user_id, device_id, quota_used, quota_limit, success
+            ) VALUES (
+                p_client_request_id, p_user_id, p_device_id, 0, 999999, true
+            ) ON CONFLICT (request_id) DO NOTHING;
+        END IF;
+
+        RETURN jsonb_build_object(
+            'success', true,
+            'is_premium', true,
+            'quota_used', 0,
+            'quota_limit', 999999,
+            'quota_remaining', 999999,
+            'premium_bypass', true
+        );
+    END IF;
+
+    -- ROW LOCKING + QUOTA CHECK
+    BEGIN
+        INSERT INTO daily_quotas (user_id, device_id, date, used, limit_value)
+        VALUES (p_user_id, p_device_id, v_today, 1, v_limit)
+        RETURNING used, limit_value INTO v_used, v_limit;
+
+        RAISE LOG '[QUOTA] New record created: used=%, limit=%', v_used, v_limit;
+
+    EXCEPTION
+        WHEN unique_violation THEN
+            SELECT used, limit_value INTO v_used, v_limit
+            FROM daily_quotas
+            WHERE COALESCE(user_id::text, '') = COALESCE(p_user_id::text, '')
+            AND COALESCE(device_id, '') = COALESCE(p_device_id, '')
+            AND date = v_today
+            FOR UPDATE;
+
+            IF v_used >= v_limit THEN
+                IF p_client_request_id IS NOT NULL THEN
+                    INSERT INTO quota_consumption_log (
+                        request_id, user_id, device_id, quota_used, quota_limit,
+                        success, error_message
+                    ) VALUES (
+                        p_client_request_id, p_user_id, p_device_id, v_used, v_limit,
+                        false, 'Daily quota exceeded'
+                    ) ON CONFLICT (request_id) DO NOTHING;
+                END IF;
+
+                RETURN jsonb_build_object(
+                    'success', false,
+                    'error', 'Daily quota exceeded',
+                    'quota_used', v_used,
+                    'quota_limit', v_limit,
+                    'quota_remaining', 0,
+                    'is_premium', false
+                );
+            END IF;
+
+            UPDATE daily_quotas
+            SET used = used + 1, updated_at = NOW()
+            WHERE COALESCE(user_id::text, '') = COALESCE(p_user_id::text, '')
+            AND COALESCE(device_id, '') = COALESCE(p_device_id, '')
+            AND date = v_today
+            RETURNING used, limit_value INTO v_used, v_limit;
+
+            RAISE LOG '[QUOTA] Updated: used=%, limit=%', v_used, v_limit;
+    END;
+
+    -- LOG CONSUMPTION
+    IF p_client_request_id IS NOT NULL THEN
+        INSERT INTO quota_consumption_log (
+            request_id, user_id, device_id, quota_used, quota_limit, success
+        ) VALUES (
+            p_client_request_id, p_user_id, p_device_id, v_used, v_limit, true
+        ) ON CONFLICT (request_id) DO NOTHING;
+    END IF;
+
+    RETURN jsonb_build_object(
+        'success', true,
+        'is_premium', false,
+        'quota_used', v_used,
+        'quota_limit', v_limit,
+        'quota_remaining', v_limit - v_used
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RAISE LOG '[QUOTA] ERROR: %', SQLERRM;
+        RETURN jsonb_build_object(
+            'success', false,
+            'error', 'Database error: ' || SQLERRM,
+            'quota_used', 0,
+            'quota_limit', v_limit,
+            'quota_remaining', 0
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+ALTER FUNCTION consume_quota(UUID, TEXT, UUID) OWNER TO postgres;
+GRANT EXECUTE ON FUNCTION consume_quota(UUID, TEXT, UUID) TO anon, authenticated, service_role;
+
+-- =====================================================
+-- STEP 6: Restore get_quota function (from migration 045)
+-- =====================================================
+CREATE OR REPLACE FUNCTION get_quota(
+    p_user_id UUID DEFAULT NULL,
+    p_device_id TEXT DEFAULT NULL
+)
+RETURNS JSONB AS $$
+DECLARE
+    v_today DATE;
+    v_used INTEGER;
+    v_limit INTEGER;
+    v_is_premium BOOLEAN := false;
+BEGIN
+    -- Set device_id session for RLS
+    IF p_device_id IS NOT NULL THEN
+        PERFORM set_config('request.device_id', p_device_id, true);
+    END IF;
+
+    -- Validate inputs
+    IF p_user_id IS NULL AND p_device_id IS NULL THEN
+        RETURN jsonb_build_object(
+            'success', false,
+            'error', 'Either user_id or device_id required',
+            'quota_used', 0,
+            'quota_limit', 5,
+            'quota_remaining', 0
+        );
+    END IF;
+
+    v_today := CURRENT_DATE;
+
+    -- CHECK PREMIUM STATUS
+    SELECT EXISTS(
+        SELECT 1 FROM subscriptions
+        WHERE (
+            (p_user_id IS NOT NULL AND user_id = p_user_id)
+            OR (p_device_id IS NOT NULL AND device_id = p_device_id)
+        )
+        AND status = 'active'
+        AND expires_at > NOW()
+        AND status != 'cancelled'
+    ) INTO v_is_premium;
+
+    -- Premium users get unlimited quota
+    IF v_is_premium THEN
+        RETURN jsonb_build_object(
+            'success', true,
+            'is_premium', true,
+            'quota_used', 0,
+            'quota_limit', 999999,
+            'quota_remaining', 999999
+        );
+    END IF;
+
+    -- GET OR CREATE DAILY QUOTA RECORD
+    SELECT used, limit_value INTO v_used, v_limit
+    FROM daily_quotas
+    WHERE COALESCE(user_id::text, '') = COALESCE(p_user_id::text, '')
+    AND COALESCE(device_id, '') = COALESCE(p_device_id, '')
+    AND date = v_today;
+
+    -- If no record exists, CREATE it
+    IF NOT FOUND THEN
+        RAISE LOG '[GET_QUOTA] No record found, creating initial quota record';
+
+        INSERT INTO daily_quotas (user_id, device_id, date, used, limit_value)
+        VALUES (p_user_id, p_device_id, v_today, 0, 5)
+        ON CONFLICT (user_id, device_id, date) DO NOTHING;
+
+        v_used := 0;
+        v_limit := 5;
+
+        RAISE LOG '[GET_QUOTA] Initial record created: user_id=%, device_id=%, used=%, limit=%',
+            p_user_id, p_device_id, v_used, v_limit;
+    END IF;
+
+    -- Return quota status
+    RETURN jsonb_build_object(
+        'success', true,
+        'is_premium', false,
+        'quota_used', COALESCE(v_used, 0),
+        'quota_limit', COALESCE(v_limit, 5),
+        'quota_remaining', GREATEST(COALESCE(v_limit, 5) - COALESCE(v_used, 0), 0)
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RAISE LOG '[GET_QUOTA] ERROR: %', SQLERRM;
+        RETURN jsonb_build_object(
+            'success', false,
+            'error', 'Database error: ' || SQLERRM,
+            'quota_used', 0,
+            'quota_limit', 5,
+            'quota_remaining', 0
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+ALTER FUNCTION get_quota(UUID, TEXT) OWNER TO postgres;
+GRANT EXECUTE ON FUNCTION get_quota(UUID, TEXT) TO anon, authenticated, service_role;
+
+-- =====================================================
+-- Rollback Complete
+-- =====================================================
+-- ✅ Removed idempotency_keys table
+-- ✅ Removed is_premium column from daily_quotas
+-- ✅ Reverted quota limit default to 5
+-- ✅ Restored original consume_quota function (uses p_client_request_id)
+-- ✅ Restored original get_quota function
+--
+-- Note: This restores the system to the state before migration 050
+-- The consume_quota function now uses UUID (p_client_request_id) instead of TEXT (p_idempotency_key)
+

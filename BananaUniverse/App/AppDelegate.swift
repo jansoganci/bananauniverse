@@ -24,7 +24,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         #endif
         
         Task { @MainActor in
-            await HybridCreditManager.shared.refreshSubscriptionInBackground()
+            await CreditManager.shared.refreshSubscriptionInBackground()
         }
     }
     

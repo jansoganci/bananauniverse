@@ -51,30 +51,9 @@ Deno.serve(async (req: Request) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
-  // ============================================
-  // 1. SUPABASE AUTHENTICATION
-  // ============================================
-  
-  // Check for Supabase authorization header
-  const authHeader = req.headers.get('authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    console.warn('⚠️ [LOG-MONITOR] Missing or invalid authorization header');
-    return new Response(JSON.stringify({ error: 'Missing authorization header' }), { 
-      status: 401,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-    });
-  }
-  
-  // Additional API key check for extra security
-  const expectedApiKey = Deno.env.get('CLEANUP_API_KEY');
-  const providedApiKey = req.headers.get('x-api-key');
-  
-  if (expectedApiKey && (!providedApiKey || providedApiKey !== expectedApiKey)) {
-    console.warn('⚠️ [LOG-MONITOR] Invalid or missing API key');
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
-      status: 401,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-    });
+  const authError = await authenticateRequest(req, corsHeaders);
+  if (authError) {
+    return authError;
   }
 
   const startTime = Date.now();
@@ -95,143 +74,23 @@ Deno.serve(async (req: Request) => {
       alerted: false
     };
 
-    // ============================================
-    // 2. GET WEEKLY CLEANUP STATISTICS
-    // ============================================
-    
-    console.log('🔍 [LOG-MONITOR] Aggregating weekly cleanup statistics...');
-    
     const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-    
-    try {
-      // Get all cleanup completion logs from last week
-      const { data: cleanupLogs, error: logsError } = await supabase
-        .from('cleanup_logs')
-        .select('operation, details, created_at')
-        .gte('created_at', oneWeekAgo)
-        .in('operation', [
-          'cleanup_old_jobs_complete',
-          'cleanup_rate_limiting_complete',
-          'cleanup_cleanup_logs_complete',
-          'log_rotation_complete'
-        ]);
-      
-      if (logsError) {
-        throw new Error(`Failed to fetch cleanup logs: ${logsError.message}`);
-      }
-      
-      if (cleanupLogs) {
-        result.weekly_cleanups = cleanupLogs.length;
-        
-        // Calculate average execution time
-        const executionTimes = cleanupLogs
-          .map(log => log.details?.execution_time_ms)
-          .filter(time => typeof time === 'number');
-        
-        if (executionTimes.length > 0) {
-          result.avg_exec_time = Math.round(
-            executionTimes.reduce((sum, time) => sum + time, 0) / executionTimes.length
-          );
-        }
-        
-        // Calculate total storage freed
-        const storageFreed = cleanupLogs
-          .map(log => log.details?.totalStorageFreed || log.details?.storage_freed || 0)
-          .filter(size => typeof size === 'number')
-          .reduce((sum, size) => sum + size, 0);
-        
-        result.storage_freed_gb = Math.round(storageFreed * 100) / 100; // Round to 2 decimal places
-        
-        console.log(`📊 [LOG-MONITOR] Found ${result.weekly_cleanups} cleanups this week`);
-        console.log(`📊 [LOG-MONITOR] Average execution time: ${result.avg_exec_time}ms`);
-        console.log(`📊 [LOG-MONITOR] Total storage freed: ${result.storage_freed_gb} GB`);
-      }
-      
-    } catch (error) {
-      console.error('❌ [LOG-MONITOR] Failed to get cleanup statistics:', error);
-    }
 
-    // ============================================
-    // 3. GET ERROR STATISTICS
-    // ============================================
-    
-    console.log('🔍 [LOG-MONITOR] Checking error statistics...');
-    
-    try {
-      const { data: errorLogs, error: errorCheckError } = await supabase
-        .from('cleanup_logs')
-        .select('operation, details')
-        .gte('created_at', oneWeekAgo)
-        .or('details->error.is.not.null,operation.like.%_error');
-      
-      if (!errorCheckError && errorLogs) {
-        result.errors = errorLogs.length;
-        console.log(`📊 [LOG-MONITOR] Found ${result.errors} errors this week`);
-      }
-      
-    } catch (error) {
-      console.warn('⚠️ [LOG-MONITOR] Failed to get error statistics:', error);
-    }
+    // Get weekly cleanup statistics
+    const cleanupStats = await getWeeklyCleanupStats(supabase, oneWeekAgo);
+    result.weekly_cleanups = cleanupStats.weekly_cleanups;
+    result.avg_exec_time = cleanupStats.avg_exec_time;
+    result.storage_freed_gb = cleanupStats.storage_freed_gb;
 
-    // ============================================
-    // 4. GET DETAILED BREAKDOWN
-    // ============================================
-    
-    try {
-      console.log('🔍 [LOG-MONITOR] Getting detailed breakdown...');
-      
-      const { data: allLogs } = await supabase
-        .from('cleanup_logs')
-        .select('operation, details, created_at')
-        .gte('created_at', oneWeekAgo);
-      
-      if (allLogs) {
-        // Cleanup breakdown by type
-        const cleanupBreakdown = {
-          images: allLogs.filter(log => log.operation.includes('cleanup_images')).length,
-          database: allLogs.filter(log => log.operation.includes('cleanup_db') || log.operation.includes('cleanup_old_jobs')).length,
-          logs: allLogs.filter(log => log.operation.includes('log_rotation')).length
-        };
-        
-        // Error breakdown by type
-        const errorBreakdown = {
-          images: allLogs.filter(log => log.operation.includes('cleanup_images') && log.operation.includes('error')).length,
-          database: allLogs.filter(log => (log.operation.includes('cleanup_db') || log.operation.includes('cleanup_old_jobs')) && log.operation.includes('error')).length,
-          logs: allLogs.filter(log => log.operation.includes('log_rotation') && log.operation.includes('error')).length
-        };
-        
-        // Top operations by frequency
-        const operationCounts = allLogs.reduce((acc, log) => {
-          acc[log.operation] = (acc[log.operation] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>);
-        
-        const topOperations = Object.entries(operationCounts)
-          .map(([operation, count]) => ({
-            operation,
-            count: count as number,
-            avg_time: 0 // Could be calculated if needed
-          }))
-          .sort((a, b) => b.count - a.count)
-          .slice(0, 5);
-        
-        result.details = {
-          cleanup_breakdown: cleanupBreakdown,
-          error_breakdown: errorBreakdown,
-          top_operations: topOperations
-        };
-        
-        console.log('📊 [LOG-MONITOR] Detailed breakdown completed');
-      }
-      
-    } catch (error) {
-      console.warn('⚠️ [LOG-MONITOR] Failed to get detailed breakdown:', error);
-    }
+    // Get error statistics
+    const errorStats = await getErrorStatistics(supabase, oneWeekAgo);
+    result.errors = errorStats.errors;
 
-    // ============================================
-    // 5. SEND TELEGRAM WEEKLY SUMMARY
-    // ============================================
-    
+    // Get detailed breakdown
+    const breakdown = await getDetailedBreakdown(supabase, oneWeekAgo);
+    result.details = breakdown;
+
+    // Send Telegram weekly summary
     result.executionTime = Date.now() - startTime;
     
     try {
@@ -242,31 +101,10 @@ Deno.serve(async (req: Request) => {
       // Don't throw - we don't want Telegram failures to break monitoring
     }
 
-    // ============================================
-    // 6. LOG MONITORING RESULTS
-    // ============================================
-    
-    try {
-      await supabase
-        .from('cleanup_logs')
-        .insert({
-          operation: 'log_monitor_complete',
-          details: {
-            weekly_cleanups: result.weekly_cleanups,
-            avg_exec_time: result.avg_exec_time,
-            storage_freed_gb: result.storage_freed_gb,
-            errors: result.errors,
-            execution_time_ms: result.executionTime
-          }
-        });
-    } catch (logError) {
-      console.warn('⚠️ [LOG-MONITOR] Failed to log monitoring results:', logError);
-    }
+    // Log monitoring results
+    await logMonitoringResults(supabase, result, result.executionTime);
 
-    // ============================================
-    // 7. RETURN MONITORING RESULTS
-    // ============================================
-    
+    // Return monitoring results
     console.log(`📊 [LOG-MONITOR] Weekly monitoring completed in ${result.executionTime}ms`);
     
     return new Response(JSON.stringify(result), { 
@@ -296,6 +134,221 @@ Deno.serve(async (req: Request) => {
 // ============================================
 // HELPER FUNCTIONS
 // ============================================
+
+async function authenticateRequest(req: Request, corsHeaders: Record<string, string>): Promise<Response | null> {
+  const authHeader = req.headers.get('authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    console.warn('⚠️ [LOG-MONITOR] Missing or invalid authorization header');
+    return new Response(JSON.stringify({ error: 'Missing authorization header' }), { 
+      status: 401,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    });
+  }
+  
+  const expectedApiKey = Deno.env.get('CLEANUP_API_KEY');
+  const providedApiKey = req.headers.get('x-api-key');
+  
+  if (expectedApiKey && (!providedApiKey || providedApiKey !== expectedApiKey)) {
+    console.warn('⚠️ [LOG-MONITOR] Invalid or missing API key');
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
+      status: 401,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    });
+  }
+  
+  return null;
+}
+
+async function getWeeklyCleanupStats(
+  supabase: any,
+  oneWeekAgo: string
+): Promise<{
+  weekly_cleanups: number;
+  avg_exec_time: number;
+  storage_freed_gb: number;
+}> {
+  console.log('🔍 [LOG-MONITOR] Aggregating weekly cleanup statistics...');
+  
+  try {
+    // Get all cleanup completion logs from last week
+    const { data: cleanupLogs, error: logsError } = await supabase
+      .from('cleanup_logs')
+      .select('operation, details, created_at')
+      .gte('created_at', oneWeekAgo)
+      .in('operation', [
+        'cleanup_old_jobs_complete',
+        'cleanup_rate_limiting_complete',
+        'cleanup_cleanup_logs_complete',
+        'log_rotation_complete'
+      ]);
+    
+    if (logsError) {
+      throw new Error(`Failed to fetch cleanup logs: ${logsError.message}`);
+    }
+    
+    let weekly_cleanups = 0;
+    let avg_exec_time = 0;
+    let storage_freed_gb = 0;
+    
+    if (cleanupLogs) {
+      weekly_cleanups = cleanupLogs.length;
+      
+      // Calculate average execution time
+      const executionTimes = cleanupLogs
+        .map(log => log.details?.execution_time_ms)
+        .filter(time => typeof time === 'number');
+      
+      if (executionTimes.length > 0) {
+        avg_exec_time = Math.round(
+          executionTimes.reduce((sum, time) => sum + time, 0) / executionTimes.length
+        );
+      }
+      
+      // Calculate total storage freed
+      const storageFreed = cleanupLogs
+        .map(log => log.details?.totalStorageFreed || log.details?.storage_freed || 0)
+        .filter(size => typeof size === 'number')
+        .reduce((sum, size) => sum + size, 0);
+      
+      storage_freed_gb = Math.round(storageFreed * 100) / 100; // Round to 2 decimal places
+      
+      console.log(`📊 [LOG-MONITOR] Found ${weekly_cleanups} cleanups this week`);
+      console.log(`📊 [LOG-MONITOR] Average execution time: ${avg_exec_time}ms`);
+      console.log(`📊 [LOG-MONITOR] Total storage freed: ${storage_freed_gb} GB`);
+    }
+    
+    return { weekly_cleanups, avg_exec_time, storage_freed_gb };
+    
+  } catch (error) {
+    console.error('❌ [LOG-MONITOR] Failed to get cleanup statistics:', error);
+    return { weekly_cleanups: 0, avg_exec_time: 0, storage_freed_gb: 0 };
+  }
+}
+
+async function getErrorStatistics(
+  supabase: any,
+  oneWeekAgo: string
+): Promise<{ errors: number }> {
+  console.log('🔍 [LOG-MONITOR] Checking error statistics...');
+  
+  try {
+    const { data: errorLogs, error: errorCheckError } = await supabase
+      .from('cleanup_logs')
+      .select('operation, details')
+      .gte('created_at', oneWeekAgo)
+      .or('details->error.is.not.null,operation.like.%_error');
+    
+    let errors = 0;
+    if (!errorCheckError && errorLogs) {
+      errors = errorLogs.length;
+      console.log(`📊 [LOG-MONITOR] Found ${errors} errors this week`);
+    }
+    
+    return { errors };
+    
+  } catch (error) {
+    console.warn('⚠️ [LOG-MONITOR] Failed to get error statistics:', error);
+    return { errors: 0 };
+  }
+}
+
+async function getDetailedBreakdown(
+  supabase: any,
+  oneWeekAgo: string
+): Promise<{
+  cleanup_breakdown: {
+    images: number;
+    database: number;
+    logs: number;
+  };
+  error_breakdown: {
+    images: number;
+    database: number;
+    logs: number;
+  };
+  top_operations: Array<{
+    operation: string;
+    count: number;
+    avg_time: number;
+  }>;
+} | undefined> {
+  try {
+    console.log('🔍 [LOG-MONITOR] Getting detailed breakdown...');
+    
+    const { data: allLogs } = await supabase
+      .from('cleanup_logs')
+      .select('operation, details, created_at')
+      .gte('created_at', oneWeekAgo);
+    
+    if (!allLogs) {
+      return undefined;
+    }
+    
+    // Cleanup breakdown by type
+    const cleanupBreakdown = {
+      images: allLogs.filter(log => log.operation.includes('cleanup_images')).length,
+      database: allLogs.filter(log => log.operation.includes('cleanup_db') || log.operation.includes('cleanup_old_jobs')).length,
+      logs: allLogs.filter(log => log.operation.includes('log_rotation')).length
+    };
+    
+    // Error breakdown by type
+    const errorBreakdown = {
+      images: allLogs.filter(log => log.operation.includes('cleanup_images') && log.operation.includes('error')).length,
+      database: allLogs.filter(log => (log.operation.includes('cleanup_db') || log.operation.includes('cleanup_old_jobs')) && log.operation.includes('error')).length,
+      logs: allLogs.filter(log => log.operation.includes('log_rotation') && log.operation.includes('error')).length
+    };
+    
+    // Top operations by frequency
+    const operationCounts = allLogs.reduce((acc, log) => {
+      acc[log.operation] = (acc[log.operation] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    const topOperations = Object.entries(operationCounts)
+      .map(([operation, count]) => ({
+        operation,
+        count: count as number,
+        avg_time: 0 // Could be calculated if needed
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+    
+    console.log('📊 [LOG-MONITOR] Detailed breakdown completed');
+    
+    return {
+      cleanup_breakdown: cleanupBreakdown,
+      error_breakdown: errorBreakdown,
+      top_operations: topOperations
+    };
+    
+  } catch (error) {
+    console.warn('⚠️ [LOG-MONITOR] Failed to get detailed breakdown:', error);
+    return undefined;
+  }
+}
+
+async function logMonitoringResults(
+  supabase: any,
+  result: LogMonitorResult,
+  executionTime: number
+): Promise<void> {
+  try {
+    await supabase
+      .from('cleanup_logs')
+      .insert({
+        operation: 'log_monitor_complete',
+        details: {
+          weekly_cleanups: result.weekly_cleanups,
+          avg_exec_time: result.avg_exec_time,
+          storage_freed_gb: result.storage_freed_gb,
+          errors: result.errors,
+          execution_time_ms: executionTime
+        }
+      });
+  } catch (logError) {
+    console.warn('⚠️ [LOG-MONITOR] Failed to log monitoring results:', logError);
+  }
+}
 
 async function sendTelegramWeeklySummary(result: LogMonitorResult): Promise<void> {
   const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN');

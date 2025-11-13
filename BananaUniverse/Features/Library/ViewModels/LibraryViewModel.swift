@@ -74,7 +74,7 @@ class LibraryViewModel: ObservableObject {
     private let supabaseService: SupabaseService
     private let authService: HybridAuthService
     private let storageService: StorageService
-    private let creditManager: HybridCreditManager
+    private let creditManager: CreditManager
     
     // Image Cache
     private let imageCache = NSCache<NSString, UIImage>()
@@ -140,12 +140,12 @@ class LibraryViewModel: ObservableObject {
         supabaseService: SupabaseService? = nil,
         authService: HybridAuthService? = nil,
         storageService: StorageService? = nil,
-        creditManager: HybridCreditManager? = nil
+        creditManager: CreditManager? = nil
     ) {
         self.supabaseService = supabaseService ?? SupabaseService.shared
         self.authService = authService ?? HybridAuthService.shared
         self.storageService = storageService ?? StorageService.shared
-        self.creditManager = creditManager ?? HybridCreditManager.shared
+        self.creditManager = creditManager ?? CreditManager.shared
         
         // Configure image cache
         imageCache.countLimit = 50
@@ -376,7 +376,7 @@ class LibraryViewModel: ObservableObject {
             return URL(string: signedURLString)
         } catch {
             // Fallback to public URL if signed URL fails
-            let baseURL = "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/\(Config.supabaseBucket)"
+            let baseURL = "\(Config.supabaseURL)/storage/v1/object/public/\(Config.supabaseBucket)"
             let fullPath = "\(baseURL)/\(path)"
             return URL(string: fullPath)
         }
@@ -395,7 +395,7 @@ class LibraryViewModel: ObservableObject {
             return signedURL
         } catch {
             // Fallback to public URL if signed URL fails
-            let baseURL = "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/\(Config.supabaseBucket)"
+            let baseURL = "\(Config.supabaseURL)/storage/v1/object/public/\(Config.supabaseBucket)"
             let fullPath = "\(baseURL)/\(path)"
             return URL(string: fullPath)
         }

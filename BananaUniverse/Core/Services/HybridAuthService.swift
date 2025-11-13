@@ -56,7 +56,7 @@ class HybridAuthService: ObservableObject {
                         let deviceId = self.getOrCreateDeviceUUID()
                         self.userState = .anonymous(deviceId: deviceId)
                         // Update credit manager with new anonymous state
-                        HybridCreditManager.shared.setUserState(self.userState)
+                        CreditManager.shared.setUserState(self.userState)
                     }
                 }
             }
@@ -78,7 +78,7 @@ class HybridAuthService: ObservableObject {
             }
             
             // Update credit manager with the determined state
-            HybridCreditManager.shared.setUserState(userState)
+            CreditManager.shared.setUserState(userState)
         }
     }
     
@@ -86,14 +86,14 @@ class HybridAuthService: ObservableObject {
         print("🔄 [AUTH] User state transition: \(previousState) → \(newState)")
         
         // CRITICAL: Update quota manager with new state
-        HybridCreditManager.shared.setUserState(newState)
+        CreditManager.shared.setUserState(newState)
         
         // If transitioning from anonymous to authenticated, handle quota migration
         if case .anonymous = previousState, case .authenticated(let user) = newState {
             print("🔄 [AUTH] Anonymous → Authenticated transition")
             
             // Initialize new user in backend if needed
-            await HybridCreditManager.shared.initializeNewUser()
+            await CreditManager.shared.initializeNewUser()
             
             // Identify user in Adapty for purchase tracking
             do {
@@ -125,7 +125,7 @@ class HybridAuthService: ObservableObject {
     func signInAnonymously() {
         let deviceId = getOrCreateDeviceUUID()
         userState = .anonymous(deviceId: deviceId)
-        HybridCreditManager.shared.setUserState(userState)
+        CreditManager.shared.setUserState(userState)
     }
     
     // MARK: - Authenticated Authentication
@@ -151,7 +151,7 @@ class HybridAuthService: ObservableObject {
             if !userState.isAuthenticated {
                 let previousState = userState
                 userState = .authenticated(user: session.user)
-                HybridCreditManager.shared.setUserState(userState)
+                CreditManager.shared.setUserState(userState)
                 await handleAuthenticationStateChange(from: previousState, to: userState)
             }
             
@@ -185,7 +185,7 @@ class HybridAuthService: ObservableObject {
             if !userState.isAuthenticated {
                 let previousState = userState
                 userState = .authenticated(user: session.user)
-                HybridCreditManager.shared.setUserState(userState)
+                CreditManager.shared.setUserState(userState)
                 await handleAuthenticationStateChange(from: previousState, to: userState)
             }
             
@@ -223,7 +223,7 @@ class HybridAuthService: ObservableObject {
             if !userState.isAuthenticated {
                 let previousState = userState
                 userState = .authenticated(user: session.user)
-                HybridCreditManager.shared.setUserState(userState)
+                CreditManager.shared.setUserState(userState)
                 await handleAuthenticationStateChange(from: previousState, to: userState)
             }
             
@@ -252,7 +252,7 @@ class HybridAuthService: ObservableObject {
             // Switch to anonymous state
             let deviceId = getOrCreateDeviceUUID()
             userState = .anonymous(deviceId: deviceId)
-            HybridCreditManager.shared.setUserState(userState)
+            CreditManager.shared.setUserState(userState)
             
             // Verify session cleared (best-effort diagnostics)
             let currentUser = supabase.getCurrentUser()

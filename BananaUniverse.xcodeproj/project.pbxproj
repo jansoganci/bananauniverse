@@ -19,12 +19,26 @@
 /* Begin PBXFileReference section */
 		C5B91B602E9C4E54000CA05D /* BananaUniverse.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BananaUniverse.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C5B91CC82E9D6E00000CA05D /* BananaUniverse.storekit */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = BananaUniverse.storekit; sourceTree = "<group>"; };
-		C5B91CC92E9D6E01000CA05D /* BananaUniverseTestPlan.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text.xctestplan; path = BananaUniverseTestPlan.xctestplan; sourceTree = "<group>"; };
+		C5XCONFIG0001 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
+		C5XCONFIG0002 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		C5AF26C32EB8954900101751 /* Exceptions for "BananaUniverse" folder in "BananaUniverse" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = C5B91B5F2E9C4E54000CA05D /* BananaUniverse */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		C5B91B622E9C4E54000CA05D /* BananaUniverse */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				C5AF26C32EB8954900101751 /* Exceptions for "BananaUniverse" folder in "BananaUniverse" target */,
+			);
 			path = BananaUniverse;
 			sourceTree = "<group>";
 		};
@@ -53,7 +67,8 @@
 			children = (
 				C5B91B622E9C4E54000CA05D /* BananaUniverse */,
 				C5B91CC82E9D6E00000CA05D /* BananaUniverse.storekit */,
-				C5B91CC92E9D6E01000CA05D /* BananaUniverseTestPlan.xctestplan */,
+				C5XCONFIG0001 /* Debug.xcconfig */,
+				C5XCONFIG0002 /* Release.xcconfig */,
 				C5B91B612E9C4E54000CA05D /* Products */,
 			);
 			sourceTree = "<group>";
@@ -162,6 +177,7 @@
 /* Begin XCBuildConfiguration section */
 		C5B91B692E9C4E56000CA05D /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = C5XCONFIG0001 /* Debug.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -228,6 +244,7 @@
 		};
 		C5B91B6A2E9C4E56000CA05D /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = C5XCONFIG0002 /* Release.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -287,6 +304,7 @@
 		};
 		C5B91B6C2E9C4E56000CA05D /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = C5XCONFIG0001 /* Debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -296,12 +314,15 @@
 				DEVELOPMENT_TEAM = N5386872HH;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = BananaUniverse/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Banana Universe";
 				INFOPLIST_KEY_CFBundleURLTypes = "{\n    CFBundleURLName = \"Apple Sign In\";\n    CFBundleURLSchemes =     (\n        \"com.janstrade.bananauniverse.signin\"\n    );\n}";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.photography";
 				INFOPLIST_KEY_LSApplicationQueriesSchemes = appleid;
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "We need permission to save your edited images to your Photos library.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "We need access to your photo library to let you select and edit your images.";
+				INFOPLIST_KEY_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imppb3JmdXRibWFocGZncGxrYXRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIxMTUzMTQsImV4cCI6MjA3NzQ3NTMxNH0.Ft5q_ebLUbIf6aKtf-0boWdOJvKPQSnEfOAmP5Oo69M";
+				INFOPLIST_KEY_SUPABASE_URL = "https://jiorfutbmahpfgplkats.supabase.co";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -326,6 +347,7 @@
 		};
 		C5B91B6D2E9C4E56000CA05D /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = C5XCONFIG0002 /* Release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -335,12 +357,15 @@
 				DEVELOPMENT_TEAM = N5386872HH;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = BananaUniverse/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Banana Universe";
 				INFOPLIST_KEY_CFBundleURLTypes = "{\n    CFBundleURLName = \"Apple Sign In\";\n    CFBundleURLSchemes =     (\n        \"com.janstrade.bananauniverse.signin\"\n    );\n}";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.photography";
 				INFOPLIST_KEY_LSApplicationQueriesSchemes = appleid;
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "We need permission to save your edited images to your Photos library.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "We need access to your photo library to let you select and edit your images.";
+				INFOPLIST_KEY_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imppb3JmdXRibWFocGZncGxrYXRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIxMTUzMTQsImV4cCI6MjA3NzQ3NTMxNH0.Ft5q_ebLUbIf6aKtf-0boWdOJvKPQSnEfOAmP5Oo69M";
+				INFOPLIST_KEY_SUPABASE_URL = "https://jiorfutbmahpfgplkats.supabase.co";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

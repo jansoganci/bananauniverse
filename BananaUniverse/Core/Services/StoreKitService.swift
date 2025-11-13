@@ -79,8 +79,8 @@ class StoreKitService: ObservableObject {
                 // Sync subscription to Supabase
                 await syncSubscriptionToSupabase(transaction: transaction, productId: product.id)
 
-                // Trigger premium status refresh in HybridCreditManager
-                await HybridCreditManager.shared.refreshPremiumStatus()
+                // Trigger premium status refresh in CreditManager
+                await CreditManager.shared.refreshPremiumStatus()
 
                 #if DEBUG
                 print("✅ Purchase successful and verified: \(product.id)")
@@ -212,7 +212,7 @@ class StoreKitService: ObservableObject {
             // Get user state
             let userState = HybridAuthService.shared.userState
             let userId: String? = userState.isAuthenticated ? userState.identifier : nil
-            let deviceId: String? = userState.isAuthenticated ? nil : await HybridCreditManager.shared.getDeviceUUID()
+            let deviceId: String? = userState.isAuthenticated ? nil : await CreditManager.shared.getDeviceUUID()
 
             // Prepare parameters for RPC call (must be Encodable - all String values)
             var params: [String: String] = [

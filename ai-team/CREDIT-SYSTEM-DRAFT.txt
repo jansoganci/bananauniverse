@@ -1,0 +1,87 @@
+## 1️⃣ Core Architecture
+- `CreditService` (`RendioAI/RendioAI/Core/Networking/CreditService.swift`, L11-L93) centralizes credit reads: `fetchCredits()` calls `/functions/v1/get-user-credits`, `hasSufficientCredits()` re-fetches to compare against a cost, while `updateCredits()` is a Phase-2 stub that just simulates a balance change.## 1️⃣ Core Architecture
+- `CreditService` (`RendioAI/RendioAI/Core/Networking/CreditService.swift`, L11-L93) centralizes credit reads: `fetchCredits()` calls `/functions/v1/get-user-credits`, `hasSufficientCredits()` re-fetches to compare against a cost, while `updateCredits()` is a Phase-2 stub that just simulates a balance change.
+- `StoreKitManager` (`Core/Services/StoreKitManager.swift`, L13-L361) is a singleton handling IAP product loading and purchases; receipt validation is mocked (L207-L228) and packages map to hard-coded product IDs.
+- View-models consume the service per screen:
+  - `HomeViewModel` (`Features/Home/HomeViewModel.swift`, L14-L90) and `ProfileViewModel` (`Features/Profile/ProfileViewModel.swift`, L23-L388) fetch credits asynchronously and expose them for banners/buttons.
+  - `ModelDetailViewModel` (`Features/ModelDetail/ModelDetailViewModel.swift`, L16-L236) tracks `creditsRemaining`, derives `generationCost`, and gates generation.
+- Backend credit logic lives in Supabase Edge Functions and SQL:
+  - `get-user-credits`, `update-credits`, `device-check`, `generate-video` (under `supabase/functions/`).
+  - Stored procedures `add_credits`, `deduct_credits`, and `generate_video_atomic` (`supabase/migrations/20251105000002...sql`, `20251108000002...sql`, `20251108000004...sql`), plus RLS fixes (`20251106000005/06`). Credits persist in `users` with an audit trail in `quota_log` (`20251105000001_create_tables.sql`, L100-L118).
+
+## 2️⃣ Credit Lifecycle
+- **Initial grant:** `device-check` Edge Function (`supabase/functions/device-check/index.ts`, L25-L180) creates/returns a guest user and calls `add_credits` with reason `initial_grant` for 10 credits; the response seeds onboarding state (`OnboardingService`, L36-L101).
+- **Balance fetch/update:** Clients call `CreditService.fetchCredits()` on splash/profile/home/model detail loads; no local caching beyond in-memory state (only references to `app.cachedCredits` in logs).
+- **Deduction flow:** `ModelDetailViewModel.generateVideo()` (L152-L236) checks `hasSufficientCredits()`, uploads any required image, then invokes `VideoGenerationService.generateVideo()` (Edge Function `/generate-video`). The Edge Function:
+  - Validates request, calculates price via `calculateCost` (`supabase/functions/generate-video/cost-calculator.ts`, L14-L45).
+  - Calls `generate_video_atomic` stored procedure to lock the user, deduct credits, insert a `video_jobs` row, and write an idempotency record.
+  - On provider failure, credits are refunded via `refundCredits` (`credit-service.ts`, L27-L39).
+- **Frontend post-deduction:** The app subtracts credits via the stubbed `CreditService.updateCredits(change:reason:)` (L80-L88), so UX updates even though actual deduction already happened server-side—risking inconsistencies until the real endpoint is wired.
+- **Refund/Failure handling:** Backend refunds inside the Edge Function on downstream errors; there is no matching client-side adjustment besides re-fetching credits when screens reload.
+- **Purchases:** `PurchaseSheet` (`Features/Profile/Components/PurchaseSheet.swift`, L10-L258) uses `StoreKitManager.purchase()`; on success, `ProfileViewModel.handlePurchaseComplete()` refreshes the profile. Backend IAP fulfillment is via `/update-credits` Edge Function, which verifies (mock) with Apple and calls `add_credits` (`supabase/functions/update-credits/index.ts`, L30-L169).
+- **Idempotency & rate limits:** `generate-video` enforces an `Idempotency-Key` header and logs to `idempotency_log`; stored procedures lock rows to prevent race conditions (see `generate_video_atomic` and `deduct_credits` SELECT … FOR UPDATE). No explicit client-side rate limiting beyond button disabling.
+
+## 3️⃣ UI & Integration
+- **Credit displays:** 
+  - `CreditInfoSection` on profile (`Features/Profile/Components/CreditInfoSection.swift`, L10-L150).
+  - `CreditInfoBar` + badge in model detail (`Features/ModelDetail/Components/CreditInfoBar.swift`, L10-L74; `ModelDetailView.swift`, L75-L173).
+  - `LowCreditBanner` and `QuotaWarningBanner` on home (`Features/Home/Components/*Banner.swift`).
+  - History cards show `credits_used` per job (`Features/History/Components/HistoryCard.swift`, L10-L269).
+- **Purchase entry points:** `ProfileView` opens `PurchaseSheet` (sheet binding), `HomeView` raises it from the low-credit banner (L53-L117).
+- **Premium logic:** No premium bypass implemented—the only gating is `ProfileViewModel.canBuyCredits = !isGuest`.
+- **State refresh:** Post-purchase or restore triggers `loadUserProfile()` / `HomeViewModel.loadData()` to pull fresh balances; there is no background polling.
+
+## 4️⃣ Backend / API Integration
+- **Edge Functions:**
+  - `/device-check` for initial accounts and grants.
+  - `/get-user-credits` and `/get-user-profile` for reads.
+  - `/update-credits` for adding credits after purchase (mock verification).
+  - `/generate-video` for generation + deduction.
+- **Stored Procedures & Tables:** `add_credits` and `deduct_credits` manage balances and write `quota_log`; `generate_video_atomic` atomically deducts and logs idempotency info; migrations include RLS tweaks to allow the security-definer functions to bypass user-level policies.
+- **Requests / responses:** Frontend uses anon key with bearer auth headers. Deduction responses contain `{job_id, credits_used, status}`; credit fetch returns `{credits_remaining}`. Purchase endpoint returns `{success, credits_added, credits_remaining}`.
+- **Security:** RLS policies limit direct table access; policies explicitly allow `postgres`/`service_role` for stored procedures (see migrations dated 2025-11-06). Idempotency records store last response to replay duplicates.
+
+## 5️⃣ Summary Flow
+When onboarding succeeds, `/device-check` provisions a guest user and grants 10 credits via `add_credits`; the app caches the returned `user_id`. The home/profile screens call `CreditService.fetchCredits()` to display current balances. On model generation, `ModelDetailViewModel.generateVideo()` re-validates available credits (another `fetchCredits()`), then calls `/generate-video`, which locks the user, deducts credits through `generate_video_atomic`, and creates the job; if the provider call later fails, the Edge Function refunds the deducted amount. The frontend immediately applies the simulated `updateCredits(-credits_used)` return value to keep UI responsive, then navigation to the result screen shows `credits_used`. Purchases or restores go through `StoreKitManager`, and on success the app refreshes the profile while `/update-credits` calls `add_credits` to add to the balance and log the transaction. Throughout, credit transactions remain server-authoritative in `users` and `quota_log`, with clients periodically re-fetching to stay in sync (there is no persistent local cache or offline mode).
+- `StoreKitManager` (`Core/Services/StoreKitManager.swift`, L13-L361) is a singleton handling IAP product loading and purchases; receipt validation is mocked (L207-L228) and packages map to hard-coded product IDs.
+- View-models consume the service per screen:
+  - `HomeViewModel` (`Features/Home/HomeViewModel.swift`, L14-L90) and `ProfileViewModel` (`Features/Profile/ProfileViewModel.swift`, L23-L388) fetch credits asynchronously and expose them for banners/buttons.
+  - `ModelDetailViewModel` (`Features/ModelDetail/ModelDetailViewModel.swift`, L16-L236) tracks `creditsRemaining`, derives `generationCost`, and gates generation.
+- Backend credit logic lives in Supabase Edge Functions and SQL:
+  - `get-user-credits`, `update-credits`, `device-check`, `generate-video` (under `supabase/functions/`).
+  - Stored procedures `add_credits`, `deduct_credits`, and `generate_video_atomic` (`supabase/migrations/20251105000002...sql`, `20251108000002...sql`, `20251108000004...sql`), plus RLS fixes (`20251106000005/06`). Credits persist in `users` with an audit trail in `quota_log` (`20251105000001_create_tables.sql`, L100-L118).
+
+## 2️⃣ Credit Lifecycle
+- **Initial grant:** `device-check` Edge Function (`supabase/functions/device-check/index.ts`, L25-L180) creates/returns a guest user and calls `add_credits` with reason `initial_grant` for 10 credits; the response seeds onboarding state (`OnboardingService`, L36-L101).
+- **Balance fetch/update:** Clients call `CreditService.fetchCredits()` on splash/profile/home/model detail loads; no local caching beyond in-memory state (only references to `app.cachedCredits` in logs).
+- **Deduction flow:** `ModelDetailViewModel.generateVideo()` (L152-L236) checks `hasSufficientCredits()`, uploads any required image, then invokes `VideoGenerationService.generateVideo()` (Edge Function `/generate-video`). The Edge Function:
+  - Validates request, calculates price via `calculateCost` (`supabase/functions/generate-video/cost-calculator.ts`, L14-L45).
+  - Calls `generate_video_atomic` stored procedure to lock the user, deduct credits, insert a `video_jobs` row, and write an idempotency record.
+  - On provider failure, credits are refunded via `refundCredits` (`credit-service.ts`, L27-L39).
+- **Frontend post-deduction:** The app subtracts credits via the stubbed `CreditService.updateCredits(change:reason:)` (L80-L88), so UX updates even though actual deduction already happened server-side—risking inconsistencies until the real endpoint is wired.
+- **Refund/Failure handling:** Backend refunds inside the Edge Function on downstream errors; there is no matching client-side adjustment besides re-fetching credits when screens reload.
+- **Purchases:** `PurchaseSheet` (`Features/Profile/Components/PurchaseSheet.swift`, L10-L258) uses `StoreKitManager.purchase()`; on success, `ProfileViewModel.handlePurchaseComplete()` refreshes the profile. Backend IAP fulfillment is via `/update-credits` Edge Function, which verifies (mock) with Apple and calls `add_credits` (`supabase/functions/update-credits/index.ts`, L30-L169).
+- **Idempotency & rate limits:** `generate-video` enforces an `Idempotency-Key` header and logs to `idempotency_log`; stored procedures lock rows to prevent race conditions (see `generate_video_atomic` and `deduct_credits` SELECT … FOR UPDATE). No explicit client-side rate limiting beyond button disabling.
+
+## 3️⃣ UI & Integration
+- **Credit displays:** 
+  - `CreditInfoSection` on profile (`Features/Profile/Components/CreditInfoSection.swift`, L10-L150).
+  - `CreditInfoBar` + badge in model detail (`Features/ModelDetail/Components/CreditInfoBar.swift`, L10-L74; `ModelDetailView.swift`, L75-L173).
+  - `LowCreditBanner` and `QuotaWarningBanner` on home (`Features/Home/Components/*Banner.swift`).
+  - History cards show `credits_used` per job (`Features/History/Components/HistoryCard.swift`, L10-L269).
+- **Purchase entry points:** `ProfileView` opens `PurchaseSheet` (sheet binding), `HomeView` raises it from the low-credit banner (L53-L117).
+- **Premium logic:** No premium bypass implemented—the only gating is `ProfileViewModel.canBuyCredits = !isGuest`.
+- **State refresh:** Post-purchase or restore triggers `loadUserProfile()` / `HomeViewModel.loadData()` to pull fresh balances; there is no background polling.
+
+## 4️⃣ Backend / API Integration
+- **Edge Functions:**
+  - `/device-check` for initial accounts and grants.
+  - `/get-user-credits` and `/get-user-profile` for reads.
+  - `/update-credits` for adding credits after purchase (mock verification).
+  - `/generate-video` for generation + deduction.
+- **Stored Procedures & Tables:** `add_credits` and `deduct_credits` manage balances and write `quota_log`; `generate_video_atomic` atomically deducts and logs idempotency info; migrations include RLS tweaks to allow the security-definer functions to bypass user-level policies.
+- **Requests / responses:** Frontend uses anon key with bearer auth headers. Deduction responses contain `{job_id, credits_used, status}`; credit fetch returns `{credits_remaining}`. Purchase endpoint returns `{success, credits_added, credits_remaining}`.
+- **Security:** RLS policies limit direct table access; policies explicitly allow `postgres`/`service_role` for stored procedures (see migrations dated 2025-11-06). Idempotency records store last response to replay duplicates.
+
+## 5️⃣ Summary Flow
+When onboarding succeeds, `/device-check` provisions a guest user and grants 10 credits via `add_credits`; the app caches the returned `user_id`. The home/profile screens call `CreditService.fetchCredits()` to display current balances. On model generation, `ModelDetailViewModel.generateVideo()` re-validates available credits (another `fetchCredits()`), then calls `/generate-video`, which locks the user, deducts credits through `generate_video_atomic`, and creates the job; if the provider call later fails, the Edge Function refunds the deducted amount. The frontend immediately applies the simulated `updateCredits(-credits_used)` return value to keep UI responsive, then navigation to the result screen shows `credits_used`. Purchases or restores go through `StoreKitManager`, and on success the app refreshes the profile while `/update-credits` calls `add_credits` to add to the balance and log the transaction. Throughout, credit transactions remain server-authoritative in `users` and `quota_log`, with clients periodically re-fetching to stay in sync (there is no persistent local cache or offline mode).

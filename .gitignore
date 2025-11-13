@@ -123,3 +123,8 @@ node_modules/
 
 # Logs
 *.log
+
+# Xcode Configuration Files (secrets)
+*.xcconfig
+!Debug.xcconfig.example
+!Release.xcconfig.example

@@ -10,7 +10,7 @@ import SwiftUI
 struct ProfileView: View {
     @StateObject private var viewModel = ProfileViewModel()
     @ObservedObject private var authService = HybridAuthService.shared
-    @StateObject private var creditManager = HybridCreditManager.shared
+    @StateObject private var creditManager = CreditManager.shared
     @EnvironmentObject var themeManager: ThemeManager
     @State private var showPaywall = false
     @State private var showSignIn = false

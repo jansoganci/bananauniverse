@@ -126,7 +126,7 @@ enum HeaderContent {
         UnifiedHeaderBar(
             title: "Banana Universe",
             leftContent: .brandLogo("Banana Universe"),
-            rightContent: .quotaBadge(3, 5, {})
+            rightContent: .quotaBadge(0, 3, {})
         )
         
         // Chat style - Unlimited mode with App Logo

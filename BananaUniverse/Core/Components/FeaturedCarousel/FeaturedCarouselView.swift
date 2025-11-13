@@ -136,7 +136,7 @@ struct FeaturedCarouselCard: View {
     
     // MARK: - State
     @State private var isPressed = false
-    @StateObject private var creditManager = HybridCreditManager.shared
+    @StateObject private var creditManager = CreditManager.shared
     @EnvironmentObject var themeManager: ThemeManager
     
     var body: some View {

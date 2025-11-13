@@ -28,7 +28,7 @@ class ProfileViewModel: ObservableObject {
     
     private let supabaseService = SupabaseService.shared
     private let authService = HybridAuthService.shared
-    private let creditManager = HybridCreditManager.shared
+    private let creditManager = CreditManager.shared
     private let storeKitService = StoreKitService.shared
     private var cancellables = Set<AnyCancellable>()
     
@@ -38,10 +38,10 @@ class ProfileViewModel: ObservableObject {
     }
     
     init() {
-        // Initialize premium status from HybridCreditManager
+        // Initialize premium status from CreditManager
         self.isPremiumUser = creditManager.isPremiumUser
         
-        // Subscribe to HybridCreditManager's premium status updates
+        // Subscribe to CreditManager's premium status updates
         creditManager.$isPremiumUser
             .receive(on: RunLoop.main)
             .sink { [weak self] newValue in
@@ -72,7 +72,7 @@ class ProfileViewModel: ObservableObject {
     func restorePurchases() async {
         do {
             try await StoreKitService.shared.restorePurchases()
-            // isPRO will be updated automatically via HybridCreditManager subscription
+            // isPRO will be updated automatically via CreditManager subscription
             #if DEBUG
             print("✅ Restore successful – user upgraded to PRO")
             #endif
@@ -120,7 +120,7 @@ class ProfileViewModel: ObservableObject {
         isLoadingSubscription = true
         
         do {
-            await HybridCreditManager.shared.refreshSubscriptionInBackground()
+            await CreditManager.shared.refreshSubscriptionInBackground()
             #if DEBUG
             print("✅ Subscription details refreshed")
             #endif

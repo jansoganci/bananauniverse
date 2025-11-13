@@ -10,7 +10,7 @@ import SwiftUI
 struct ContentView: View {
     @State private var selectedTab = 0 // Start on Home tab with welcome screen
     @StateObject private var authService = HybridAuthService.shared
-    @StateObject private var creditManager = HybridCreditManager.shared
+    @StateObject private var creditManager = CreditManager.shared
     @StateObject private var themeManager = ThemeManager()
     // @StateObject private var adaptyService = AdaptyService.shared
     @StateObject private var appState = AppState()

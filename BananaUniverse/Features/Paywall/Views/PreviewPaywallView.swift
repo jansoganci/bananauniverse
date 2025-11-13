@@ -94,7 +94,7 @@ struct PreviewPaywallView: View {
                     await storeKitService.loadProducts()
                 }
             }
-            .onReceive(HybridCreditManager.shared.$isPremiumUser) { isPremium in
+            .onReceive(CreditManager.shared.$isPremiumUser) { isPremium in
                 #if DEBUG
                 print("🔄 PaywallView: Premium status changed to \(isPremium)")
                 #endif

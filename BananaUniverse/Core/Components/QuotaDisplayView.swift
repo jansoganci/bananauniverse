@@ -9,17 +9,17 @@
 import SwiftUI
 
 struct QuotaDisplayView: View {
-    let creditManager: HybridCreditManager
+    let creditManager: CreditManager
     @EnvironmentObject var themeManager: ThemeManager
     let style: QuotaDisplayStyle
     let action: (() -> Void)?
     
     init(
-        creditManager: HybridCreditManager? = nil,
+        creditManager: CreditManager? = nil,
         style: QuotaDisplayStyle = .compact,
         action: (() -> Void)? = nil
     ) {
-        self.creditManager = creditManager ?? HybridCreditManager.shared
+        self.creditManager = creditManager ?? CreditManager.shared
         self.style = style
         self.action = action
     }
@@ -108,27 +108,27 @@ struct QuotaDisplayView: View {
     }
     
     private var titleView: some View {
-        Text(creditManager.isPremiumUser ? "Credits" : "Daily Credits")
+        Text("Credits")
             .font(.system(size: 16))
             .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
     }
-    
+
     private var valueView: some View {
-        Text(creditManager.isPremiumUser ? "Unlimited" : "\(creditManager.dailyQuotaUsed) / \(creditManager.dailyQuotaLimit)")
+        Text(creditManager.isPremiumUser ? "Unlimited" : "\(creditManager.creditsRemaining) credits")
             .font(.system(size: style == .compact ? 13 : 14))
             .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
     }
-    
+
     private var textView: some View {
         HStack(spacing: 4) {
-            // Warning icon when quota is low
+            // Warning icon when credits are low
             if creditManager.shouldShowQuotaWarning {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundColor(.orange)
             }
-            
-            Text(creditManager.isPremiumUser ? "∞" : "Daily Credits: \(creditManager.remainingQuota) / \(creditManager.dailyQuotaLimit)")
+
+            Text(creditManager.isPremiumUser ? "∞" : "\(creditManager.creditsRemaining) credits")
                 .font(.system(size: 13, weight: .medium))
                 .lineLimit(1)
                 .foregroundColor(creditManager.shouldShowQuotaWarning ? .orange : DesignTokens.Text.primary(themeManager.resolvedColorScheme))

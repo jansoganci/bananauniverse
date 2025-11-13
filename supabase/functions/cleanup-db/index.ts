@@ -13,6 +13,7 @@ interface CleanupResult {
   logsDeleted: number;
   quotaLogsDeleted: number;
   quotaRecordsDeleted: number;
+  idempotencyKeysDeleted: number;
   errors: string[];
   executionTime: number;
 }
@@ -70,6 +71,7 @@ Deno.serve(async (req: Request) => {
       logsDeleted: 0,
       quotaLogsDeleted: 0,
       quotaRecordsDeleted: 0,
+      idempotencyKeysDeleted: 0,
       errors: [],
       executionTime: 0
     };
@@ -89,9 +91,10 @@ Deno.serve(async (req: Request) => {
       result.logsDeleted = cleanupResults.logsDeleted;
       result.quotaLogsDeleted = cleanupResults.quotaLogsDeleted;
       result.quotaRecordsDeleted = cleanupResults.quotaRecordsDeleted;
+      result.idempotencyKeysDeleted = cleanupResults.idempotencyKeysDeleted;
       result.errors.push(...cleanupResults.errors);
       
-      console.log(`✅ [CLEANUP-DB] Atomic cleanup completed: ${result.jobsDeleted} jobs, ${result.rateLimitDeleted} rate limits, ${result.logsDeleted} logs, ${result.quotaLogsDeleted} quota logs, ${result.quotaRecordsDeleted} quota records`);
+      console.log(`✅ [CLEANUP-DB] Atomic cleanup completed: ${result.jobsDeleted} jobs, ${result.rateLimitDeleted} rate limits, ${result.logsDeleted} logs, ${result.quotaLogsDeleted} quota logs, ${result.quotaRecordsDeleted} quota records, ${result.idempotencyKeysDeleted} idempotency keys`);
       
     } catch (error) {
       result.errors.push(`Atomic cleanup error: ${error.message}`);
@@ -110,7 +113,7 @@ Deno.serve(async (req: Request) => {
     });
 
     console.log(`✅ [CLEANUP-DB] Database cleanup completed in ${result.executionTime}ms`);
-    console.log(`📊 [CLEANUP-DB] Results: ${result.jobsDeleted} jobs, ${result.rateLimitDeleted} rate limits, ${result.logsDeleted} logs, ${result.quotaLogsDeleted} quota logs, ${result.quotaRecordsDeleted} quota records, ${result.errors.length} errors`);
+    console.log(`📊 [CLEANUP-DB] Results: ${result.jobsDeleted} jobs, ${result.rateLimitDeleted} rate limits, ${result.logsDeleted} logs, ${result.quotaLogsDeleted} quota logs, ${result.quotaRecordsDeleted} quota records, ${result.idempotencyKeysDeleted} idempotency keys, ${result.errors.length} errors`);
 
     return new Response(JSON.stringify(result), { 
       headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -125,6 +128,7 @@ Deno.serve(async (req: Request) => {
       logsDeleted: 0,
       quotaLogsDeleted: 0,
       quotaRecordsDeleted: 0,
+      idempotencyKeysDeleted: 0,
       errors: [`Fatal error: ${error.message}`],
       executionTime: Date.now() - startTime
     };
@@ -140,13 +144,14 @@ Deno.serve(async (req: Request) => {
 // HELPER FUNCTIONS
 // ============================================
 
-async function executeAtomicCleanup(supabase: any): Promise<{jobsDeleted: number, rateLimitDeleted: number, logsDeleted: number, quotaLogsDeleted: number, quotaRecordsDeleted: number, errors: string[]}> {
+async function executeAtomicCleanup(supabase: any): Promise<{jobsDeleted: number, rateLimitDeleted: number, logsDeleted: number, quotaLogsDeleted: number, quotaRecordsDeleted: number, idempotencyKeysDeleted: number, errors: string[]}> {
   const errors: string[] = [];
   let jobsDeleted = 0;
   let rateLimitDeleted = 0;
   let logsDeleted = 0;
   let quotaLogsDeleted = 0;
   let quotaRecordsDeleted = 0;
+  let idempotencyKeysDeleted = 0;
   
   try {
     // 1. Clean up old jobs
@@ -229,12 +234,30 @@ async function executeAtomicCleanup(supabase: any): Promise<{jobsDeleted: number
       console.error('❌ [CLEANUP-DB] Quota records cleanup error:', error);
     }
     
+    // 6. Clean up old idempotency keys
+    console.log('🗑️ [CLEANUP-DB] Cleaning up old idempotency keys...');
+    try {
+      const { data: idempotencyResult, error: idempotencyError } = await supabase.rpc('cleanup_old_idempotency_keys', {
+        p_retention_days: 90
+      });
+      if (idempotencyError) {
+        errors.push(`Idempotency keys cleanup error: ${idempotencyError.message}`);
+        console.error('❌ [CLEANUP-DB] Idempotency keys cleanup failed:', idempotencyError);
+      } else {
+        idempotencyKeysDeleted = idempotencyResult?.[0]?.deleted_count || 0;
+        console.log(`✅ [CLEANUP-DB] Deleted ${idempotencyKeysDeleted} idempotency key records`);
+      }
+    } catch (error) {
+      errors.push(`Idempotency keys cleanup error: ${error.message}`);
+      console.error('❌ [CLEANUP-DB] Idempotency keys cleanup error:', error);
+    }
+    
   } catch (error) {
     errors.push(`Atomic cleanup execution error: ${error.message}`);
     console.error('❌ [CLEANUP-DB] Atomic cleanup execution failed:', error);
   }
   
-  return { jobsDeleted, rateLimitDeleted, logsDeleted, quotaLogsDeleted, quotaRecordsDeleted, errors };
+  return { jobsDeleted, rateLimitDeleted, logsDeleted, quotaLogsDeleted, quotaRecordsDeleted, idempotencyKeysDeleted, errors };
 }
 
 async function sendTelegramNotification(result: CleanupResult): Promise<void> {
@@ -253,6 +276,7 @@ async function sendTelegramNotification(result: CleanupResult): Promise<void> {
 • ${result.logsDeleted} log records
 • ${result.quotaLogsDeleted} quota consumption logs
 • ${result.quotaRecordsDeleted} daily quota records
+• ${result.idempotencyKeysDeleted} idempotency keys
 • ${result.errors.length} errors
 • ${(result.executionTime / 1000).toFixed(1)}s execution time`;
 

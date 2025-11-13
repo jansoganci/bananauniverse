@@ -1,0 +1,164 @@
+# =====================================================
+# Automated Database Cleanup Workflow
+# =====================================================
+# Runs cleanup-db Edge Function on the 1st of every month
+# Includes retry logic (one retry on failure)
+# Can be triggered manually via workflow_dispatch
+
+name: Database Cleanup (Monthly)
+
+on:
+  # Scheduled: 1st of every month at 03:00 UTC
+  schedule:
+    - cron: '0 3 1 * *'
+  
+  # Manual trigger (optional)
+  workflow_dispatch:
+    inputs:
+      force_retry:
+        description: 'Force retry even if first attempt succeeds'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+env:
+  SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+  SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+  CLEANUP_API_KEY: ${{ secrets.CLEANUP_API_KEY }}
+
+jobs:
+  cleanup-db:
+    name: Cleanup Database
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Cleanup-DB (Attempt 1)
+        id: attempt1
+        continue-on-error: true
+        run: |
+          echo "🧹 [ATTEMPT 1] Starting database cleanup..."
+          echo "Timestamp: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+          
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$SUPABASE_URL/functions/v1/cleanup-db" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "x-api-key: $CLEANUP_API_KEY" \
+            -H "Content-Type: application/json" \
+            --max-time 300 \
+            --retry 0)
+          
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+          
+          echo "HTTP Status Code: $HTTP_CODE"
+          echo "Response Body:"
+          echo "$BODY" | jq . 2>/dev/null || echo "$BODY"
+          
+          if [ "$HTTP_CODE" == "200" ]; then
+            echo "✅ [ATTEMPT 1] Cleanup completed successfully"
+            echo "attempt1_success=true" >> $GITHUB_OUTPUT
+            echo "attempt1_result=$BODY" >> $GITHUB_OUTPUT
+          else
+            echo "❌ [ATTEMPT 1] Cleanup failed with status $HTTP_CODE"
+            echo "attempt1_success=false" >> $GITHUB_OUTPUT
+            echo "attempt1_result=$BODY" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      - name: Run Cleanup-DB (Attempt 2 - Retry)
+        id: attempt2
+        if: steps.attempt1.outcome == 'failure' || github.event.inputs.force_retry == 'true'
+        continue-on-error: true
+        run: |
+          echo ""
+          echo "🔄 [ATTEMPT 2] Retrying database cleanup..."
+          echo "Timestamp: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+          echo "Reason: ${{ steps.attempt1.outcome == 'failure' && 'First attempt failed' || 'Manual retry requested' }}"
+          
+          # Wait 5 seconds before retry
+          sleep 5
+          
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$SUPABASE_URL/functions/v1/cleanup-db" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "x-api-key: $CLEANUP_API_KEY" \
+            -H "Content-Type: application/json" \
+            --max-time 300 \
+            --retry 0)
+          
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+          
+          echo "HTTP Status Code: $HTTP_CODE"
+          echo "Response Body:"
+          echo "$BODY" | jq . 2>/dev/null || echo "$BODY"
+          
+          if [ "$HTTP_CODE" == "200" ]; then
+            echo "✅ [ATTEMPT 2] Cleanup completed successfully (retry succeeded)"
+            echo "attempt2_success=true" >> $GITHUB_OUTPUT
+            echo "attempt2_result=$BODY" >> $GITHUB_OUTPUT
+          else
+            echo "❌ [ATTEMPT 2] Cleanup failed with status $HTTP_CODE (retry failed)"
+            echo "attempt2_success=false" >> $GITHUB_OUTPUT
+            echo "attempt2_result=$BODY" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      - name: Summary
+        if: always()
+        run: |
+          echo ""
+          echo "=========================================="
+          echo "📊 CLEANUP SUMMARY"
+          echo "=========================================="
+          echo "Attempt 1: ${{ steps.attempt1.outcome }}"
+          if [ "${{ steps.attempt1.outcome }}" == "success" ]; then
+            echo "  ✅ First attempt succeeded"
+            echo "  Result: ${{ steps.attempt1.outputs.attempt1_result }}"
+          else
+            echo "  ❌ First attempt failed"
+            echo "  Error: ${{ steps.attempt1.outputs.attempt1_result }}"
+          fi
+          
+          if [ "${{ steps.attempt2.outcome }}" != "" ]; then
+            echo ""
+            echo "Attempt 2: ${{ steps.attempt2.outcome }}"
+            if [ "${{ steps.attempt2.outcome }}" == "success" ]; then
+              echo "  ✅ Retry succeeded"
+              echo "  Result: ${{ steps.attempt2.outputs.attempt2_result }}"
+            else
+              echo "  ❌ Retry failed"
+              echo "  Error: ${{ steps.attempt2.outputs.attempt2_result }}"
+            fi
+          else
+            echo ""
+            echo "Attempt 2: Skipped (first attempt succeeded)"
+          fi
+          
+          echo "=========================================="
+          
+          # Determine final status
+          if [ "${{ steps.attempt1.outcome }}" == "success" ]; then
+            echo "✅ FINAL STATUS: SUCCESS (first attempt)"
+            exit 0
+          elif [ "${{ steps.attempt2.outcome }}" == "success" ]; then
+            echo "✅ FINAL STATUS: SUCCESS (retry succeeded)"
+            exit 0
+          else
+            echo "❌ FINAL STATUS: FAILED (both attempts failed)"
+            exit 1
+          fi
+
+      - name: Notify on Failure
+        if: failure()
+        run: |
+          echo "🚨 Cleanup job failed after both attempts"
+          echo "Please check the logs above for details"
+          # You can add additional notification logic here
+          # e.g., send to Slack, Discord, email, etc.
+

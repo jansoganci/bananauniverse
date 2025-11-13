@@ -29,7 +29,7 @@ RETURNS JSONB AS $$
 DECLARE
     v_today DATE;
     v_used INTEGER;
-    v_limit INTEGER := 5;  -- Free tier limit (hard-coded)
+    v_limit INTEGER := 3;  -- Free tier limit (hard-coded)
     v_is_premium BOOLEAN := false;
     v_existing_success BOOLEAN;
     v_existing_refunded BOOLEAN;
@@ -135,6 +135,7 @@ BEGIN
 
         RETURN jsonb_build_object(
             'success', true,
+            'idempotent', false,
             'is_premium', true,
             'quota_used', 0,
             'quota_limit', 999999,
@@ -214,6 +215,7 @@ BEGIN
 
     RETURN jsonb_build_object(
         'success', true,
+        'idempotent', false,
         'is_premium', false,
         'quota_used', v_used,
         'quota_limit', v_limit,
@@ -265,7 +267,7 @@ BEGIN
             'success', false,
             'error', 'Either user_id or device_id required',
             'quota_used', 0,
-            'quota_limit', 5,
+            'quota_limit', 3,
             'quota_remaining', 0
         );
     END IF;
@@ -308,18 +310,18 @@ BEGIN
             'success', true,
             'is_premium', false,
             'quota_used', 0,
-            'quota_limit', 5,
-            'quota_remaining', 5
+            'quota_limit', 3,
+            'quota_remaining', 3
         );
     END IF;
 
-    -- ✅ FIX: Use COALESCE consistently (not hardcoded 5)
+    -- ✅ FIX: Use COALESCE consistently (not hardcoded 3)
     RETURN jsonb_build_object(
         'success', true,
         'is_premium', false,
         'quota_used', COALESCE(v_used, 0),
-        'quota_limit', COALESCE(v_limit, 5),
-        'quota_remaining', GREATEST(COALESCE(v_limit, 5) - COALESCE(v_used, 0), 0)
+        'quota_limit', COALESCE(v_limit, 3),
+        'quota_remaining', GREATEST(COALESCE(v_limit, 3) - COALESCE(v_used, 0), 0)
     );
 
 EXCEPTION
@@ -328,7 +330,7 @@ EXCEPTION
             'success', false,
             'error', 'Database error: ' || SQLERRM,
             'quota_used', 0,
-            'quota_limit', 5,
+            'quota_limit', 3,
             'quota_remaining', 0
         );
 END;
