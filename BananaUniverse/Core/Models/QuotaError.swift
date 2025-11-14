@@ -29,7 +29,7 @@ enum QuotaError: LocalizedError {
             return "Server error \(code): \(message)"
 
         case .rateLimited:
-            return "Daily limit reached. Please try again tomorrow or upgrade to Premium."
+            return "Daily limit reached. Please try again tomorrow or purchase more credits."
 
         case .invalidResponse(let details):
             return "Invalid response from server: \(details)"
@@ -52,7 +52,7 @@ enum QuotaError: LocalizedError {
             return "Server error. Please try again later."
 
         case .rateLimited:
-            return "You've reached your daily limit. Upgrade to Premium for unlimited access!"
+            return "You've reached your daily limit. Purchase more credits to continue!"
 
         case .unauthorized:
             return "Please sign in to continue."

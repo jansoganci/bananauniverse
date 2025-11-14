@@ -41,10 +41,9 @@ enum AppError: LocalizedError {
     case accountSuspended
     case signInRequired
     
-    // MARK: - Subscription & Payments
+    // MARK: - Payments
     case purchaseFailed
     case restoreFailed
-    case subscriptionExpired
     case productNotFound
     
     // MARK: - General
@@ -82,7 +81,7 @@ enum AppError: LocalizedError {
         case .insufficientCredits:
             return "You're out of credits! Tap here to get more and continue processing images."
         case .dailyQuotaExceeded:
-            return "You've reached your daily limit. Come back tomorrow or upgrade for unlimited access."
+            return "You've reached your daily limit. Come back tomorrow or purchase more credits."
         case .quotaResetRequired:
             return "Your daily quota has been reset. You can now process more images."
             
@@ -106,13 +105,11 @@ enum AppError: LocalizedError {
         case .signInRequired:
             return "Please sign in to continue."
             
-        // Subscription & Payments
+        // Payments
         case .purchaseFailed:
             return "Purchase failed. Please check your payment method and try again."
         case .restoreFailed:
             return "Failed to restore purchases. Please try again or contact support."
-        case .subscriptionExpired:
-            return "Your subscription has expired. Please renew to continue."
         case .productNotFound:
             return "Product not available. Please try again later."
             
@@ -138,7 +135,7 @@ enum AppError: LocalizedError {
         case .insufficientCredits:
             return "Purchase more credits or wait for daily reset"
         case .dailyQuotaExceeded:
-            return "Upgrade to Pro for unlimited access"
+            return "Purchase more credits to continue"
         case .photoLibraryAccessDenied:
             return "Go to Settings > Privacy > Photos and enable access"
         case .authenticationFailed:

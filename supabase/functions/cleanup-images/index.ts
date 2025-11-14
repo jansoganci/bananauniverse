@@ -105,7 +105,7 @@ Deno.serve(async (req: Request) => {
     // ============================================
     for (const folder of folders) {
       console.log(`📁 [CLEANUP] Processing folder: ${folder}/`);
-
+    
       const folderResult = await processFolder(
         supabase,
         bucketName,
@@ -127,7 +127,7 @@ Deno.serve(async (req: Request) => {
     // ============================================
     result.execution_time_ms = Date.now() - startTime;
     await logCleanupResults(supabase, result);
-
+    
     console.log(`✅ [CLEANUP] Cleanup completed in ${result.execution_time_ms}ms`);
     console.log(`📊 [CLEANUP] Deleted: ${result.files_deleted}, Skipped: ${result.files_skipped}, Errors: ${result.errors.length}`);
 
@@ -282,8 +282,8 @@ async function processFolder(
               deletedCount++;
               storageFreedMB += sizeMB;
             }
-          }
-        } else {
+        }
+      } else {
           // File is too new, skip it
           skippedFiles.push({
             path: filePath,
@@ -338,7 +338,7 @@ async function listAllFilesRecursive(
       console.error(`❌ [CLEANUP] Error listing ${currentPath}:`, error);
       return allFiles;
     }
-
+    
     if (!items || items.length === 0) {
       return allFiles;
     }
@@ -381,7 +381,7 @@ async function listAllFilesRecursive(
     if (items.length === 1000) {
       console.warn(`⚠️ [CLEANUP] Found 1000 items in ${currentPath} - may have more files`);
     }
-
+    
     return allFiles;
   } catch (error: any) {
     console.error(`❌ [CLEANUP] Error in listAllFilesRecursive for ${currentPath}:`, error);

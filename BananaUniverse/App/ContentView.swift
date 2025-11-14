@@ -12,7 +12,6 @@ struct ContentView: View {
     @StateObject private var authService = HybridAuthService.shared
     @StateObject private var creditManager = CreditManager.shared
     @StateObject private var themeManager = ThemeManager()
-    // @StateObject private var adaptyService = AdaptyService.shared
     @StateObject private var appState = AppState()
     @StateObject private var chatViewModel = ChatViewModel()
     
@@ -71,17 +70,6 @@ struct ContentView: View {
         .onAppear {
             themeManager.updateResolvedScheme(systemScheme: systemColorScheme)
             updateTabBarAppearance(for: themeManager.resolvedColorScheme)
-            
-            // Initialize AdaptyService after Adapty SDK is activated
-            Task {
-                do {
-                    // Mock initialization - always succeeds
-                    // try await adaptyService.initialize()
-                    print("Mock: AdaptyService initialized")
-                } catch {
-                    print("Mock: AdaptyService initialization skipped")
-                }
-            }
         }
     }
     

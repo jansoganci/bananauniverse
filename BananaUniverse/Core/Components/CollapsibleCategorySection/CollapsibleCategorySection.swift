@@ -76,7 +76,7 @@ struct CollapsibleCategorySection: View {
         }
         
         return tools.filter { tool in
-            String(describing: tool.title).localizedCaseInsensitiveContains(searchQuery)
+            String(describing: tool.name).localizedCaseInsensitiveContains(searchQuery)
         }
     }
 }
@@ -88,7 +88,7 @@ struct CollapsibleCategorySection: View {
         CollapsibleCategorySection(
             categoryId: "main_tools",
             categoryName: "Photo Editor",
-            tools: Array(Tool.mainTools.prefix(6)),
+            tools: Array(Theme.mockThemes.prefix(6)),
             isExpanded: true,
             onToggle: {},
             onToolTap: { _ in },
@@ -99,7 +99,7 @@ struct CollapsibleCategorySection: View {
         CollapsibleCategorySection(
             categoryId: "pro_looks",
             categoryName: "Pro Photos",
-            tools: Array(Tool.proLooksTools.prefix(4)),
+            tools: Array(Theme.mockThemes.prefix(4)),
             isExpanded: false,
             onToggle: {},
             onToolTap: { _ in },
@@ -110,7 +110,7 @@ struct CollapsibleCategorySection: View {
         CollapsibleCategorySection(
             categoryId: "restoration",
             categoryName: "Enhancer",
-            tools: Tool.restorationTools,
+            tools: Theme.mockThemes,
             isExpanded: true,
             onToggle: {},
             onToolTap: { _ in },

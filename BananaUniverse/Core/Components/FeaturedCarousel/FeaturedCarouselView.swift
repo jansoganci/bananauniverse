@@ -154,7 +154,7 @@ struct FeaturedCarouselCard: View {
                 
                 // Content overlay
                 VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
-                    // Featured Badge & Premium Badge
+                    // Featured Badge
                     HStack(spacing: DesignTokens.Spacing.xs) {
                         Text("Featured")
                             .font(DesignTokens.Typography.caption1)
@@ -166,23 +166,6 @@ struct FeaturedCarouselCard: View {
                                 Capsule()
                                     .fill(Color.white.opacity(0.2))
                             )
-                        
-                        if tool.requiresPro {
-                            HStack(spacing: 4) {
-                                Image(systemName: "crown.fill")
-                                    .font(.system(size: 10, weight: .semibold))
-                                Text("PRO")
-                                    .font(DesignTokens.Typography.caption1)
-                                    .fontWeight(.bold)
-                            }
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(
-                                Capsule()
-                                    .fill(DesignTokens.Brand.accent(.light).opacity(0.8))
-                            )
-                        }
                         
                         Spacer()
                     }
@@ -197,7 +180,7 @@ struct FeaturedCarouselCard: View {
                             .foregroundColor(.white)
                         
                         // Title
-                        Text(tool.title)
+                        Text(tool.name)
                             .font(DesignTokens.Typography.title3)
                             .fontWeight(.semibold)
                             .foregroundColor(.white)
@@ -224,7 +207,7 @@ struct FeaturedCarouselCard: View {
 // MARK: - Preview
 #Preview {
     FeaturedCarouselView(
-        tools: Array(Tool.mainTools.prefix(5)),
+        tools: Array(Theme.mockThemes.prefix(5)),
         onToolTap: { _ in }
     )
     .environmentObject(ThemeManager())

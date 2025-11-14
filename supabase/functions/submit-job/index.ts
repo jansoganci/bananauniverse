@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createLogger } from '../_shared/logger.ts';
 
 // ============================================
 // SUBMIT-JOB: ASYNC POLLING ARCHITECTURE
@@ -13,7 +14,6 @@ interface SubmitJobRequest {
   prompt: string;
   device_id?: string;
   user_id?: string;
-  is_premium?: boolean;
   client_request_id?: string;
 }
 
@@ -25,7 +25,7 @@ interface SubmitJobResponse {
   error?: string;
   quota_info?: {
     credits_remaining: number;
-    is_premium: boolean;
+    is_premium: boolean; // Always false, kept for backward compatibility
   };
 }
 
@@ -42,14 +42,31 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    console.log('🚀 [SUBMIT-JOB] Request started');
+    // Initialize logger early (before parsing to get requestId)
+    // We'll update it with context after parsing
+    let logger = createLogger('submit-job');
+    
+    logger.info('Request received', { method: req.method });
 
     // Parse and validate request
-    const parseResult = await parseAndValidateRequest(req, corsHeaders);
+    const parseResult = await parseAndValidateRequest(req, corsHeaders, logger);
     if (parseResult.error) {
+      logger.error('Request parsing failed');
       return parseResult.error;
     }
-    const { image_url, prompt, device_id, requestId, user_id, is_premium } = parseResult.data!;
+    const { image_url, prompt, device_id, requestId, user_id } = parseResult.data!;
+    
+    // Update logger with request context
+    logger = createLogger('submit-job', requestId, {
+      deviceId: device_id,
+      userId: user_id,
+    });
+    
+    logger.step('1. Request parsed', { 
+      hasImage: !!image_url, 
+      hasPrompt: !!prompt,
+      userType: user_id ? 'authenticated' : 'anonymous'
+    });
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -59,35 +76,54 @@ Deno.serve(async (req: Request) => {
     });
 
     // Authenticate user
-    const authResult = await authenticateUser(req, supabase, user_id, device_id, is_premium, corsHeaders);
+    logger.step('2. Authenticating user');
+    const authResult = await authenticateUser(req, supabase, user_id, device_id, corsHeaders, logger);
     if (authResult.error) {
+      logger.error('Authentication failed');
       return authResult.error;
     }
-    const { userIdentifier, userType, isPremium } = authResult.data!;
+    const { userIdentifier, userType } = authResult.data!;
+    
+    logger.step('2. User authenticated', { userType });
 
     // Set device ID session for RLS
-    await setDeviceIdSession(supabase, device_id);
+    logger.step('3. Setting device ID session');
+    await setDeviceIdSession(supabase, device_id, logger);
 
     // Consume credits
-    const creditResult = await consumeCredits(supabase, userType, userIdentifier, requestId, isPremium, corsHeaders);
+    logger.step('4. Consuming credits');
+    const creditResult = await consumeCredits(supabase, userType, userIdentifier, requestId, corsHeaders, logger);
     if (creditResult.error) {
+      logger.error('Credit consumption failed');
       return creditResult.error;
     }
-    const { quotaResult, updatedIsPremium } = creditResult.data!;
-    const finalIsPremium = updatedIsPremium;
+    const { quotaResult } = creditResult.data!;
+    
+    logger.step('4.1. Credits consumed', {
+      creditsRemaining: quotaResult.credits_remaining,
+      idempotent: quotaResult.idempotent || false
+    });
 
     // Submit to fal.ai
-    const falResult = await submitToFalAI(supabase, supabaseUrl, image_url, prompt, userType, userIdentifier, requestId, corsHeaders);
+    logger.step('5. Submitting to fal.ai');
+    const falResult = await submitToFalAI(supabase, supabaseUrl, image_url, prompt, userType, userIdentifier, requestId, corsHeaders, logger);
     if (falResult.error) {
+      logger.error('Fal.ai submission failed');
       return falResult.error;
     }
     const { falJobId } = falResult.data!;
+    
+    logger.step('5.1. Submitted to fal.ai', { falJobId });
 
     // Insert job result
-    const insertResult = await insertJobResult(supabase, falJobId, userType, userIdentifier, requestId, corsHeaders);
+    logger.step('6. Inserting job result');
+    const insertResult = await insertJobResult(supabase, falJobId, userType, userIdentifier, requestId, corsHeaders, logger);
     if (insertResult.error) {
+      logger.error('Job result insertion failed');
       return insertResult.error;
     }
+    
+    logger.step('6.1. Job result inserted', { jobId: falJobId });
 
     // Return success response
     const response: SubmitJobResponse = {
@@ -97,11 +133,14 @@ Deno.serve(async (req: Request) => {
       estimated_time: 15,
       quota_info: {
         credits_remaining: quotaResult.credits_remaining || 0,
-        is_premium: finalIsPremium
+        is_premium: false
       }
     };
 
-    console.log('✅ [SUBMIT-JOB] Success:', JSON.stringify(response, null, 2));
+    logger.summary('success', {
+      jobId: falJobId,
+      creditsRemaining: quotaResult.credits_remaining
+    });
 
     return new Response(
       JSON.stringify(response),
@@ -109,52 +148,69 @@ Deno.serve(async (req: Request) => {
     );
 
   } catch (error: any) {
-    console.error('❌ [SUBMIT-JOB] Unexpected error:', error.message);
+    // Try to log error (logger might not be initialized)
+    try {
+      const logger = createLogger('submit-job');
+      logger.error('Fatal error', error);
+      logger.summary('error', { error: error.message });
+    } catch {
+      // Fallback if logger creation fails
+      const fallbackLogger = createLogger('submit-job');
+      fallbackLogger.error('Fatal error (fallback)', error);
+    }
+    
     return new Response(
-      JSON.stringify({ success: false, error: 'Internal server error' }),
+      JSON.stringify({ success: false, error: error.message || 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
 
-// ============================================
+    // ============================================
 // HELPER FUNCTIONS
-// ============================================
+    // ============================================
 
 async function parseAndValidateRequest(
   req: Request,
-  corsHeaders: Record<string, string>
-): Promise<{ error?: Response; data?: { image_url: string; prompt: string; device_id?: string; requestId: string; user_id?: string; is_premium?: boolean } }> {
-  const requestData: SubmitJobRequest = await req.json();
-  let { image_url, prompt, device_id, user_id, is_premium, client_request_id } = requestData;
+  corsHeaders: Record<string, string>,
+  logger?: any
+): Promise<{ error?: Response; data?: { image_url: string; prompt: string; device_id?: string; requestId: string; user_id?: string } }> {
+    const requestData: SubmitJobRequest = await req.json();
+    let { image_url, prompt, device_id, user_id, client_request_id } = requestData;
 
-  // Generate request ID for idempotency
-  const requestId = client_request_id || crypto.randomUUID();
-  console.log('🔑 [SUBMIT-JOB] Request ID:', requestId);
+    // Generate request ID for idempotency
+    const requestId = client_request_id || crypto.randomUUID();
+    if (logger) logger.debug('Request ID generated', { requestId, fromClient: !!client_request_id });
 
-  // Try to get device_id from header if not in body
-  if (!device_id) {
-    const deviceIdHeader = req.headers.get('device-id');
-    if (deviceIdHeader) {
-      device_id = deviceIdHeader;
-      console.log('🔧 [SUBMIT-JOB] Device ID from header:', device_id);
+    // Try to get device_id from header if not in body
+    if (!device_id) {
+      const deviceIdHeader = req.headers.get('device-id');
+      if (deviceIdHeader) {
+        device_id = deviceIdHeader;
+        if (logger) logger.debug('Device ID from header', { deviceId: device_id });
+      }
     }
-  }
 
-  // Validate required fields
-  if (!image_url || !prompt) {
-    return {
-      error: new Response(
-        JSON.stringify({ success: false, error: 'Missing image_url or prompt' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    };
-  }
+    // Validate required fields
+    if (!image_url || !prompt) {
+      if (logger) logger.warn('Missing required fields', { hasImageUrl: !!image_url, hasPrompt: !!prompt });
+      return {
+        error: new Response(
+          JSON.stringify({ success: false, error: 'Missing image_url or prompt' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      };
+    }
 
-  console.log('🔍 [SUBMIT-JOB] Request:', { image_url, prompt: prompt.substring(0, 50) + '...' });
+    if (logger) logger.debug('Request validated', { 
+      imageUrl: image_url.substring(0, 50) + '...',
+      promptPreview: prompt.substring(0, 50) + '...',
+      hasDeviceId: !!device_id,
+      hasUserId: !!user_id
+    });
 
   return {
-    data: { image_url, prompt, device_id, requestId, user_id, is_premium }
+    data: { image_url, prompt, device_id, requestId, user_id }
   };
 }
 
@@ -163,41 +219,58 @@ async function authenticateUser(
   supabase: any,
   user_id_from_body: string | undefined,
   device_id: string | undefined,
-  is_premium_from_body: boolean | undefined,
-  corsHeaders: Record<string, string>
-): Promise<{ error?: Response; data?: { userIdentifier: string; userType: 'authenticated' | 'anonymous'; isPremium: boolean } }> {
-  let userIdentifier: string;
-  let userType: 'authenticated' | 'anonymous';
-  let isPremium: boolean;
+  corsHeaders: Record<string, string>,
+  logger?: any
+): Promise<{ error?: Response; data?: { userIdentifier: string; userType: 'authenticated' | 'anonymous' } }> {
+    let userIdentifier: string;
+    let userType: 'authenticated' | 'anonymous';
 
-  const authHeader = req.headers.get('authorization');
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    try {
-      const token = authHeader.split(' ')[1];
-      console.log('🔑 [SUBMIT-JOB] Validating JWT token...');
+    const authHeader = req.headers.get('authorization');
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.split(' ')[1];
+        if (logger) logger.debug('Validating JWT token');
 
-      const { data: { user }, error } = await supabase.auth.getUser(token);
+        const { data: { user }, error } = await supabase.auth.getUser(token);
 
-      if (error || !user) {
-        throw new Error(`JWT validation failed: ${error?.message || 'No user'}`);
-      }
+        if (error || !user) {
+          throw new Error(`JWT validation failed: ${error?.message || 'No user'}`);
+        }
 
       userIdentifier = user_id_from_body || user.id;
-      userType = 'authenticated';
-      isPremium = is_premium_from_body || false;
+        userType = 'authenticated';
 
-      console.log('✅ [SUBMIT-JOB] Authenticated user:', user.id, 'Premium:', isPremium);
-    } catch (error: any) {
-      console.log('⚠️ [SUBMIT-JOB] JWT auth failed, checking device_id fallback...');
+        if (logger) logger.debug('Authenticated user', { userId: user.id });
+      } catch (error: any) {
+        if (logger) logger.info('JWT auth failed, using device_id fallback', { error: error.message });
+
+        if (!device_id) {
+          if (logger) logger.error('Authentication failed and no device_id provided');
+          return {
+            error: new Response(
+              JSON.stringify({
+                success: false,
+                error: 'Authentication failed and no device_id provided',
+                details: error.message || 'Invalid or expired token'
+              }),
+              { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+          };
+        }
+
+        userIdentifier = device_id;
+        userType = 'anonymous';
+
+        if (logger) logger.debug('Anonymous user (JWT fallback)', { deviceId: device_id });
+      }
+    } else {
+      if (logger) logger.debug('No auth header, checking device_id');
 
       if (!device_id) {
+        if (logger) logger.error('Authentication or device_id required');
         return {
           error: new Response(
-            JSON.stringify({
-              success: false,
-              error: 'Authentication failed and no device_id provided',
-              details: error.message || 'Invalid or expired token'
-            }),
+            JSON.stringify({ success: false, error: 'Authentication or device_id required' }),
             { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           )
         };
@@ -205,46 +278,27 @@ async function authenticateUser(
 
       userIdentifier = device_id;
       userType = 'anonymous';
-      isPremium = is_premium_from_body || false;
 
-      console.log('🔓 [SUBMIT-JOB] Anonymous user:', device_id, 'Premium:', isPremium);
+      if (logger) logger.debug('Anonymous user (no auth header)', { deviceId: device_id });
     }
-  } else {
-    console.log('🔓 [SUBMIT-JOB] No auth header, checking device_id...');
-
-    if (!device_id) {
-      return {
-        error: new Response(
-          JSON.stringify({ success: false, error: 'Authentication or device_id required' }),
-          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-      };
-    }
-
-    userIdentifier = device_id;
-    userType = 'anonymous';
-    isPremium = is_premium_from_body || false;
-
-    console.log('🔓 [SUBMIT-JOB] Anonymous user:', device_id, 'Premium:', isPremium);
-  }
 
   return {
-    data: { userIdentifier, userType, isPremium }
+    data: { userIdentifier, userType }
   };
 }
 
-async function setDeviceIdSession(supabase: any, device_id?: string): Promise<void> {
-  if (device_id) {
-    console.log('🔧 [RLS] Setting device_id session variable:', device_id);
-    const { error: sessionError } = await supabase.rpc('set_device_id_session', {
-      p_device_id: device_id
-    });
+async function setDeviceIdSession(supabase: any, device_id?: string, logger?: any): Promise<void> {
+    if (device_id) {
+      if (logger) logger.debug('Setting device_id session variable', { deviceId: device_id });
+      const { error: sessionError } = await supabase.rpc('set_device_id_session', {
+        p_device_id: device_id
+      });
 
-    if (sessionError) {
-      console.error('[SUBMIT-JOB] Failed to set device_id session:', sessionError);
-    } else {
-      console.log('✅ [RLS] Device ID session variable set');
-    }
+      if (sessionError) {
+        if (logger) logger.warn('Failed to set device_id session', { error: sessionError.message });
+      } else {
+        if (logger) logger.debug('Device ID session variable set');
+      }
   }
 }
 
@@ -253,45 +307,35 @@ async function consumeCredits(
   userType: 'authenticated' | 'anonymous',
   userIdentifier: string,
   requestId: string,
-  isPremium: boolean,
-  corsHeaders: Record<string, string>
-): Promise<{ error?: Response; data?: { quotaResult: any; updatedIsPremium: boolean } }> {
-  console.log('🆕 [CREDITS] Consuming credits with persistent balance system...');
+  corsHeaders: Record<string, string>,
+  logger?: any
+): Promise<{ error?: Response; data?: { quotaResult: any } }> {
+    if (logger) logger.debug('Calling consume_credits RPC', { userType });
 
-  try {
-    const { data, error } = await supabase.rpc('consume_credits', {
-      p_user_id: userType === 'authenticated' ? userIdentifier : null,
-      p_device_id: userType === 'anonymous' ? userIdentifier : null,
-      p_amount: 1,
-      p_idempotency_key: requestId
-    });
+    try {
+      const { data, error } = await supabase.rpc('consume_credits', {
+        p_user_id: userType === 'authenticated' ? userIdentifier : null,
+        p_device_id: userType === 'anonymous' ? userIdentifier : null,
+        p_amount: 1,
+        p_idempotency_key: requestId
+      });
 
-    if (error) {
-      console.error('❌ [CREDITS] consume_credits failed:', error);
+      if (error) {
+        if (logger) logger.error('consume_credits RPC failed', { error: error.message });
       return {
         error: new Response(
           JSON.stringify({ success: false, error: 'Credit validation failed' }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       };
-    }
+      }
 
     const quotaResult = data;
-    console.log('✅ [CREDITS] Result:', JSON.stringify(quotaResult));
+      if (logger) logger.debug('consume_credits RPC result', quotaResult);
 
-    // Extract premium status from server
-    let updatedIsPremium = isPremium;
-    if (quotaResult?.is_premium !== undefined) {
-      updatedIsPremium = quotaResult.is_premium;
-      console.log('🔍 [QUOTA] Server premium status:', updatedIsPremium);
-      if (updatedIsPremium) {
-        console.log('💎 [QUOTA] Premium user — bypassing quota');
-      }
-    }
-
-    // Check for idempotent request
-    if (quotaResult?.idempotent === true) {
-      console.log('✅ [IDEMPOTENCY] Duplicate request detected');
+      // Check for idempotent request
+      if (quotaResult?.idempotent === true) {
+        if (logger) logger.info('Idempotent request detected', { previousJobId: quotaResult.previous_job_id });
 
       return {
         error: new Response(
@@ -309,30 +353,33 @@ async function consumeCredits(
 
     // Check credit result
     if (!quotaResult.success) {
-      console.log(`❌ [CREDITS] Credit check failed: ${quotaResult.error}`);
+      if (logger) logger.warn('Credit check failed', { 
+        error: quotaResult.error, 
+        creditsRemaining: quotaResult.credits_remaining 
+      });
 
       return {
         error: new Response(
-          JSON.stringify({
-            success: false,
-            error: quotaResult.error || 'Insufficient credits. Purchase more credits to continue.',
-            quota_info: {
-              credits_remaining: quotaResult.credits_remaining || 0,
-              is_premium: updatedIsPremium
-            }
-          }),
-          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({
+          success: false,
+          error: quotaResult.error || 'Insufficient credits. Purchase more credits to continue.',
+          quota_info: {
+            credits_remaining: quotaResult.credits_remaining || 0,
+            is_premium: false
+          }
+        }),
+        { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       };
     }
 
-    console.log(`✅ [CREDITS] Credit consumed: ${quotaResult.credits_remaining} remaining`);
+    if (logger) logger.info('Credit consumed successfully', { creditsRemaining: quotaResult.credits_remaining });
 
     return {
-      data: { quotaResult, updatedIsPremium }
+      data: { quotaResult }
     };
   } catch (error: any) {
-    console.error('❌ [CREDITS] Exception:', error.message);
+    if (logger) logger.error('Credit consumption exception', error);
     return {
       error: new Response(
         JSON.stringify({ success: false, error: 'Credit system error' }),
@@ -350,57 +397,70 @@ async function submitToFalAI(
   userType: 'authenticated' | 'anonymous',
   userIdentifier: string,
   requestId: string,
-  corsHeaders: Record<string, string>
+  corsHeaders: Record<string, string>,
+  logger?: any
 ): Promise<{ error?: Response; data?: { falJobId: string } }> {
-  console.log('🤖 [FAL.AI] Submitting to async queue...');
+    if (logger) logger.debug('Submitting to fal.ai async queue');
 
-  const falAIKey = Deno.env.get('FAL_AI_API_KEY');
-  if (!falAIKey) {
-    const refundResult = await refundCredit(supabase, userType, userIdentifier, requestId);
-    if (!refundResult.success) {
-      console.warn('⚠️ [SUBMIT-JOB] Credit refund failed (non-critical):', refundResult.error);
+    const falAIKey = Deno.env.get('FAL_AI_API_KEY');
+    if (!falAIKey) {
+      if (logger) logger.error('FAL_AI_API_KEY not configured');
+      const refundResult = await refundCredit(supabase, userType, userIdentifier, requestId, logger);
+      if (!refundResult.success) {
+        if (logger) logger.warn('Credit refund failed (non-critical)', { error: refundResult.error });
+      }
+      return {
+        error: new Response(
+          JSON.stringify({ success: false, error: 'FAL_AI_API_KEY not configured' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      };
     }
-    return {
-      error: new Response(
-        JSON.stringify({ success: false, error: 'FAL_AI_API_KEY not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+
+    // Fal.ai does NOT preserve query parameters when calling webhooks
+    // So we don't include token in URL - security is handled via:
+    // 1. JWT verification disabled for webhook-handler function
+    // 2. Job validation (request_id must exist in database)
+    // 3. Rate limiting per IP
+    // 4. Optional: Fal.ai signature verification (can be added later)
+    const webhookUrl = `${supabaseUrl}/functions/v1/webhook-handler`;
+
+    const falAIRequest = {
+      prompt: prompt,
+      image_urls: [image_url],
+      num_images: 1,
+      output_format: 'jpeg',
     };
-  }
 
-  const webhookToken = Deno.env.get('FAL_WEBHOOK_TOKEN') || '';
-  const webhookUrl = webhookToken
-    ? `${supabaseUrl}/functions/v1/webhook-handler?token=${webhookToken}`
-    : `${supabaseUrl}/functions/v1/webhook-handler`;
+    // Build URL with fal_webhook query parameter (required by fal.ai)
+    const falApiUrl = `https://queue.fal.run/fal-ai/nano-banana/edit?fal_webhook=${encodeURIComponent(webhookUrl)}`;
 
-  const falAIRequest = {
-    prompt: prompt,
-    image_urls: [image_url],
-    num_images: 1,
-    output_format: 'jpeg',
-    webhook_url: webhookUrl
-  };
-
-  console.log('📤 [FAL.AI] Request:', JSON.stringify(falAIRequest, null, 2));
-  console.log('🔗 [WEBHOOK] URL:', webhookUrl.replace(webhookToken, '***'));
-
-  try {
-    const falResponse = await fetch('https://queue.fal.run/fal-ai/nano-banana/edit', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Key ${falAIKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(falAIRequest),
+    if (logger) logger.debug('Fal.ai request prepared', { 
+      hasWebhook: !!webhookUrl,
+      webhookUrl: webhookUrl,
+      falApiUrl: falApiUrl
     });
 
-    if (!falResponse.ok) {
-      const errorText = await falResponse.text();
-      console.error('❌ [FAL.AI] Queue submission failed:', falResponse.status, errorText);
+    try {
+      const falResponse = await fetch(falApiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Key ${falAIKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(falAIRequest),
+      });
 
-      const refundResult = await refundCredit(supabase, userType, userIdentifier, requestId);
+      if (!falResponse.ok) {
+        const errorText = await falResponse.text();
+        if (logger) logger.error('Fal.ai queue submission failed', { 
+          status: falResponse.status, 
+          error: errorText.substring(0, 200) 
+        });
+
+      const refundResult = await refundCredit(supabase, userType, userIdentifier, requestId, logger);
       if (!refundResult.success) {
-        console.warn('⚠️ [SUBMIT-JOB] Credit refund failed (non-critical):', refundResult.error);
+        if (logger) logger.warn('Credit refund failed (non-critical)', { error: refundResult.error });
       }
 
       return {
@@ -409,28 +469,28 @@ async function submitToFalAI(
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       };
-    }
+      }
 
-    const falResult = await falResponse.json();
-    console.log('✅ [FAL.AI] Queue submission result:', JSON.stringify(falResult, null, 2));
+      const falResult = await falResponse.json();
+      if (logger) logger.debug('Fal.ai queue submission successful', { requestId: falResult.request_id });
 
     const falJobId = falResult.request_id;
 
-    if (!falJobId) {
-      throw new Error('No request_id returned from fal.ai queue');
-    }
+      if (!falJobId) {
+        throw new Error('No request_id returned from fal.ai queue');
+      }
 
-    console.log('🎫 [FAL.AI] Job ID:', falJobId);
+      if (logger) logger.debug('Fal.ai job ID extracted', { falJobId });
 
     return {
       data: { falJobId }
     };
-  } catch (error: any) {
-    console.error('❌ [FAL.AI] Exception:', error.message);
+    } catch (error: any) {
+      if (logger) logger.error('Fal.ai submission exception', error);
 
-    const refundResult = await refundCredit(supabase, userType, userIdentifier, requestId);
+    const refundResult = await refundCredit(supabase, userType, userIdentifier, requestId, logger);
     if (!refundResult.success) {
-      console.warn('⚠️ [SUBMIT-JOB] Credit refund failed (non-critical):', refundResult.error);
+      if (logger) logger.warn('Credit refund failed (non-critical)', { error: refundResult.error });
     }
 
     return {
@@ -439,7 +499,7 @@ async function submitToFalAI(
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     };
-  }
+    }
 }
 
 async function insertJobResult(
@@ -448,23 +508,24 @@ async function insertJobResult(
   userType: 'authenticated' | 'anonymous',
   userIdentifier: string,
   requestId: string,
-  corsHeaders: Record<string, string>
+  corsHeaders: Record<string, string>,
+  logger?: any
 ): Promise<{ error?: Response }> {
-  const { error: insertError } = await supabase
-    .from('job_results')
-    .insert({
-      fal_job_id: falJobId,
-      user_id: userType === 'authenticated' ? userIdentifier : null,
-      device_id: userType === 'anonymous' ? userIdentifier : null,
-      status: 'pending'
-    });
+    const { error: insertError } = await supabase
+      .from('job_results')
+      .insert({
+        fal_job_id: falJobId,
+        user_id: userType === 'authenticated' ? userIdentifier : null,
+        device_id: userType === 'anonymous' ? userIdentifier : null,
+        status: 'pending'
+      });
 
-  if (insertError) {
-    console.error('❌ [JOB-RESULTS] FATAL: Insert failed:', insertError);
+    if (insertError) {
+      if (logger) logger.error('Job result insert failed', { error: insertError.message });
 
-    const refundResult = await refundCredit(supabase, userType, userIdentifier, requestId);
+    const refundResult = await refundCredit(supabase, userType, userIdentifier, requestId, logger);
     if (!refundResult.success) {
-      console.warn('⚠️ [SUBMIT-JOB] Credit refund failed (non-critical):', refundResult.error);
+      if (logger) logger.warn('Credit refund failed (non-critical)', { error: refundResult.error });
     }
 
     return {
@@ -473,9 +534,9 @@ async function insertJobResult(
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     };
-  }
+    }
 
-  console.log('✅ [JOB-RESULTS] Job result entry created with status: pending');
+    if (logger) logger.debug('Job result entry created', { falJobId, status: 'pending' });
   return {};
 }
 
@@ -487,9 +548,10 @@ async function refundCredit(
   supabase: any,
   userType: 'authenticated' | 'anonymous',
   userIdentifier: string,
-  requestId: string
+  requestId: string,
+  logger?: any
 ): Promise<{success: boolean, error?: string}> {
-  console.log('💰 [REFUND] Attempting credit refund...');
+  if (logger) logger.debug('Attempting credit refund', { userType, requestId });
 
   try {
     const { data, error } = await supabase.rpc('add_credits', {
@@ -500,17 +562,20 @@ async function refundCredit(
     });
 
     if (error) {
-      console.error('❌ [REFUND] Failed:', error);
+      if (logger) logger.error('Credit refund failed', { error: error.message });
       return {
         success: false,
         error: error.message || 'Credit refund failed'
       };
     } else {
-      console.log('✅ [REFUND] Success:', data);
+      if (logger) logger.info('Credit refund successful', { 
+        creditsAdded: data?.credits_added,
+        creditsRemaining: data?.credits_remaining 
+      });
       return { success: true };
     }
   } catch (error: any) {
-    console.error('❌ [REFUND] Exception:', error.message);
+    if (logger) logger.error('Credit refund exception', error);
     return {
       success: false,
       error: error.message || 'Unexpected error during credit refund'

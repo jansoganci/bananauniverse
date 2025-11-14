@@ -62,15 +62,9 @@ struct ChatContainerView: View {
             UnifiedHeaderBar(
                 title: "",  // Empty title since logo serves as identifier
                 leftContent: .appLogo(32),
-                rightContent: creditManager.isPremiumUser 
-                    ? .unlimitedBadge({ 
-                        // PRO users can tap to see subscription details
-                        // Could open manage subscription or show info
-                    })
-                    : .quotaBadge(creditManager.remainingQuota, creditManager.dailyQuotaLimit, { 
-                        viewModel.showingPaywall = true
-                        // TODO: insert Adapty Paywall ID here - placement: chat_quota_exceeded
-                    })
+                rightContent: .quotaBadge(creditManager.creditsRemaining, { 
+                    viewModel.showingPaywall = true
+                })
             )
             
             // Messages Area
@@ -133,15 +127,15 @@ struct ChatContainerView: View {
     
     private var canSendMessage: Bool {
         guard !viewModel.currentPrompt.isEmpty else { return false }
-        return viewModel.selectedImage != nil && viewModel.remainingQuota > 0 && !viewModel.isProcessing
+        return viewModel.selectedImage != nil && creditManager.canProcessImage() && !viewModel.isProcessing
     }
     
     // MARK: - Actions
     
     private func handleUploadTap() {
-        if viewModel.remainingQuota <= 0 && !HybridAuthService.shared.isAuthenticated {
+        // Check credits for ALL users (anonymous AND authenticated)
+        if !creditManager.canProcessImage() {
             viewModel.showingPaywall = true
-            // TODO: insert Adapty Paywall ID here - placement: chat_quota_exceeded
         } else {
             viewModel.showingImagePicker = true
         }
@@ -402,7 +396,7 @@ struct MessageBubbleView: View {
                         .background(
                             Group {
                                 if isFromUser {
-                                    // User bubble with premium gradient
+                                    // User bubble with gradient
                                     LinearGradient(
                                         gradient: Gradient(colors: [
                                             DesignTokens.Gradients.premiumStart(themeManager.resolvedColorScheme),

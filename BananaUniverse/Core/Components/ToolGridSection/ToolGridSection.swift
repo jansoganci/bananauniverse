@@ -99,7 +99,7 @@ struct ToolGridSection: View {
     VStack(spacing: DesignTokens.Spacing.lg) {
         // iPhone SE (375px) - Main Tools: 2 columns, Others: 2 columns
         ToolGridSection(
-            tools: Array(Tool.mainTools.prefix(6)),
+            tools: Array(Theme.mockThemes.prefix(6)),
             onToolTap: { _ in },
             category: "main_tools"
         )
@@ -109,7 +109,7 @@ struct ToolGridSection: View {
         
         // iPhone 14 (393px) - Main Tools: 2 columns, Others: 3 columns
         ToolGridSection(
-            tools: Array(Tool.mainTools.prefix(6)),
+            tools: Array(Theme.mockThemes.prefix(6)),
             onToolTap: { _ in },
             category: "main_tools"
         )
@@ -119,7 +119,7 @@ struct ToolGridSection: View {
         
         // iPhone 14 Plus (428px) - Main Tools: 2 columns, Others: 4 columns
         ToolGridSection(
-            tools: Array(Tool.mainTools.prefix(8)),
+            tools: Array(Theme.mockThemes.prefix(8)),
             onToolTap: { _ in },
             category: "main_tools"
         )
@@ -129,7 +129,7 @@ struct ToolGridSection: View {
         
         // iPad (768px) - Main Tools: 2 columns, Others: 5+ columns
         ToolGridSection(
-            tools: Array(Tool.mainTools.prefix(10)),
+            tools: Array(Theme.mockThemes.prefix(10)),
             onToolTap: { _ in },
             category: "main_tools"
         )

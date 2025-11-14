@@ -96,9 +96,9 @@ struct CategoryRow: View {
         guard let searchQuery = searchQuery, !searchQuery.isEmpty else {
             return tools
         }
-        
+
         return tools.filter { tool in
-            String(describing: tool.title).localizedCaseInsensitiveContains(searchQuery) ||
+            tool.name.localizedCaseInsensitiveContains(searchQuery) ||
             tool.id.localizedCaseInsensitiveContains(searchQuery) ||
             tool.prompt.localizedCaseInsensitiveContains(searchQuery) ||
             tool.category.localizedCaseInsensitiveContains(searchQuery)
@@ -112,7 +112,7 @@ struct CategoryRow: View {
         // Category row without search
         CategoryRow(
             title: "Photo Editor",
-            tools: Array(Tool.mainTools.prefix(5)),
+            tools: Theme.mockThemes,
             onToolTap: { _ in },
             onSeeAllTap: { print("See All tapped") }
         )
@@ -120,15 +120,15 @@ struct CategoryRow: View {
         // Category row with search filter
         CategoryRow(
             title: "Seasonal",
-            tools: Tool.seasonalTools,
+            tools: Theme.mockThemes,
             onToolTap: { _ in },
-            searchQuery: "winter"
+            searchQuery: "christmas"
         )
-        
+
         // Category row without "See All" button
         CategoryRow(
             title: "Pro Photos",
-            tools: Array(Tool.proLooksTools.prefix(4)),
+            tools: Theme.mockThemes,
             onToolTap: { _ in }
         )
     }
@@ -141,7 +141,7 @@ struct CategoryRow: View {
     VStack(spacing: DesignTokens.Spacing.xl) {
         CategoryRow(
             title: "Enhancer",
-            tools: Tool.restorationTools,
+            tools: Theme.mockThemes,
             onToolTap: { _ in },
             onSeeAllTap: { print("See All tapped") }
         )

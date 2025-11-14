@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createLogger } from '../_shared/logger.ts';
 
 // ============================================
 // LOG ALERT EDGE FUNCTION
@@ -55,9 +56,11 @@ Deno.serve(async (req: Request) => {
   }
 
   const startTime = Date.now();
+  const requestId = `log-alert-${Date.now()}`;
+  const logger = createLogger('log-alert', requestId);
   
   try {
-    console.log('🚨 [LOG-ALERT] Starting automated alerting check...');
+    logger.info('Starting automated alerting check');
     
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -72,52 +75,78 @@ Deno.serve(async (req: Request) => {
     };
 
     // Check database connectivity
-    const dbStatus = await checkDatabaseConnectivity(supabase);
+    logger.step('1. Checking database connectivity');
+    const dbStatus = await checkDatabaseConnectivity(supabase, logger);
     result.details = {
       database_status: dbStatus
     };
     const databaseConnected = dbStatus.connected;
-
+    if (databaseConnected) {
+      logger.step('1. Database connected');
+    } else {
+      logger.warn('Database connectivity failed', { error: dbStatus.error_message });
+    }
+    
     // Check error rates (last 24 hours)
     let totalErrors = 0;
     let cleanupDelay = false;
     
     if (databaseConnected) {
-      const errorInfo = await checkErrorRates(supabase);
+      logger.step('2. Checking error rates');
+      const errorInfo = await checkErrorRates(supabase, logger);
       result.errors_24h = errorInfo.errors_24h;
       result.details!.error_breakdown = errorInfo.error_breakdown;
       totalErrors = errorInfo.errors_24h;
+      logger.step('2. Error rates checked', { totalErrors });
 
       // Check cleanup delay
-      const cleanupInfo = await checkCleanupDelay(supabase);
+      logger.step('3. Checking cleanup delay');
+      const cleanupInfo = await checkCleanupDelay(supabase, logger);
       result.last_cleanup_hours = cleanupInfo.hours_since_cleanup;
       result.details!.cleanup_status = cleanupInfo;
       cleanupDelay = cleanupInfo.cleanup_delay;
+      logger.step('3. Cleanup delay checked', { 
+        hoursSinceCleanup: cleanupInfo.hours_since_cleanup,
+        cleanupDelay 
+      });
     }
 
     // Determine alert status
+    logger.step('4. Determining alert status');
     result.status = determineAlertStatus(databaseConnected, totalErrors, cleanupDelay);
-    console.log(`🚨 [LOG-ALERT] Alert status: ${result.status}`);
+    logger.info('Alert status determined', { status: result.status });
 
     // Send Telegram alert if needed
     if (result.status !== 'healthy') {
+      logger.step('5. Sending Telegram alert');
       try {
-        await sendTelegramAlert(result);
+        await sendTelegramAlert(result, logger);
         result.alert_sent = true;
-        console.log('✅ [LOG-ALERT] Telegram alert sent successfully');
+        logger.step('5. Telegram alert sent');
       } catch (telegramError) {
-        console.warn('⚠️ [LOG-ALERT] Telegram alert failed:', telegramError);
+        logger.warn('Telegram alert failed', { error: telegramError });
         // Don't throw - we don't want Telegram failures to break alerting
       }
     } else {
-      console.log('ℹ️ [LOG-ALERT] System healthy, no alert needed');
+      logger.info('System healthy, no alert needed');
     }
 
     // Log alert results
-    await logAlertResults(supabase, result, startTime, databaseConnected);
+    logger.step('6. Logging alert results');
+    await logAlertResults(supabase, result, startTime, databaseConnected, logger);
+    logger.step('6. Alert results logged');
 
     // Return alert results
     const statusCode = result.status === 'critical' ? 500 : 200;
+    const duration = Date.now() - startTime;
+    
+    logger.summary('success', {
+      status: result.status,
+      errors24h: result.errors_24h,
+      lastCleanupHours: result.last_cleanup_hours,
+      alertSent: result.alert_sent,
+      duration
+    });
     
     return new Response(JSON.stringify(result), { 
       status: statusCode,
@@ -125,7 +154,7 @@ Deno.serve(async (req: Request) => {
     });
 
   } catch (error) {
-    console.error('❌ [LOG-ALERT] Fatal error:', error);
+    logger.error('Fatal error', error);
     
     const errorResult: LogAlertResult = {
       status: 'critical',
@@ -153,9 +182,10 @@ Deno.serve(async (req: Request) => {
 // ============================================
 
 async function authenticateRequest(req: Request, corsHeaders: Record<string, string>): Promise<Response | null> {
+  const logger = createLogger('log-alert');
   const authHeader = req.headers.get('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    console.warn('⚠️ [LOG-ALERT] Missing or invalid authorization header');
+    logger.warn('Missing or invalid authorization header');
     return new Response(JSON.stringify({ error: 'Missing authorization header' }), { 
       status: 401,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -166,21 +196,22 @@ async function authenticateRequest(req: Request, corsHeaders: Record<string, str
   const providedApiKey = req.headers.get('x-api-key');
   
   if (expectedApiKey && (!providedApiKey || providedApiKey !== expectedApiKey)) {
-    console.warn('⚠️ [LOG-ALERT] Invalid or missing API key');
+    logger.warn('Invalid or missing API key');
     return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
       status: 401,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
     });
   }
   
+  logger.debug('Authentication successful');
   return null;
 }
 
-async function checkDatabaseConnectivity(supabase: any): Promise<{
+async function checkDatabaseConnectivity(supabase: any, logger?: any): Promise<{
   connected: boolean;
   error_message?: string;
 }> {
-  console.log('🔍 [LOG-ALERT] Checking database connectivity...');
+  if (logger) logger.debug('Checking database connectivity');
   
   try {
     const { data: dbTest, error: dbError } = await supabase
@@ -192,11 +223,11 @@ async function checkDatabaseConnectivity(supabase: any): Promise<{
       throw new Error(`Database error: ${dbError.message}`);
     }
     
-    console.log('✅ [LOG-ALERT] Database connectivity confirmed');
+    if (logger) logger.debug('Database connectivity confirmed');
     return { connected: true };
     
   } catch (error: any) {
-    console.error('❌ [LOG-ALERT] Database connectivity failed:', error);
+    if (logger) logger.error('Database connectivity failed', error);
     return { 
       connected: false, 
       error_message: error.message 
@@ -204,7 +235,7 @@ async function checkDatabaseConnectivity(supabase: any): Promise<{
   }
 }
 
-async function checkErrorRates(supabase: any): Promise<{
+async function checkErrorRates(supabase: any, logger?: any): Promise<{
   errors_24h: number;
   error_breakdown: {
     cleanup_errors: number;
@@ -213,7 +244,7 @@ async function checkErrorRates(supabase: any): Promise<{
   };
 }> {
   try {
-    console.log('🔍 [LOG-ALERT] Checking error rates...');
+    if (logger) logger.debug('Checking error rates');
     
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     
@@ -248,11 +279,15 @@ async function checkErrorRates(supabase: any): Promise<{
       }
     } catch (apiError) {
       // api_logs table might not exist yet, that's okay
-      console.log('ℹ️ [LOG-ALERT] api_logs table not found, skipping API error check');
+      if (logger) logger.debug('api_logs table not found, skipping API error check');
     }
     
     const totalErrors = cleanupErrors + apiErrors;
-    console.log(`📊 [LOG-ALERT] Found ${totalErrors} errors in last 24h (cleanup: ${cleanupErrors}, api: ${apiErrors})`);
+    if (logger) logger.info('Error rates retrieved', { 
+      totalErrors,
+      cleanupErrors,
+      apiErrors
+    });
     
     return {
       errors_24h: totalErrors,
@@ -264,7 +299,7 @@ async function checkErrorRates(supabase: any): Promise<{
     };
     
   } catch (error) {
-    console.warn('⚠️ [LOG-ALERT] Failed to check error rates:', error);
+    if (logger) logger.warn('Failed to check error rates', error);
     return {
       errors_24h: 0,
       error_breakdown: {
@@ -276,13 +311,13 @@ async function checkErrorRates(supabase: any): Promise<{
   }
 }
 
-async function checkCleanupDelay(supabase: any): Promise<{
+async function checkCleanupDelay(supabase: any, logger?: any): Promise<{
   last_cleanup: string | null;
   hours_since_cleanup: number | null;
   cleanup_delay: boolean;
 }> {
   try {
-    console.log('🔍 [LOG-ALERT] Checking cleanup delay...');
+    if (logger) logger.debug('Checking cleanup delay');
     
     const { data: lastCleanupData, error: cleanupError } = await supabase
       .from('cleanup_logs')
@@ -307,7 +342,11 @@ async function checkCleanupDelay(supabase: any): Promise<{
       
       const cleanupDelay = hoursSinceCleanup > ALERT_THRESHOLDS.maxCleanupDelayHours;
       
-      console.log(`📊 [LOG-ALERT] Last cleanup: ${hoursSinceCleanup}h ago (${lastCleanup})`);
+      if (logger) logger.debug('Last cleanup found', { 
+        hoursSinceCleanup,
+        lastCleanup,
+        cleanupDelay
+      });
       
       return {
         last_cleanup: lastCleanup,
@@ -315,7 +354,7 @@ async function checkCleanupDelay(supabase: any): Promise<{
         cleanup_delay: cleanupDelay
       };
     } else {
-      console.log('⚠️ [LOG-ALERT] No recent cleanup found');
+      if (logger) logger.warn('No recent cleanup found');
       return {
         last_cleanup: null,
         hours_since_cleanup: null,
@@ -324,7 +363,7 @@ async function checkCleanupDelay(supabase: any): Promise<{
     }
     
   } catch (error) {
-    console.warn('⚠️ [LOG-ALERT] Failed to check cleanup delay:', error);
+    if (logger) logger.warn('Failed to check cleanup delay', error);
     return {
       last_cleanup: null,
       hours_since_cleanup: null,
@@ -351,7 +390,8 @@ async function logAlertResults(
   supabase: any,
   result: LogAlertResult,
   startTime: number,
-  databaseConnected: boolean
+  databaseConnected: boolean,
+  logger?: any
 ): Promise<void> {
   try {
     await supabase
@@ -367,17 +407,18 @@ async function logAlertResults(
           database_connected: databaseConnected
         }
       });
+    if (logger) logger.debug('Alert results logged to database');
   } catch (logError) {
-    console.warn('⚠️ [LOG-ALERT] Failed to log alert results:', logError);
+    if (logger) logger.warn('Failed to log alert results', logError);
   }
 }
 
-async function sendTelegramAlert(result: LogAlertResult): Promise<void> {
+async function sendTelegramAlert(result: LogAlertResult, logger?: any): Promise<void> {
   const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
   const chatId = Deno.env.get('TELEGRAM_CHAT_ID');
   
   if (!botToken || !chatId) {
-    console.log('ℹ️ [LOG-ALERT] Telegram credentials not configured, skipping alert');
+    if (logger) logger.debug('Telegram credentials not configured, skipping alert');
     return;
   }
   
@@ -418,6 +459,7 @@ async function sendTelegramAlert(result: LogAlertResult): Promise<void> {
   message += `⏰ **Generated**: ${new Date().toLocaleString()}`;
   
   try {
+    if (logger) logger.debug('Sending Telegram alert', { status: result.status });
     const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       method: 'POST',
       headers: {
@@ -434,9 +476,9 @@ async function sendTelegramAlert(result: LogAlertResult): Promise<void> {
       throw new Error(`Telegram API error: ${response.status} ${response.statusText}`);
     }
     
-    console.log('✅ [LOG-ALERT] Telegram alert sent successfully');
+    if (logger) logger.info('Telegram alert sent successfully');
   } catch (error) {
-    console.error('❌ [LOG-ALERT] Failed to send Telegram alert:', error);
+    if (logger) logger.error('Failed to send Telegram alert', error);
     throw error;
   }
 }

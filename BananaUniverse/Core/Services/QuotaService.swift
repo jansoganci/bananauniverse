@@ -28,13 +28,6 @@ actor QuotaService {
     /// - Returns: CreditInfo with current credit balance
     /// - Throws: QuotaError on network/decode failure
     func getQuota(userId: String?, deviceId: String?) async throws -> CreditInfo {
-        // Define response structure matching backend RPC
-        struct RPCResponse: Decodable {
-            let credits_remaining: Int
-            let is_premium: Bool
-            let success: Bool?
-        }
-
         do {
             // Build params dictionary with proper types
             var params: [String: AnyJSON] = [:]
@@ -52,7 +45,6 @@ actor QuotaService {
             // Directly decode the RPC response as CreditInfo
             struct RPCCreditResponse: Decodable {
                 let credits_remaining: Int
-                let is_premium: Bool
                 let success: Bool?
                 let idempotent: Bool?
             }
@@ -64,7 +56,6 @@ actor QuotaService {
 
             return CreditInfo(
                 creditsRemaining: rpcResponse.credits_remaining,
-                isPremium: rpcResponse.is_premium,
                 idempotent: rpcResponse.idempotent
             )
 

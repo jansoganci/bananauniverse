@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createLogger } from '../_shared/logger.ts';
 
 // ============================================
 // LOG MONITOR EDGE FUNCTION
@@ -57,9 +58,11 @@ Deno.serve(async (req: Request) => {
   }
 
   const startTime = Date.now();
+  const requestId = `log-monitor-${Date.now()}`;
+  const logger = createLogger('log-monitor', requestId);
   
   try {
-    console.log('📊 [LOG-MONITOR] Starting weekly system monitoring...');
+    logger.info('Starting weekly system monitoring');
     
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -75,37 +78,59 @@ Deno.serve(async (req: Request) => {
     };
 
     const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    logger.debug('Monitoring period', { oneWeekAgo });
 
     // Get weekly cleanup statistics
-    const cleanupStats = await getWeeklyCleanupStats(supabase, oneWeekAgo);
+    logger.step('1. Getting weekly cleanup statistics');
+    const cleanupStats = await getWeeklyCleanupStats(supabase, oneWeekAgo, logger);
     result.weekly_cleanups = cleanupStats.weekly_cleanups;
     result.avg_exec_time = cleanupStats.avg_exec_time;
     result.storage_freed_gb = cleanupStats.storage_freed_gb;
+    logger.step('1. Cleanup statistics retrieved', {
+      weeklyCleanups: result.weekly_cleanups,
+      avgExecTime: result.avg_exec_time,
+      storageFreedGb: result.storage_freed_gb
+    });
 
     // Get error statistics
-    const errorStats = await getErrorStatistics(supabase, oneWeekAgo);
+    logger.step('2. Getting error statistics');
+    const errorStats = await getErrorStatistics(supabase, oneWeekAgo, logger);
     result.errors = errorStats.errors;
+    logger.step('2. Error statistics retrieved', { errors: result.errors });
 
     // Get detailed breakdown
-    const breakdown = await getDetailedBreakdown(supabase, oneWeekAgo);
+    logger.step('3. Getting detailed breakdown');
+    const breakdown = await getDetailedBreakdown(supabase, oneWeekAgo, logger);
     result.details = breakdown;
+    logger.step('3. Detailed breakdown retrieved');
 
     // Send Telegram weekly summary
     result.executionTime = Date.now() - startTime;
     
+    logger.step('4. Sending Telegram weekly summary');
     try {
-      await sendTelegramWeeklySummary(result);
+      await sendTelegramWeeklySummary(result, logger);
       result.alerted = true;
+      logger.step('4. Telegram summary sent');
     } catch (telegramError) {
-      console.warn('⚠️ [LOG-MONITOR] Telegram summary failed:', telegramError);
+      logger.warn('Telegram summary failed', { error: telegramError });
       // Don't throw - we don't want Telegram failures to break monitoring
     }
 
     // Log monitoring results
-    await logMonitoringResults(supabase, result, result.executionTime);
+    logger.step('5. Logging monitoring results');
+    await logMonitoringResults(supabase, result, result.executionTime, logger);
+    logger.step('5. Monitoring results logged');
 
     // Return monitoring results
-    console.log(`📊 [LOG-MONITOR] Weekly monitoring completed in ${result.executionTime}ms`);
+    logger.summary('success', {
+      weeklyCleanups: result.weekly_cleanups,
+      avgExecTime: result.avg_exec_time,
+      storageFreedGb: result.storage_freed_gb,
+      errors: result.errors,
+      executionTime: result.executionTime,
+      alerted: result.alerted
+    });
     
     return new Response(JSON.stringify(result), { 
       status: 200,
@@ -113,7 +138,7 @@ Deno.serve(async (req: Request) => {
     });
 
   } catch (error) {
-    console.error('❌ [LOG-MONITOR] Fatal error:', error);
+    logger.error('Fatal error', error);
     
     const errorResult: LogMonitorResult = {
       weekly_cleanups: 0,
@@ -136,9 +161,10 @@ Deno.serve(async (req: Request) => {
 // ============================================
 
 async function authenticateRequest(req: Request, corsHeaders: Record<string, string>): Promise<Response | null> {
+  const logger = createLogger('log-monitor');
   const authHeader = req.headers.get('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    console.warn('⚠️ [LOG-MONITOR] Missing or invalid authorization header');
+    logger.warn('Missing or invalid authorization header');
     return new Response(JSON.stringify({ error: 'Missing authorization header' }), { 
       status: 401,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -149,25 +175,27 @@ async function authenticateRequest(req: Request, corsHeaders: Record<string, str
   const providedApiKey = req.headers.get('x-api-key');
   
   if (expectedApiKey && (!providedApiKey || providedApiKey !== expectedApiKey)) {
-    console.warn('⚠️ [LOG-MONITOR] Invalid or missing API key');
+    logger.warn('Invalid or missing API key');
     return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
       status: 401,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
     });
   }
   
+  logger.debug('Authentication successful');
   return null;
 }
 
 async function getWeeklyCleanupStats(
   supabase: any,
-  oneWeekAgo: string
+  oneWeekAgo: string,
+  logger?: any
 ): Promise<{
   weekly_cleanups: number;
   avg_exec_time: number;
   storage_freed_gb: number;
 }> {
-  console.log('🔍 [LOG-MONITOR] Aggregating weekly cleanup statistics...');
+  if (logger) logger.debug('Aggregating weekly cleanup statistics');
   
   try {
     // Get all cleanup completion logs from last week
@@ -212,49 +240,63 @@ async function getWeeklyCleanupStats(
       
       storage_freed_gb = Math.round(storageFreed * 100) / 100; // Round to 2 decimal places
       
-      console.log(`📊 [LOG-MONITOR] Found ${weekly_cleanups} cleanups this week`);
-      console.log(`📊 [LOG-MONITOR] Average execution time: ${avg_exec_time}ms`);
-      console.log(`📊 [LOG-MONITOR] Total storage freed: ${storage_freed_gb} GB`);
+      if (logger) logger.info('Weekly cleanup statistics calculated', {
+        weeklyCleanups: weekly_cleanups,
+        avgExecTime: avg_exec_time,
+        storageFreedGb: storage_freed_gb
+      });
+    } else {
+      if (logger) logger.debug('No cleanup logs found for the week');
     }
     
     return { weekly_cleanups, avg_exec_time, storage_freed_gb };
     
   } catch (error) {
-    console.error('❌ [LOG-MONITOR] Failed to get cleanup statistics:', error);
+    if (logger) logger.error('Failed to get cleanup statistics', error);
     return { weekly_cleanups: 0, avg_exec_time: 0, storage_freed_gb: 0 };
   }
 }
 
 async function getErrorStatistics(
   supabase: any,
-  oneWeekAgo: string
+  oneWeekAgo: string,
+  logger?: any
 ): Promise<{ errors: number }> {
-  console.log('🔍 [LOG-MONITOR] Checking error statistics...');
+  if (logger) logger.debug('Checking error statistics');
   
   try {
-    const { data: errorLogs, error: errorCheckError } = await supabase
+    // Fetch all logs from last week, then filter for errors in JavaScript
+    // This is more reliable than complex PostgREST OR filters
+    const { data: allLogs, error: errorCheckError } = await supabase
       .from('cleanup_logs')
       .select('operation, details')
-      .gte('created_at', oneWeekAgo)
-      .or('details->error.is.not.null,operation.like.%_error');
+      .gte('created_at', oneWeekAgo);
     
     let errors = 0;
-    if (!errorCheckError && errorLogs) {
+    if (!errorCheckError && allLogs) {
+      // Filter for errors: operation ends with '_error' OR details contains 'error' field
+      const errorLogs = allLogs.filter(log => {
+        const hasErrorOperation = log.operation.endsWith('_error');
+        const hasErrorInDetails = log.details && typeof log.details === 'object' && 'error' in log.details && log.details.error !== null;
+        return hasErrorOperation || hasErrorInDetails;
+      });
+      
       errors = errorLogs.length;
-      console.log(`📊 [LOG-MONITOR] Found ${errors} errors this week`);
+      if (logger) logger.info('Error statistics retrieved', { errors });
     }
     
     return { errors };
     
   } catch (error) {
-    console.warn('⚠️ [LOG-MONITOR] Failed to get error statistics:', error);
+    if (logger) logger.warn('Failed to get error statistics', error);
     return { errors: 0 };
   }
 }
 
 async function getDetailedBreakdown(
   supabase: any,
-  oneWeekAgo: string
+  oneWeekAgo: string,
+  logger?: any
 ): Promise<{
   cleanup_breakdown: {
     images: number;
@@ -273,7 +315,7 @@ async function getDetailedBreakdown(
   }>;
 } | undefined> {
   try {
-    console.log('🔍 [LOG-MONITOR] Getting detailed breakdown...');
+    if (logger) logger.debug('Getting detailed breakdown');
     
     const { data: allLogs } = await supabase
       .from('cleanup_logs')
@@ -281,6 +323,7 @@ async function getDetailedBreakdown(
       .gte('created_at', oneWeekAgo);
     
     if (!allLogs) {
+      if (logger) logger.debug('No logs found for detailed breakdown');
       return undefined;
     }
     
@@ -313,7 +356,11 @@ async function getDetailedBreakdown(
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
     
-    console.log('📊 [LOG-MONITOR] Detailed breakdown completed');
+    if (logger) logger.info('Detailed breakdown completed', {
+      cleanupBreakdown,
+      errorBreakdown,
+      topOperationsCount: topOperations.length
+    });
     
     return {
       cleanup_breakdown: cleanupBreakdown,
@@ -322,7 +369,7 @@ async function getDetailedBreakdown(
     };
     
   } catch (error) {
-    console.warn('⚠️ [LOG-MONITOR] Failed to get detailed breakdown:', error);
+    if (logger) logger.warn('Failed to get detailed breakdown', error);
     return undefined;
   }
 }
@@ -330,7 +377,8 @@ async function getDetailedBreakdown(
 async function logMonitoringResults(
   supabase: any,
   result: LogMonitorResult,
-  executionTime: number
+  executionTime: number,
+  logger?: any
 ): Promise<void> {
   try {
     await supabase
@@ -345,17 +393,18 @@ async function logMonitoringResults(
           execution_time_ms: executionTime
         }
       });
+    if (logger) logger.debug('Monitoring results logged to database');
   } catch (logError) {
-    console.warn('⚠️ [LOG-MONITOR] Failed to log monitoring results:', logError);
+    if (logger) logger.warn('Failed to log monitoring results', logError);
   }
 }
 
-async function sendTelegramWeeklySummary(result: LogMonitorResult): Promise<void> {
+async function sendTelegramWeeklySummary(result: LogMonitorResult, logger?: any): Promise<void> {
   const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
   const chatId = Deno.env.get('TELEGRAM_CHAT_ID');
   
   if (!botToken || !chatId) {
-    console.log('ℹ️ [LOG-MONITOR] Telegram credentials not configured, skipping summary');
+    if (logger) logger.debug('Telegram credentials not configured, skipping summary');
     return;
   }
   
@@ -371,6 +420,7 @@ async function sendTelegramWeeklySummary(result: LogMonitorResult): Promise<void
     `⏱️ **Generated**: ${new Date().toLocaleString()}`;
   
   try {
+    if (logger) logger.debug('Sending Telegram weekly summary');
     const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       method: 'POST',
       headers: {
@@ -387,9 +437,9 @@ async function sendTelegramWeeklySummary(result: LogMonitorResult): Promise<void
       throw new Error(`Telegram API error: ${response.status} ${response.statusText}`);
     }
     
-    console.log('✅ [LOG-MONITOR] Telegram weekly summary sent successfully');
+    if (logger) logger.info('Telegram weekly summary sent successfully');
   } catch (error) {
-    console.error('❌ [LOG-MONITOR] Failed to send Telegram summary:', error);
+    if (logger) logger.error('Failed to send Telegram summary', error);
     throw error;
   }
 }

@@ -11,6 +11,7 @@ struct HomeView: View {
     @State private var showPaywall = false
     @StateObject private var authService = HybridAuthService.shared
     @StateObject private var creditManager = CreditManager.shared
+    @StateObject private var viewModel = HomeViewModel() // ✅ NEW: ViewModel for dynamic data
     @EnvironmentObject var themeManager: ThemeManager
     let onToolSelected: (Tool) -> Void // Callback for tool selection
     @State private var rawSearch: String = ""
@@ -25,17 +26,14 @@ struct HomeView: View {
                 UnifiedHeaderBar(
                     title: "",
                     leftContent: .appLogo(32),
-                    rightContent: creditManager.isPremiumUser 
-                        ? .unlimitedBadge({})  // PRO badge (non-tappable for MVP)
-                        : .getProButton({ 
-                            showPaywall = true
-                            // TODO: Log analytics event
-                        })
+                    rightContent: .quotaBadge(creditManager.creditsRemaining, { 
+                        showPaywall = true
+                    })
                 )
                 
                 
                 // Quota Warning Banner
-                if !creditManager.isPremiumUser && creditManager.remainingQuota <= 1 {
+                if creditManager.creditsRemaining <= 1 {
                     QuotaWarningBanner()
                         .padding(.horizontal, DesignTokens.Spacing.md)
                         .padding(.top, DesignTokens.Spacing.sm)
@@ -89,18 +87,24 @@ struct HomeView: View {
                         .stroke(DesignTokens.Text.secondary(themeManager.resolvedColorScheme).opacity(0.1), lineWidth: 1)
                 )
                 .padding(.horizontal, DesignTokens.Spacing.md)
-                .padding(.vertical, DesignTokens.Spacing.sm)
+                .padding(.vertical, DesignTokens.Spacing.xs)
                 
                 // Content Area
                 ScrollView {
-                    VStack(spacing: DesignTokens.Spacing.xl) {
+                    VStack(spacing: DesignTokens.Spacing.md) {
+                        // Loading State
+                        if viewModel.isLoading && !viewModel.hasData {
+                            ProgressView()
+                                .padding(.top, 60)
+                        }
+
                         // Featured Carousel (only show when not searching)
-                        if searchQuery.isEmpty && !featuredCarouselTools.isEmpty {
+                        if searchQuery.isEmpty && !viewModel.carouselThemes.isEmpty {
                             FeaturedCarouselView(
-                                tools: featuredCarouselTools,
+                                tools: viewModel.carouselThemes, // ✅ CHANGED: Use ViewModel data
                                 onToolTap: handleToolTap
                             )
-                            .padding(.top, DesignTokens.Spacing.md)
+                            .padding(.top, DesignTokens.Spacing.sm)
                             .transition(.asymmetric(
                                 insertion: .opacity.combined(with: .scale(scale: 0.95)),
                                 removal: .opacity.combined(with: .scale(scale: 1.05))
@@ -129,10 +133,11 @@ struct HomeView: View {
                         }
 
                         // Category Rows (Horizontal Scroll - Amazon Style)
-                        ForEach(categories, id: \.id) { category in
+                        // ✅ CHANGED: Use dynamic categories from database
+                        ForEach(viewModel.categories, id: \.id) { category in
                             CategoryRow(
                                 title: category.name,
-                                tools: CategoryFeaturedMapping.remainingTools(for: category.id),
+                                tools: viewModel.remainingThemes(for: category.id),
                                 onToolTap: handleToolTap,
                                 onSeeAllTap: nil, // Placeholder for future "See All" functionality
                                 searchQuery: searchQuery.isEmpty ? nil : searchQuery
@@ -146,6 +151,12 @@ struct HomeView: View {
             .background(DesignTokens.Background.primary(themeManager.resolvedColorScheme))
             .navigationTitle("")
             .toolbar(.hidden, for: .navigationBar)
+            .onAppear {
+                // ✅ NEW: Load themes from database on appear
+                if !viewModel.hasData {
+                    viewModel.loadData()
+                }
+            }
             .onDisappear {
                 // Fix timer memory leak
                 searchTimer?.invalidate()
@@ -155,6 +166,18 @@ struct HomeView: View {
                 // Update search results state
                 updateSearchResults()
             }
+            .refreshable {
+                // ✅ NEW: Pull to refresh support
+                viewModel.refresh()
+            }
+            .alert("Error Loading Themes", isPresented: $viewModel.showingErrorAlert) {
+                Button("OK", role: .cancel) {}
+                Button("Retry") {
+                    viewModel.loadData()
+                }
+            } message: {
+                Text(viewModel.errorMessage ?? "An error occurred")
+            }
         }
         .sheet(isPresented: $showPaywall) {
             PaywallPreview()
@@ -162,26 +185,7 @@ struct HomeView: View {
     }
     
     // MARK: - Computed Properties
-    
-    /// Featured tools for carousel (mixed from all categories)
-    private var featuredCarouselTools: [Tool] {
-        let mainTools = Array(Tool.mainTools.prefix(2))
-        let seasonalTools = Array(Tool.seasonalTools.prefix(1))
-        let proTools = Array(Tool.proLooksTools.prefix(1))
-        let restorationTools = Array(Tool.restorationTools.prefix(1))
-        
-        return (mainTools + seasonalTools + proTools + restorationTools).prefix(5).map { $0 }
-    }
-    
-    /// Categories for horizontal scroll rows
-    private var categories: [(id: String, name: String)] {
-        [
-            (id: "main_tools", name: "Photo Editor"),
-            (id: "seasonal", name: "Seasonal"),
-            (id: "pro_looks", name: "Pro Photos"),
-            (id: "restoration", name: "Enhancer")
-        ]
-    }
+    // ✅ REMOVED: Hardcoded categories - now using viewModel.categories (database-driven)
     
     
     // MARK: - Helper Methods
@@ -189,7 +193,7 @@ struct HomeView: View {
     private func handleToolTap(_ tool: Tool) {
         DesignTokens.Haptics.impact(.light)
         
-        // All tools are accessible to everyone (premium users have unlimited quota)
+        // All tools are accessible to everyone (credits are consumed per use)
         // Navigate to Chat tab with the tool
         onToolSelected(tool)
     }
@@ -207,14 +211,8 @@ struct HomeView: View {
             return
         }
 
-        // Check if any category has matching tools
-        let allTools = Tool.mainTools + Tool.seasonalTools + Tool.proLooksTools + Tool.restorationTools
-        let matchingTools = allTools.filter { tool in
-            // Search in id, prompt, and category
-            tool.id.localizedCaseInsensitiveContains(searchQuery) ||
-            tool.prompt.localizedCaseInsensitiveContains(searchQuery) ||
-            tool.category.localizedCaseInsensitiveContains(searchQuery)
-        }
+        // ✅ CHANGED: Use ViewModel search instead of static arrays
+        let matchingTools = viewModel.searchThemes(query: searchQuery)
 
         withAnimation(.easeInOut(duration: 0.2)) {
             hasSearchResults = !matchingTools.isEmpty
@@ -236,18 +234,18 @@ struct QuotaWarningBanner: View {
                 .font(.system(size: 16))
             
             VStack(alignment: .leading, spacing: 2) {
-                Text("Daily Quota Almost Full")
+                Text("Low Credits")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
                 
-                Text("\(creditManager.remainingQuota) generation\(creditManager.remainingQuota == 1 ? "" : "s") left today")
+                Text("\(creditManager.creditsRemaining) credit\(creditManager.creditsRemaining == 1 ? "" : "s") remaining")
                     .font(.system(size: 12))
                     .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
             }
             
             Spacer()
             
-            Button("Upgrade") {
+            Button("Buy Credits") {
                 showPaywall = true
             }
             .font(.system(size: 12, weight: .semibold))

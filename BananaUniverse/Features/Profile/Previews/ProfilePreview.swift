@@ -22,7 +22,6 @@ struct ProfilePreview: View {
     // Mock user data
     @State private var mockUsername = "Jan Söğancı"
     @State private var mockEmail = "jan@example.com"
-    @State private var mockSubscriptionStatus = "Premium User"
     @State private var mockThemePreference = ThemePreference.system
     @State private var mockNotificationEnabled = true
     
@@ -123,22 +122,6 @@ struct ProfilePreview: View {
                     showChevron: false
                 )
                 
-                Divider()
-                    .background(DesignTokens.Surface.secondary(colorScheme))
-                    .padding(.leading, 56)
-                
-                // Subscription Status Row
-                ProfileRow(
-                    icon: "crown.fill",
-                    title: "Subscription",
-                    subtitle: mockSubscriptionStatus,
-                    iconColor: DesignTokens.Brand.premiumVIP(colorScheme),
-                    showChevron: true,
-                    action: {
-                        // Mock action
-                        print("Manage subscription tapped")
-                    }
-                )
             }
             .background(DesignTokens.Surface.secondary(colorScheme))
             .cornerRadius(DesignTokens.CornerRadius.md)

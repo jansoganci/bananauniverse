@@ -39,30 +39,7 @@ class CreditManager: ObservableObject {
         }
     }
 
-    @Published private(set) var isPremiumUser: Bool = false {
-        didSet {
-            guard oldValue != isPremiumUser else { return }
-            #if DEBUG
-            print("🔄 [PREMIUM] Status changed: \(oldValue) → \(isPremiumUser)")
-            #endif
-        }
-    }
-
     @Published private(set) var isLoading = false
-
-    // MARK: - Legacy Properties (For Backward Compatibility)
-    // These allow existing code to continue working during transition
-
-    var dailyQuotaUsed: Int {
-        // In credit system, we don't track "used"
-        // Return 0 for now to maintain compatibility
-        return isPremiumUser ? 0 : max(0, 10 - creditsRemaining)
-    }
-
-    var dailyQuotaLimit: Int {
-        // Premium users have unlimited, free users start with 10
-        return isPremiumUser ? 999999 : 10
-    }
 
     // MARK: - Private State
 
@@ -106,10 +83,7 @@ class CreditManager: ObservableObject {
                 )
 
                 // Only update if values changed
-                await updateCredits(
-                    remaining: creditInfo.creditsRemaining,
-                    premium: creditInfo.isPremium
-                )
+                await updateCredits(remaining: creditInfo.creditsRemaining)
 
             } catch let error as QuotaError {
                 print("❌ [CREDITS] Load failed: \(error.displayMessage)")
@@ -124,12 +98,7 @@ class CreditManager: ObservableObject {
 
     /// Check if user can process image (synchronous, uses cached state)
     func canProcessImage() -> Bool {
-        // Premium users bypass all limits
-        if isPremiumUser {
-            return true
-        }
-
-        // Check credit balance for non-premium users
+        // Check credit balance
         return creditsRemaining > 0
     }
 
@@ -139,15 +108,16 @@ class CreditManager: ObservableObject {
     }
 
     /// Updates credits from backend response (called by SupabaseService)
-    func updateFromBackendResponse(creditsRemaining: Int, isPremium: Bool) async {
-        await updateCredits(remaining: creditsRemaining, premium: isPremium)
+    func updateFromBackendResponse(creditsRemaining: Int, isPremium: Bool = false) async {
+        // isPremium parameter kept for backward compatibility but ignored
+        await updateCredits(remaining: creditsRemaining)
     }
 
     // Legacy method for backward compatibility
-    func updateFromBackendResponse(quotaUsed: Int, quotaLimit: Int, isPremium: Bool) async {
-        // Convert old quota format to credits
+    func updateFromBackendResponse(quotaUsed: Int, quotaLimit: Int, isPremium: Bool = false) async {
+        // Convert old quota format to credits, isPremium ignored
         let remaining = max(0, quotaLimit - quotaUsed)
-        await updateCredits(remaining: remaining, premium: isPremium)
+        await updateCredits(remaining: remaining)
     }
 
     // MARK: - User State Management (Legacy)
@@ -166,54 +136,28 @@ class CreditManager: ObservableObject {
         return getOrCreateDeviceUUID()
     }
 
-    // MARK: - Premium Status Integration
-
-    /// Refreshes premium status from StoreKit
-    func refreshPremiumStatus() async {
-        await StoreKitService.shared.updateSubscriptionStatus()
-        let newPremiumStatus = StoreKitService.shared.isPremiumUser
-
-        // Only update if changed
-        if isPremiumUser != newPremiumStatus {
-            isPremiumUser = newPremiumStatus
-            QuotaCache.shared.save(creditsRemaining: creditsRemaining, premium: isPremiumUser)
-        }
-    }
-
     /// Background refresh (called when app returns to foreground)
-    func refreshSubscriptionInBackground() async {
-        await StoreKitService.shared.updateSubscriptionStatus()
-        let newPremiumStatus = StoreKitService.shared.isPremiumUser
-
-        if isPremiumUser != newPremiumStatus {
-            isPremiumUser = newPremiumStatus
-            QuotaCache.shared.save(creditsRemaining: creditsRemaining, premium: isPremiumUser)
-        }
-
-        // Also refresh credits from backend
+    func refreshCreditsInBackground() async {
+        // Refresh credits from backend
         await loadQuota()
     }
 
     // MARK: - Computed Properties for UI
 
     var remainingQuota: Int {
-        isPremiumUser ? Int.max : creditsRemaining
+        creditsRemaining
     }
 
     var hasQuotaLeft: Bool {
-        isPremiumUser || creditsRemaining > 0
+        creditsRemaining > 0
     }
 
     var quotaDisplayText: String {
-        isPremiumUser ? "Unlimited" : "\(creditsRemaining) credits"
-    }
-
-    var isQuotaUnlimited: Bool {
-        isPremiumUser
+        "\(creditsRemaining) credits"
     }
 
     var shouldShowQuotaWarning: Bool {
-        !isPremiumUser && creditsRemaining <= 1
+        creditsRemaining <= 1
     }
 
     var quotaWarningMessage: String {
@@ -228,10 +172,9 @@ class CreditManager: ObservableObject {
     // MARK: - Private Helpers
 
     /// Updates credit state (atomic, with change detection)
-    private func updateCredits(remaining: Int, premium: Bool) async {
+    private func updateCredits(remaining: Int) async {
         // Only update if values actually changed
-        guard creditsRemaining != remaining ||
-              isPremiumUser != premium else {
+        guard creditsRemaining != remaining else {
             #if DEBUG
             print("⏭️ [CREDITS] No changes detected, skipping update")
             #endif
@@ -239,12 +182,11 @@ class CreditManager: ObservableObject {
         }
 
         // Save to cache first (background thread OK)
-        QuotaCache.shared.save(creditsRemaining: remaining, premium: premium)
+        QuotaCache.shared.save(creditsRemaining: remaining)
 
         // Update UI state on main thread
         await MainActor.run {
             creditsRemaining = remaining
-            isPremiumUser = premium
         }
     }
 
@@ -258,10 +200,9 @@ class CreditManager: ObservableObject {
         }
 
         creditsRemaining = cached.creditsRemaining
-        isPremiumUser = cached.premium
 
         #if DEBUG
-        print("📱 [CREDITS] Loaded from cache: \(cached.creditsRemaining) credits, premium: \(cached.premium)")
+        print("📱 [CREDITS] Loaded from cache: \(cached.creditsRemaining) credits")
         #endif
     }
 

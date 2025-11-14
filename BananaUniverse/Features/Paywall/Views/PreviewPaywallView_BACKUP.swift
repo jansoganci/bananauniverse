@@ -4,7 +4,7 @@
 //
 //  BACKUP - Original paywall with both weekly and yearly
 //  Created by AI Assistant on 14.10.2025.
-//  Preview paywall for App Store submission - replaces Adapty paywall temporarily
+//  Preview paywall for App Store submission
 //
 
 import SwiftUI
@@ -39,7 +39,7 @@ struct PreviewPaywallView_BACKUP: View {
                         // Products section
                         if storeKitService.isLoading {
                             loadingSection
-                        } else if storeKitService.hasProducts {
+                        } else if storeKitService.hasCreditProducts {
                             productsSection
                         } else {
                             errorSection
@@ -95,17 +95,6 @@ struct PreviewPaywallView_BACKUP: View {
                     await storeKitService.loadProducts()
                 }
             }
-            .onReceive(CreditManager.shared.$isPremiumUser) { isPremium in
-                #if DEBUG
-                print("🔄 PaywallView: Premium status changed to \(isPremium)")
-                #endif
-                if isPremium {
-                    // Hide paywall when user becomes premium
-                    DispatchQueue.main.async {
-                        self.dismiss()
-                    }
-                }
-            }
         }
     }
     
@@ -134,7 +123,7 @@ struct PreviewPaywallView_BACKUP: View {
                 .multilineTextAlignment(.center)
             
             // Subtitle
-            Text("Get unlimited access to all premium features")
+            Text("Get credits to process AI images")
                 .font(.system(size: 16, weight: .medium))
                 .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
                 .multilineTextAlignment(.center)
@@ -153,7 +142,7 @@ struct PreviewPaywallView_BACKUP: View {
                 description: "Process as many images as you want"
             )
             .accessibilityLabel("Unlimited AI image edits. Process as many images as you want")
-            .accessibilityHint("Premium benefit")
+            .accessibilityHint("Feature benefit")
             
             // Benefit 2
                             PreviewPaywallBenefitRow(
@@ -162,16 +151,16 @@ struct PreviewPaywallView_BACKUP: View {
                 description: "Skip the queue and get results instantly"
             )
             .accessibilityLabel("Faster processing priority. Skip the queue and get results instantly")
-            .accessibilityHint("Premium benefit")
+            .accessibilityHint("Feature benefit")
             
             // Benefit 3
                             PreviewPaywallBenefitRow(
                 icon: "star.fill",
-                title: "Exclusive premium filters",
+                title: "Advanced AI filters",
                 description: "Access to advanced AI models and effects"
             )
-            .accessibilityLabel("Exclusive premium filters. Access to advanced AI models and effects")
-            .accessibilityHint("Premium benefit")
+            .accessibilityLabel("Advanced AI filters. Access to advanced AI models and effects")
+            .accessibilityHint("Feature benefit")
         }
         .padding(.vertical, 24)
         .padding(.horizontal, 20)
@@ -200,35 +189,17 @@ struct PreviewPaywallView_BACKUP: View {
     // MARK: - Products Section
     
     private var productsSection: some View {
-        HStack(spacing: 16) {
-            // Weekly Product
-            if let weeklyProduct = storeKitService.weeklyProduct {
-                StoreKitProductCard(
-                    product: weeklyProduct,
-                    isSelected: selectedProduct?.id == weeklyProduct.id,
-                    shouldHighlight: false,
-                    shouldShowTrialBadge: false
+        VStack(spacing: 16) {
+            // Credit Products
+            ForEach(Array(storeKitService.creditProducts.enumerated()), id: \.element.id) { index, product in
+                let isBestValue = product.id == "credits_100"
+                CreditProductCard(
+                    product: product,
+                    isSelected: selectedProduct?.id == product.id,
+                    isBestValue: isBestValue
                 ) {
-                    selectedProduct = weeklyProduct
+                    selectedProduct = product
                 }
-                .accessibilityLabel("Weekly Pro. Perfect for trying out premium features. \(weeklyProduct.displayPrice) / week")
-                .accessibilityHint("Subscription option")
-                .accessibilityAddTraits(selectedProduct?.id == weeklyProduct.id ? .isSelected : [])
-            }
-            
-            // Yearly Product
-            if let yearlyProduct = storeKitService.yearlyProduct {
-                StoreKitProductCard(
-                    product: yearlyProduct,
-                    isSelected: selectedProduct?.id == yearlyProduct.id,
-                    shouldHighlight: true,
-                    shouldShowTrialBadge: true
-                ) {
-                    selectedProduct = yearlyProduct
-                }
-                .accessibilityLabel("Yearly Pro. Best value - save 70% compared to weekly. \(yearlyProduct.displayPrice) / year")
-                .accessibilityHint("Subscription option")
-                .accessibilityAddTraits(selectedProduct?.id == yearlyProduct.id ? .isSelected : [])
             }
         }
     }
@@ -266,7 +237,7 @@ struct PreviewPaywallView_BACKUP: View {
         Button(action: {
             Task {
                 guard let selectedProduct = selectedProduct else {
-                    showAlert(title: "No Product Selected", message: "Please select a subscription plan to continue.")
+                    showAlert(title: "No Product Selected", message: "Please select a credit package to continue.")
                     return
                 }
                 
@@ -292,7 +263,7 @@ struct PreviewPaywallView_BACKUP: View {
                         .font(.system(size: 18, weight: .semibold))
                 }
                 
-                Text("Unlock Premium")
+                Text("Buy Credits")
                     .font(.system(size: 18, weight: .bold))
             }
             .foregroundColor(.white)
@@ -310,7 +281,7 @@ struct PreviewPaywallView_BACKUP: View {
         }
         .disabled(selectedProduct == nil || storeKitService.isLoading)
         .opacity((selectedProduct != nil && !storeKitService.isLoading) ? 1.0 : 0.6)
-        .accessibilityLabel("Unlock Premium")
+        .accessibilityLabel("Buy Credits")
         .accessibilityHint("Tap to purchase selected product")
     }
     
@@ -324,7 +295,7 @@ struct PreviewPaywallView_BACKUP: View {
                     do {
                         try await storeKitService.restorePurchases()
                         DispatchQueue.main.async {
-                            self.showAlert(title: "Success!", message: "Purchases restored successfully! Welcome back to Premium.")
+                            self.showAlert(title: "Success!", message: "Purchases restored successfully!")
                         }
                     } catch {
                         DispatchQueue.main.async {
@@ -658,7 +629,7 @@ extension PreviewPaywallView_BACKUP {
                 do {
                     try await self.storeKitService.restorePurchases()
                     DispatchQueue.main.async {
-                        self.showAlert(title: "Success!", message: "Purchases restored successfully! Welcome back to Premium.")
+                        self.showAlert(title: "Success!", message: "Purchases restored successfully!")
                     }
                 } catch {
                     DispatchQueue.main.async {
@@ -690,7 +661,7 @@ extension PreviewPaywallView_BACKUP {
         
         // Check for restore specific errors
         if type == .restore && (errorDescription.contains("restore") || errorDescription.contains("subscription")) {
-            return ("No Active Subscriptions", "Restore failed. You may not have any active subscriptions to restore.")
+            return ("No Purchases Found", "Restore failed. You may not have any previous purchases to restore.")
         }
         
         // Default fallback

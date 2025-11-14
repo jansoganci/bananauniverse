@@ -11,8 +11,6 @@ import Combine
 
 @MainActor
 class ProfileViewModel: ObservableObject {
-    // Single source of truth for premium status
-    @Published private(set) var isPremiumUser: Bool = false
     @Published var showAlert: Bool = false
     @Published var alertMessage: String = ""
     @Published var showDeleteConfirmation: Bool = false
@@ -20,7 +18,6 @@ class ProfileViewModel: ObservableObject {
     @Published var profile: UserProfile? = nil
     @Published var isProfileLoading: Bool = false
     @Published var profileError: String? = nil
-    @Published var isLoadingSubscription: Bool = false
     
     // Success alert handling from StoreKitService
     @Published var shouldShowSuccessAlert: Bool = false
@@ -32,26 +29,7 @@ class ProfileViewModel: ObservableObject {
     private let storeKitService = StoreKitService.shared
     private var cancellables = Set<AnyCancellable>()
     
-    // Computed property for backward compatibility
-    var isPRO: Bool {
-        isPremiumUser
-    }
-    
     init() {
-        // Initialize premium status from CreditManager
-        self.isPremiumUser = creditManager.isPremiumUser
-        
-        // Subscribe to CreditManager's premium status updates
-        creditManager.$isPremiumUser
-            .receive(on: RunLoop.main)
-            .sink { [weak self] newValue in
-                self?.isPremiumUser = newValue
-                #if DEBUG
-                print("🔄 Premium status updated: \(newValue)")
-                #endif
-            }
-            .store(in: &cancellables)
-        
         // Subscribe to StoreKitService success alerts
         storeKitService.$shouldShowSuccessAlert
             .receive(on: RunLoop.main)
@@ -72,9 +50,8 @@ class ProfileViewModel: ObservableObject {
     func restorePurchases() async {
         do {
             try await StoreKitService.shared.restorePurchases()
-            // isPRO will be updated automatically via CreditManager subscription
             #if DEBUG
-            print("✅ Restore successful – user upgraded to PRO")
+            print("✅ Restore successful")
             #endif
         } catch {
             #if DEBUG
@@ -85,55 +62,6 @@ class ProfileViewModel: ObservableObject {
                 self.handleRestoreError(error)
             }
         }
-    }
-    
-    func openManageSubscription() {
-        DispatchQueue.main.async {
-            if let manageURL = URL(string: "https://apps.apple.com/account/subscriptions") {
-                UIApplication.shared.open(manageURL)
-            }
-        }
-    }
-    
-    // MARK: - Subscription Status Display
-    
-    func getSubscriptionStatusText() -> String {
-        let isPremium = creditManager.isPremiumUser
-        
-        if isPremium {
-            if let renewalDate = StoreKitService.shared.subscriptionRenewalDate {
-                let formatter = DateFormatter()
-                formatter.dateStyle = .medium
-                formatter.timeStyle = .none
-                let formattedDate = formatter.string(from: renewalDate)
-                return "Active Subscription – renews on \(formattedDate)"
-            } else {
-                return "Active Subscription – renews on –"
-            }
-        } else {
-            return "Subscription inactive – renew to continue premium access"
-        }
-    }
-    
-    @MainActor
-    func refreshSubscriptionDetails() async {
-        isLoadingSubscription = true
-        
-        do {
-            await CreditManager.shared.refreshSubscriptionInBackground()
-            #if DEBUG
-            print("✅ Subscription details refreshed")
-            #endif
-        } catch {
-            #if DEBUG
-            print("❌ Failed to refresh subscription details: \(error.localizedDescription)")
-            #endif
-            
-            alertMessage = "We couldn't retrieve your subscription details. Please try again later."
-            showAlert = true
-        }
-        
-        isLoadingSubscription = false
     }
     
     // MARK: - Account Deletion
@@ -233,8 +161,8 @@ class ProfileViewModel: ObservableObject {
         }
         // Check for StoreKit specific errors
         else if errorDescription.contains("storekit") || errorDescription.contains("payment") || 
-                errorDescription.contains("restore") || errorDescription.contains("subscription") {
-            alertMessage = "No active subscriptions found. You may not have any purchases to restore."
+                errorDescription.contains("restore") {
+            alertMessage = "No purchases found to restore. You may not have any previous purchases."
         }
         // Default fallback
         else {

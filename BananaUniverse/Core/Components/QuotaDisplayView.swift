@@ -102,7 +102,7 @@ struct QuotaDisplayView: View {
     
     // MARK: - Subviews
     private var iconView: some View {
-        Image(systemName: creditManager.isPremiumUser ? "infinity" : "star.fill")
+        Image(systemName: "star.fill")
             .font(.system(size: style == .compact ? 13 : 20))
             .foregroundColor(DesignTokens.Brand.primary(.light))
     }
@@ -114,7 +114,7 @@ struct QuotaDisplayView: View {
     }
 
     private var valueView: some View {
-        Text(creditManager.isPremiumUser ? "Unlimited" : "\(creditManager.creditsRemaining) credits")
+        Text("\(creditManager.creditsRemaining) credits")
             .font(.system(size: style == .compact ? 13 : 14))
             .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
     }
@@ -128,7 +128,7 @@ struct QuotaDisplayView: View {
                     .foregroundColor(.orange)
             }
 
-            Text(creditManager.isPremiumUser ? "∞" : "\(creditManager.creditsRemaining) credits")
+            Text("\(creditManager.creditsRemaining) credits")
                 .font(.system(size: 13, weight: .medium))
                 .lineLimit(1)
                 .foregroundColor(creditManager.shouldShowQuotaWarning ? .orange : DesignTokens.Text.primary(themeManager.resolvedColorScheme))

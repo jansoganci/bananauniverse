@@ -27,12 +27,7 @@ struct ProfileView: View {
                 UnifiedHeaderBar(
                     title: "Profile",
                     leftContent: nil,
-                    rightContent: creditManager.isPremiumUser 
-                        ? .unlimitedBadge({})  // PRO badge (non-tappable for MVP)
-                        : .getProButton { 
-                            showPaywall = true
-                            // TODO: Log analytics event - placement: profile_header
-                        }
+                    rightContent: nil
                 )
                 
                 // Main Content
@@ -61,12 +56,6 @@ struct ProfileView: View {
                 await viewModel.onAuthStateChanged(newState)
             }
         }
-        .onReceive(viewModel.$isPremiumUser) { newValue in
-            #if DEBUG
-            print("🔄 ProfileView: Premium status changed to \(newValue)")
-            #endif
-            // UI will automatically update due to @Published property
-        }
         .alert("Restore Purchases", isPresented: $viewModel.showAlert) {
             Button("OK", role: .cancel) { }
         } message: {
@@ -92,36 +81,19 @@ struct ProfileView: View {
     @ViewBuilder
     private var profileContent: some View {
         VStack(spacing: DesignTokens.Spacing.lg) {
-            // Pro Card
-            ProCard(
-                isProActive: viewModel.isPremiumUser,
+            // Credit Card
+            CreditCard(
+                creditsRemaining: creditManager.creditsRemaining,
                 features: [
-                    "Unlimited edits",
+                    "Process AI images",
                     "Fast processing",
-                    "No watermark"
+                    "High-quality outputs"
                 ],
-                subscriptionStatusText: viewModel.getSubscriptionStatusText(),
-                isLoadingSubscription: viewModel.isLoadingSubscription,
-                onUpgradeTap: {
+                onBuyCreditsTap: {
                     showPaywall = true
-                    // TODO: insert Adapty Paywall ID here - placement: profile_upgrade
-                },
-                onManageTap: {
-                    viewModel.openManageSubscription()
-                },
-                onRefreshTap: {
-                    Task {
-                        await viewModel.refreshSubscriptionDetails()
-                    }
                 }
             )
             .padding(.horizontal, DesignTokens.Spacing.md)
-            
-            // Premium Status Banner (for premium users)
-            if viewModel.isPremiumUser {
-                PremiumStatusBanner()
-                    .padding(.horizontal, DesignTokens.Spacing.md)
-            }
             
             // Sign In or Create Account Button (for anonymous users)
             if !authService.isAuthenticated {
@@ -474,15 +446,11 @@ struct ProfileView: View {
     }
 }
 
-// MARK: - Pro Card Component
-struct ProCard: View {
-    let isProActive: Bool
+// MARK: - Credit Card Component
+struct CreditCard: View {
+    let creditsRemaining: Int
     let features: [String]
-    let subscriptionStatusText: String
-    let isLoadingSubscription: Bool
-    let onUpgradeTap: () -> Void
-    let onManageTap: () -> Void
-    let onRefreshTap: () -> Void
+    let onBuyCreditsTap: () -> Void
 
     @Environment(\.colorScheme) var colorScheme
 
@@ -490,80 +458,42 @@ struct ProCard: View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(isProActive ? "Unlimited Mode" : "Upgrade to Pro")
+                    Text("Your Credits")
                         .font(.system(size: 20, weight: .bold))
                         .foregroundColor(colorScheme == .light ? Color(hex: "1A1A1A") : .white)
 
-                    Text(isProActive ? "You have unlimited access" : "Get unlimited edits")
+                    Text("\(creditsRemaining) credit\(creditsRemaining == 1 ? "" : "s") available")
                         .font(.system(size: 14))
                         .foregroundColor(colorScheme == .light ? Color(hex: "1A1A1A").opacity(0.7) : .white.opacity(0.8))
                 }
 
                 Spacer()
 
-                Image(systemName: "crown.fill")
+                Image(systemName: "star.fill")
                     .font(.system(size: 24))
                     .foregroundColor(DesignTokens.Brand.primary(colorScheme))
             }
 
-            if !isProActive {
-                VStack(alignment: .leading, spacing: 8) {
-                    ForEach(features, id: \.self) { feature in
-                        HStack(spacing: 8) {
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundColor(colorScheme == .light ? Color(hex: "00E5FF") : DesignTokens.Brand.secondary(colorScheme))
-                            Text(feature)
-                                .font(.system(size: 14))
-                                .foregroundColor(colorScheme == .light ? Color(hex: "1A1A1A").opacity(0.8) : .white.opacity(0.9))
-                        }
-                    }
-                }
-
-                Button(action: onUpgradeTap) {
-                    Text("Upgrade Now")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(Color(hex: "FFFFFF"))
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 44)
-                        .background(Color(hex: "6B21C0"))
-                        .cornerRadius(12)
-                }
-            } else {
-                Button(action: onManageTap) {
-                    Text("Manage Subscription")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(colorScheme == .light ? Color(hex: "6B21C0") : .white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 44)
-                        .background(colorScheme == .light ? Color(hex: "6B21C0").opacity(0.1) : Color.white.opacity(0.2))
-                        .cornerRadius(12)
-                }
-
-                // Subscription Status Display
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Text(subscriptionStatusText)
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(features, id: \.self) { feature in
+                    HStack(spacing: 8) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(colorScheme == .light ? Color(hex: "00E5FF") : DesignTokens.Brand.secondary(colorScheme))
+                        Text(feature)
                             .font(.system(size: 14))
-                            .foregroundColor(colorScheme == .light ? Color(hex: "1A1A1A").opacity(0.6) : .white.opacity(0.8))
-                            .multilineTextAlignment(.leading)
-
-                        Spacer()
-
-                        Button(action: onRefreshTap) {
-                            if isLoadingSubscription {
-                                ProgressView()
-                                    .progressViewStyle(CircularProgressViewStyle(tint: colorScheme == .light ? Color(hex: "6B21C0") : .white))
-                                    .scaleEffect(0.8)
-                            } else {
-                                Image(systemName: "arrow.clockwise")
-                                    .font(.system(size: 14))
-                                    .foregroundColor(colorScheme == .light ? Color(hex: "1A1A1A").opacity(0.5) : .white.opacity(0.6))
-                            }
-                        }
-                        .disabled(isLoadingSubscription)
+                            .foregroundColor(colorScheme == .light ? Color(hex: "1A1A1A").opacity(0.8) : .white.opacity(0.9))
                     }
                 }
-                .padding(.top, 8)
+            }
+
+            Button(action: onBuyCreditsTap) {
+                Text("Buy Credits")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(Color(hex: "FFFFFF"))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 44)
+                    .background(Color(hex: "6B21C0"))
+                    .cornerRadius(12)
             }
         }
         .padding(20)
@@ -584,35 +514,6 @@ struct ProCard: View {
                         ? Color(hex: "9D7FD6").opacity(0.25)
                         : Color.clear,
                     lineWidth: 1
-                )
-        )
-    }
-}
-
-// MARK: - Premium Status Banner Component
-struct PremiumStatusBanner: View {
-    @Environment(\.colorScheme) var colorScheme
-
-    var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "crown.fill")
-                .font(.system(size: 16))
-                .foregroundColor(DesignTokens.Brand.primary(colorScheme))
-            
-            Text("You're Premium! Enjoy unlimited access.")
-                .font(.system(size: 14, weight: .medium))
-                .foregroundColor(DesignTokens.Text.primary(colorScheme))
-            
-            Spacer()
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(DesignTokens.Brand.primary(colorScheme).opacity(0.1))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(DesignTokens.Brand.primary(colorScheme).opacity(0.3), lineWidth: 1)
                 )
         )
     }

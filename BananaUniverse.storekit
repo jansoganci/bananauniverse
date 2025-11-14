@@ -4,7 +4,66 @@
 
   ],
   "products" : [
-
+    {
+      "displayPrice" : "8.99",
+      "familyShareable" : false,
+      "internalID" : "2000001",
+      "localizations" : [
+        {
+          "description" : "Purchase 10 credits for image processing",
+          "displayName" : "10 Credits",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "credits_10",
+      "referenceName" : "10 Credits Pack",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "19.99",
+      "familyShareable" : false,
+      "internalID" : "2000002",
+      "localizations" : [
+        {
+          "description" : "Purchase 25 credits for image processing",
+          "displayName" : "25 Credits",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "credits_25",
+      "referenceName" : "25 Credits Pack",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "34.99",
+      "familyShareable" : false,
+      "internalID" : "2000003",
+      "localizations" : [
+        {
+          "description" : "Purchase 50 credits for image processing",
+          "displayName" : "50 Credits",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "credits_50",
+      "referenceName" : "50 Credits Pack",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "79.99",
+      "familyShareable" : false,
+      "internalID" : "2000004",
+      "localizations" : [
+        {
+          "description" : "Purchase 100 credits for image processing",
+          "displayName" : "100 Credits",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "credits_100",
+      "referenceName" : "100 Credits Pack",
+      "type" : "Consumable"
+    }
   ],
   "settings" : {
     "_applicationInternalID" : "com.bananauniverse.app",
@@ -61,81 +120,6 @@
       }
     ]
   },
-  "subscriptionGroups" : [
-    {
-      "id" : "21482400",
-      "localizations" : [
-        {
-          "description" : "Premium subscription for unlimited access to all features",
-          "displayName" : "Banana Universe Premium",
-          "locale" : "en_US"
-        }
-      ],
-      "name" : "Premium",
-      "subscriptions" : [
-        {
-          "adHocOffers" : [
-
-          ],
-          "codeOffers" : [
-
-          ],
-          "displayPrice" : "3.99",
-          "familyShareable" : false,
-          "groupNumber" : 1,
-          "internalID" : "1234567890",
-          "introductoryOffer" : {
-            "internalID" : "1234567891",
-            "numberOfPeriods" : 1,
-            "paymentMode" : "free",
-            "subscriptionPeriod" : "P3D"
-          },
-          "localizations" : [
-            {
-              "description" : "Weekly premium subscription with 3-day free trial",
-              "displayName" : "Weekly Pro",
-              "locale" : "en_US"
-            }
-          ],
-          "productID" : "banana_weekly",
-          "recurringSubscriptionPeriod" : "P1W",
-          "referenceName" : "Weekly Pro",
-          "subscriptionGroupID" : "21482400",
-          "type" : "RecurringSubscription"
-        },
-        {
-          "adHocOffers" : [
-
-          ],
-          "codeOffers" : [
-
-          ],
-          "displayPrice" : "29.99",
-          "familyShareable" : false,
-          "groupNumber" : 2,
-          "internalID" : "1234567892",
-          "introductoryOffer" : {
-            "internalID" : "1234567893",
-            "numberOfPeriods" : 1,
-            "paymentMode" : "free",
-            "subscriptionPeriod" : "P3D"
-          },
-          "localizations" : [
-            {
-              "description" : "Yearly premium subscription with 3-day free trial - Best value!",
-              "displayName" : "Yearly Pro",
-              "locale" : "en_US"
-            }
-          ],
-          "productID" : "banana_yearly",
-          "recurringSubscriptionPeriod" : "P1Y",
-          "referenceName" : "Yearly Pro",
-          "subscriptionGroupID" : "21482400",
-          "type" : "RecurringSubscription"
-        }
-      ]
-    }
-  ],
   "version" : {
     "major" : 3,
     "minor" : 0

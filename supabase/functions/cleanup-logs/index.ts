@@ -31,17 +31,17 @@ Deno.serve(async (req: Request) => {
   const startTime = Date.now();
   
   try {
-    // ============================================
+  // ============================================
     // 1. AUTHENTICATE REQUEST
-    // ============================================
+  // ============================================
     const authError = await authenticateRequest(req);
     if (authError) {
       return new Response(JSON.stringify({ error: authError }), { 
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      });
-    }
-
+      status: 401,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    });
+  }
+  
     console.log('🧹 [LOG-ROTATION] Starting 90-day log rotation...');
     
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -152,75 +152,75 @@ async function deleteLogsInBatches(
   errors: string[];
 }> {
   console.log('🗑️ [LOG-ROTATION] Starting batch deletion of logs older than 90 days...');
-  
-  let totalDeleted = 0;
-  let batchesProcessed = 0;
-  let hasMoreLogs = true;
-  let oldestDeletedDate: string | undefined;
-  let newestDeletedDate: string | undefined;
+    
+    let totalDeleted = 0;
+    let batchesProcessed = 0;
+    let hasMoreLogs = true;
+    let oldestDeletedDate: string | undefined;
+    let newestDeletedDate: string | undefined;
   const errors: string[] = [];
-  
-  while (hasMoreLogs) {
-    try {
-      // Get batch of old logs to delete
-      const { data: oldLogs, error: fetchError } = await supabase
-        .from('cleanup_logs')
-        .select('id, created_at')
-        .lt('created_at', cutoffDate.toISOString())
-        .order('created_at', { ascending: true })
+    
+    while (hasMoreLogs) {
+      try {
+        // Get batch of old logs to delete
+        const { data: oldLogs, error: fetchError } = await supabase
+          .from('cleanup_logs')
+          .select('id, created_at')
+          .lt('created_at', cutoffDate.toISOString())
+          .order('created_at', { ascending: true })
         .limit(batchSize);
-      
-      if (fetchError) {
-        throw new Error(`Failed to fetch logs: ${fetchError.message}`);
-      }
-      
-      if (!oldLogs || oldLogs.length === 0) {
-        hasMoreLogs = false;
-        break;
-      }
-      
-      // Track date range for reporting
-      if (!oldestDeletedDate) {
-        oldestDeletedDate = oldLogs[0].created_at;
-      }
-      newestDeletedDate = oldLogs[oldLogs.length - 1].created_at;
-      
-      // Delete batch
-      const logIds = oldLogs.map(log => log.id);
-      const { error: deleteError } = await supabase
-        .from('cleanup_logs')
-        .delete()
-        .in('id', logIds);
-      
-      if (deleteError) {
-        throw new Error(`Failed to delete log batch: ${deleteError.message}`);
-      }
-      
-      totalDeleted += oldLogs.length;
-      batchesProcessed++;
-      
-      console.log(`🔄 [LOG-ROTATION] Batch ${batchesProcessed}: Deleted ${oldLogs.length} logs (Total: ${totalDeleted})`);
-      
-      // Safety check: if we got fewer logs than batch size, we're done
+        
+        if (fetchError) {
+          throw new Error(`Failed to fetch logs: ${fetchError.message}`);
+        }
+        
+        if (!oldLogs || oldLogs.length === 0) {
+          hasMoreLogs = false;
+          break;
+        }
+        
+        // Track date range for reporting
+        if (!oldestDeletedDate) {
+          oldestDeletedDate = oldLogs[0].created_at;
+        }
+        newestDeletedDate = oldLogs[oldLogs.length - 1].created_at;
+        
+        // Delete batch
+        const logIds = oldLogs.map(log => log.id);
+        const { error: deleteError } = await supabase
+          .from('cleanup_logs')
+          .delete()
+          .in('id', logIds);
+        
+        if (deleteError) {
+          throw new Error(`Failed to delete log batch: ${deleteError.message}`);
+        }
+        
+        totalDeleted += oldLogs.length;
+        batchesProcessed++;
+        
+        console.log(`🔄 [LOG-ROTATION] Batch ${batchesProcessed}: Deleted ${oldLogs.length} logs (Total: ${totalDeleted})`);
+        
+        // Safety check: if we got fewer logs than batch size, we're done
       if (oldLogs.length < batchSize) {
+          hasMoreLogs = false;
+        }
+        
+        // Small delay between batches to avoid overwhelming the database
+        if (hasMoreLogs) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+      } catch (error) {
+        const errorMsg = `Batch ${batchesProcessed + 1} failed: ${error.message}`;
+      errors.push(errorMsg);
+        console.error(`❌ [LOG-ROTATION] ${errorMsg}`);
+        
+        // Continue with next batch instead of failing completely
         hasMoreLogs = false;
       }
-      
-      // Small delay between batches to avoid overwhelming the database
-      if (hasMoreLogs) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
-      
-    } catch (error) {
-      const errorMsg = `Batch ${batchesProcessed + 1} failed: ${error.message}`;
-      errors.push(errorMsg);
-      console.error(`❌ [LOG-ROTATION] ${errorMsg}`);
-      
-      // Continue with next batch instead of failing completely
-      hasMoreLogs = false;
     }
-  }
-  
+    
   return {
     totalDeleted,
     batchesProcessed,
@@ -230,33 +230,33 @@ async function deleteLogsInBatches(
   };
 }
 
-// ============================================
+    // ============================================
 // LOGGING & NOTIFICATIONS
-// ============================================
-
+    // ============================================
+    
 async function logRotationResults(
   supabase: any,
   result: LogRotationResult,
   retentionDays: number
 ): Promise<void> {
-  try {
-    await supabase
-      .from('cleanup_logs')
-      .insert({
-        operation: 'log_rotation_complete',
-        details: {
+    try {
+      await supabase
+        .from('cleanup_logs')
+        .insert({
+          operation: 'log_rotation_complete',
+          details: {
           logs_deleted: result.logsDeleted,
           batches_processed: result.batchesProcessed,
           retention_days: retentionDays,
-          execution_time_ms: result.executionTime,
-          errors: result.errors,
+            execution_time_ms: result.executionTime,
+            errors: result.errors,
           oldest_deleted: result.oldestDeletedDate,
           newest_deleted: result.newestDeletedDate
-        }
-      });
-  } catch (logError) {
-    console.warn('⚠️ [LOG-ROTATION] Failed to log rotation results:', logError);
-  }
+          }
+        });
+    } catch (logError) {
+      console.warn('⚠️ [LOG-ROTATION] Failed to log rotation results:', logError);
+    }
 }
 
 async function sendTelegramNotification(result: LogRotationResult): Promise<void> {

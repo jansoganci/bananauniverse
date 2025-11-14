@@ -154,23 +154,23 @@ struct HomeView_Redesign_Preview: View {
     private func getToolsForCategory(_ categoryId: String) -> [Tool] {
         switch categoryId {
         case "main_tools":
-            return Tool.mainTools
+            return Theme.mockThemes
         case "seasonal":
-            return Tool.seasonalTools
+            return Theme.mockThemes
         case "pro_looks":
-            return Tool.proLooksTools
+            return Theme.mockThemes
         case "restoration":
-            return Tool.restorationTools
+            return Theme.mockThemes
         default:
             return []
         }
     }
     
     private var featuredTools: [Tool] {
-        let mainTools = Array(Tool.mainTools.prefix(2))
-        let seasonalTools = Array(Tool.seasonalTools.prefix(1))
-        let proTools = Array(Tool.proLooksTools.prefix(1))
-        let restorationTools = Array(Tool.restorationTools.prefix(1))
+        let mainTools = Array(Theme.mockThemes.prefix(2))
+        let seasonalTools = Array(Theme.mockThemes.prefix(1))
+        let proTools = Array(Theme.mockThemes.prefix(1))
+        let restorationTools = Array(Theme.mockThemes.prefix(1))
         
         return Array((mainTools + seasonalTools + proTools + restorationTools).prefix(5))
     }

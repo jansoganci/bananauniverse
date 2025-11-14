@@ -63,14 +63,6 @@ class ChatViewModel: ObservableObject {
     @Published var uploadProgress: Double = 0.0
     @Published var showingPaywall = false
     @Published var showingLogin = false
-    // Quota properties now connected to CreditManager
-    var dailyQuotaUsed: Int {
-        return creditManager.dailyQuotaUsed
-    }
-    
-    var dailyQuotaLimit: Int {
-        return creditManager.dailyQuotaLimit
-    }
     @Published var currentPrompt: String = "" // Current prompt for processing
     @Published var messages: [ChatMessage] = [] // Chat messages for displaying results
     @Published var currentJobID: String? = nil // Current job being processed
@@ -80,25 +72,14 @@ class ChatViewModel: ObservableObject {
         return jobStatus.isActive
     }
     
-    // MARK: - Quota Management (Connected to CreditManager)
-    var remainingQuota: Int {
-        return creditManager.remainingQuota
-    }
-    
-    var isPremiumUser: Bool {
-        return creditManager.isPremiumUser
-    }
-    
     private let authService = HybridAuthService.shared
     private let storageService = StorageService.shared
     private let supabaseService = SupabaseService.shared
-    // private let adaptyService = AdaptyService.shared
     private let creditManager = CreditManager.shared
     private var inFlightTasks: [Task<Void, Never>] = []
     
     init() {
-        // Quota management is now handled by CreditManager
-        // No need to load quota separately
+        // Credit management is handled by CreditManager
     }
     
     // MARK: - Prompt Management
@@ -189,12 +170,10 @@ class ChatViewModel: ObservableObject {
             return
         }
         
-        // Check quota limits for anonymous users
-        if !authService.isAuthenticated {
-            if dailyQuotaUsed >= dailyQuotaLimit {
-                showingPaywall = true
-                return
-            }
+        // Check credits for ALL users (anonymous AND authenticated)
+        if !creditManager.canProcessImage() {
+            showingPaywall = true
+            return
         }
         
         let task = Task {
@@ -292,6 +271,14 @@ class ChatViewModel: ObservableObject {
                 throw ChatError.processingFailed
             }
 
+            // ⚡ UPDATE CREDITS FROM BACKEND RESPONSE ⚡
+            // Backend deducts credits and returns updated balance
+            if let creditInfo = submitResponse.creditInfo {
+                await creditManager.updateFromBackendResponse(
+                    creditsRemaining: creditInfo.creditsRemaining
+                )
+            }
+
             currentJobID = submitResponse.jobId
             let estimatedTime = submitResponse.estimatedTime ?? 15
 
@@ -327,11 +314,17 @@ class ChatViewModel: ObservableObject {
 
                 uploadProgress = 0.8
 
-                // Step 6: Download the processed image
+                // Step 6: Download the processed image with cache-busting
                 guard let url = URL(string: processedImageURL) else {
                     throw ChatError.invalidResult
                 }
-                let (processedImageData, _) = try await URLSession.shared.data(from: url)
+                
+                // Create request with cache-busting to prevent URLSession from serving cached images
+                var request = URLRequest(url: url)
+                request.cachePolicy = .reloadIgnoringLocalCacheData
+                request.setValue("no-cache", forHTTPHeaderField: "Cache-Control")
+                
+                let (processedImageData, _) = try await URLSession.shared.data(for: request)
 
                 guard let processedUIImage = UIImage(data: processedImageData) else {
                     throw ChatError.invalidResult
@@ -488,9 +481,6 @@ class ChatViewModel: ObservableObject {
     func clearError() {
         errorMessage = nil
     }
-    
-    // MARK: - Quota Management
-    // Legacy local quota implementation removed. Quota is now managed by CreditManager.
     
     // MARK: - Paywall Flow
     func showPaywall() {

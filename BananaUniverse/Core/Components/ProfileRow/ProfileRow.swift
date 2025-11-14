@@ -98,13 +98,13 @@ struct ProfileRow: View {
         )
         
         ProfileRow(
-            icon: "crown.fill",
-            title: "Subscription",
-            subtitle: "Premium User",
-            iconColor: DesignTokens.Brand.premiumVIP(.light),
+            icon: "star.fill",
+            title: "Credits",
+            subtitle: "10 credits available",
+            iconColor: DesignTokens.Brand.primary(.light),
             showChevron: true,
             action: {
-                print("Subscription tapped")
+                print("Credits tapped")
             }
         )
         
@@ -139,13 +139,13 @@ struct ProfileRow: View {
         )
         
         ProfileRow(
-            icon: "crown.fill",
-            title: "Subscription",
-            subtitle: "Premium User",
-            iconColor: DesignTokens.Brand.premiumVIP(.dark),
+            icon: "star.fill",
+            title: "Credits",
+            subtitle: "10 credits available",
+            iconColor: DesignTokens.Brand.primary(.dark),
             showChevron: true,
             action: {
-                print("Subscription tapped")
+                print("Credits tapped")
             }
         )
         

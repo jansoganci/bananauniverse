@@ -12,12 +12,7 @@ struct BananaUniverseApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     
     init() {
-        Task {
-            // Mock Adapty activation - always succeeds
-            #if DEBUG
-            print("Mock: Adapty activated successfully")
-            #endif
-        }
+        // App initialization
     }
     
     var body: some Scene {

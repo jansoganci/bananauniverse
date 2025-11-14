@@ -1,0 +1,60 @@
+//
+//  PaywallErrorSection.swift
+//  BananaUniverse
+//
+//  Error state section for paywall
+//
+
+import SwiftUI
+
+struct PaywallErrorSection: View {
+    let errorMessage: String?
+    let onRetry: () -> Void
+    @Environment(\.colorScheme) var colorScheme
+    
+    var body: some View {
+        VStack(spacing: DesignTokens.Spacing.md) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 48))
+                .foregroundColor(DesignTokens.Semantic.warning(colorScheme))
+            
+            Text("Unable to Load Products")
+                .font(DesignTokens.Typography.headline)
+                .foregroundColor(DesignTokens.Text.primary(colorScheme))
+            
+            Text(errorMessage ?? "Please check your internet connection and try again.")
+                .font(DesignTokens.Typography.subheadline)
+                .foregroundColor(DesignTokens.Text.secondary(colorScheme))
+                .multilineTextAlignment(.center)
+            
+            Button(action: onRetry) {
+                HStack(spacing: DesignTokens.Spacing.sm) {
+                    Image(systemName: "arrow.clockwise")
+                    Text("Retry")
+                }
+                .font(DesignTokens.Typography.headline)
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .frame(height: DesignTokens.Layout.buttonHeight)
+                .background(
+                    LinearGradient(
+                        colors: [
+                            DesignTokens.Gradients.premiumStart(colorScheme),
+                            DesignTokens.Gradients.premiumEnd(colorScheme)
+                        ],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .cornerRadius(DesignTokens.CornerRadius.md)
+            }
+            .padding(.top, DesignTokens.Spacing.sm)
+        }
+        .padding(DesignTokens.Spacing.xl)
+        .background(
+            RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.lg)
+                .fill(DesignTokens.Surface.secondary(colorScheme))
+        )
+    }
+}
+

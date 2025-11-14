@@ -7,11 +7,10 @@
 //
 
 import Foundation
-// import Adapty
 
 // MARK: - Mock Product Structure
 
-/// Mock product that mimics AdaptyPaywallProduct for paywall
+/// Mock product for paywall testing
 struct MockProduct {
     let id: String
     let vendorProductId: String
@@ -24,9 +23,6 @@ struct MockProduct {
     let trialPeriod: String?
     let isTrialAvailable: Bool
     let savings: String?
-    
-    // Note: AdaptyPaywallProduct doesn't have a public initializer
-    // In the paywall, we use MockProduct directly instead of converting
 }
 
 // MARK: - Mock Paywall Data

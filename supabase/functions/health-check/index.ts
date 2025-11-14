@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createLogger } from '../_shared/logger.ts';
 
 // ============================================
 // HEALTH CHECK EDGE FUNCTION
@@ -46,9 +47,11 @@ Deno.serve(async (req: Request) => {
   }
 
   const startTime = Date.now();
+  const requestId = `health-${Date.now()}`;
+  const logger = createLogger('health-check', requestId);
   
   try {
-    console.log('🏥 [HEALTH-CHECK] Starting system health check...');
+    logger.info('Starting system health check');
     
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -65,42 +68,61 @@ Deno.serve(async (req: Request) => {
     };
 
     // Check database connectivity
-    result.database = await checkDatabaseConnectivity(supabase);
+    logger.step('1. Checking database connectivity');
+    result.database = await checkDatabaseConnectivity(supabase, logger);
     if (result.database === 'error') {
       result.status = 'unhealthy';
+      logger.warn('Database connectivity failed', { status: result.status });
+    } else {
+      logger.step('1. Database connected');
     }
 
     // Check last cleanup runs
     if (result.database === 'connected') {
-      const cleanupInfo = await checkLastCleanup(supabase);
+      logger.step('2. Checking last cleanup runs');
+      const cleanupInfo = await checkLastCleanup(supabase, logger);
       result.last_cleanup = cleanupInfo.last_cleanup;
       result.details = { ...result.details, ...cleanupInfo.details };
-    }
-
+      logger.step('2. Cleanup status checked', { lastCleanup: result.last_cleanup });
+        }
+        
     // Check error count (last 24 hours)
     if (result.database === 'connected') {
-      const errorInfo = await checkErrorCount(supabase);
+      logger.step('3. Checking error count');
+      const errorInfo = await checkErrorCount(supabase, logger);
       result.errors_24h = errorInfo.errors_24h;
       result.details!.recent_errors = errorInfo.recent_errors;
-    }
-
+      logger.step('3. Error count checked', { errors24h: result.errors_24h });
+        }
+        
     // Determine overall health status
+    logger.step('4. Determining health status');
     result.status = determineHealthStatus(result.database, result.errors_24h);
-    console.log(`🏥 [HEALTH-CHECK] Overall status: ${result.status}`);
+    logger.info('Overall health status determined', { status: result.status });
 
     // Send Telegram alert if unhealthy
     if (result.status !== 'healthy') {
+      logger.step('5. Sending Telegram alert');
       try {
-        await sendTelegramAlert(result);
+        await sendTelegramAlert(result, logger);
         result.alerted = true;
+        logger.step('5. Telegram alert sent');
       } catch (telegramError) {
-        console.warn('⚠️ [HEALTH-CHECK] Telegram alert failed:', telegramError);
+        logger.warn('Telegram alert failed', { error: telegramError });
         // Don't throw - we don't want Telegram failures to break health check
       }
     }
 
     // Return health status
     const statusCode = result.status === 'unhealthy' ? 500 : 200;
+    const duration = Date.now() - startTime;
+    
+    logger.summary('success', {
+      status: result.status,
+      database: result.database,
+      errors24h: result.errors_24h,
+      duration,
+    });
     
     return new Response(JSON.stringify(result), { 
       status: statusCode,
@@ -108,7 +130,7 @@ Deno.serve(async (req: Request) => {
     });
 
   } catch (error) {
-    console.error('❌ [HEALTH-CHECK] Fatal error:', error);
+    logger.error('Fatal error', error);
     
     const errorResult: HealthCheckResult = {
       status: 'unhealthy',
@@ -134,9 +156,10 @@ Deno.serve(async (req: Request) => {
 // ============================================
 
 async function authenticateRequest(req: Request, corsHeaders: Record<string, string>): Promise<Response | null> {
+  const logger = createLogger('health-check');
   const authHeader = req.headers.get('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    console.warn('⚠️ [HEALTH-CHECK] Missing or invalid authorization header');
+    logger.warn('Missing or invalid authorization header');
     return new Response(JSON.stringify({ error: 'Missing authorization header' }), { 
       status: 401,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -147,18 +170,19 @@ async function authenticateRequest(req: Request, corsHeaders: Record<string, str
   const providedApiKey = req.headers.get('x-api-key');
   
   if (expectedApiKey && (!providedApiKey || providedApiKey !== expectedApiKey)) {
-    console.warn('⚠️ [HEALTH-CHECK] Invalid or missing API key');
+    logger.warn('Invalid or missing API key');
     return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
       status: 401,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
     });
   }
   
+  logger.debug('Authentication successful');
   return null;
 }
 
-async function checkDatabaseConnectivity(supabase: any): Promise<'connected' | 'error'> {
-  console.log('🔍 [HEALTH-CHECK] Checking database connectivity...');
+async function checkDatabaseConnectivity(supabase: any, logger?: any): Promise<'connected' | 'error'> {
+  if (logger) logger.debug('Checking database connectivity');
   
   try {
     const { data: dbTest, error: dbError } = await supabase
@@ -170,16 +194,16 @@ async function checkDatabaseConnectivity(supabase: any): Promise<'connected' | '
       throw new Error(`Database error: ${dbError.message}`);
     }
     
-    console.log('✅ [HEALTH-CHECK] Database connectivity confirmed');
+    if (logger) logger.debug('Database connectivity confirmed');
     return 'connected';
     
   } catch (error) {
-    console.error('❌ [HEALTH-CHECK] Database connectivity failed:', error);
+    if (logger) logger.error('Database connectivity failed', error);
     return 'error';
   }
 }
 
-async function checkLastCleanup(supabase: any): Promise<{
+async function checkLastCleanup(supabase: any, logger?: any): Promise<{
   last_cleanup: string | null;
   details: {
     cleanup_images_last_run?: string;
@@ -188,7 +212,7 @@ async function checkLastCleanup(supabase: any): Promise<{
   };
 }> {
   try {
-    console.log('🔍 [HEALTH-CHECK] Checking last cleanup runs...');
+    if (logger) logger.debug('Checking last cleanup runs');
     
     // Get last cleanup run from any cleanup operation
     const { data: lastCleanup, error: cleanupError } = await supabase
@@ -207,9 +231,9 @@ async function checkLastCleanup(supabase: any): Promise<{
     let last_cleanup: string | null = null;
     if (!cleanupError && lastCleanup) {
       last_cleanup = lastCleanup.created_at;
-      console.log(`✅ [HEALTH-CHECK] Last cleanup: ${lastCleanup.operation} at ${lastCleanup.created_at}`);
+      if (logger) logger.debug('Last cleanup found', { operation: lastCleanup.operation, createdAt: lastCleanup.created_at });
     } else {
-      console.log('⚠️ [HEALTH-CHECK] No recent cleanup runs found');
+      if (logger) logger.warn('No recent cleanup runs found');
     }
     
     // Get detailed cleanup status for each function
@@ -237,20 +261,21 @@ async function checkLastCleanup(supabase: any): Promise<{
       });
     }
     
+    if (logger) logger.debug('Cleanup details retrieved', { detailsCount: Object.keys(details).length });
     return { last_cleanup, details };
     
   } catch (error) {
-    console.warn('⚠️ [HEALTH-CHECK] Failed to check cleanup status:', error);
+    if (logger) logger.warn('Failed to check cleanup status', error);
     return { last_cleanup: null, details: {} };
   }
 }
 
-async function checkErrorCount(supabase: any): Promise<{
+async function checkErrorCount(supabase: any, logger?: any): Promise<{
   errors_24h: number;
   recent_errors: string[];
 }> {
   try {
-    console.log('🔍 [HEALTH-CHECK] Checking recent errors...');
+    if (logger) logger.debug('Checking recent errors');
     
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     
@@ -289,13 +314,13 @@ async function checkErrorCount(supabase: any): Promise<{
         `${err.operation}: ${err.error}`
       );
       
-      console.log(`📊 [HEALTH-CHECK] Found ${errors_24h} errors in last 24h`);
+      if (logger) logger.info('Error count retrieved', { errors24h: errors_24h, recentErrorsCount: recent_errors.length });
     }
     
     return { errors_24h, recent_errors };
     
   } catch (error) {
-    console.warn('⚠️ [HEALTH-CHECK] Failed to check error count:', error);
+    if (logger) logger.warn('Failed to check error count', error);
     return { errors_24h: 0, recent_errors: [] };
   }
 }
@@ -315,12 +340,12 @@ function determineHealthStatus(
   }
 }
 
-async function sendTelegramAlert(result: HealthCheckResult): Promise<void> {
+async function sendTelegramAlert(result: HealthCheckResult, logger?: any): Promise<void> {
   const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
   const chatId = Deno.env.get('TELEGRAM_CHAT_ID');
   
   if (!botToken || !chatId) {
-    console.log('ℹ️ [HEALTH-CHECK] Telegram credentials not configured, skipping alert');
+    if (logger) logger.debug('Telegram credentials not configured, skipping alert');
     return;
   }
   
@@ -336,6 +361,7 @@ async function sendTelegramAlert(result: HealthCheckResult): Promise<void> {
       'No recent errors');
   
   try {
+    if (logger) logger.debug('Sending Telegram alert', { status: result.status });
     const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       method: 'POST',
       headers: {
@@ -352,9 +378,9 @@ async function sendTelegramAlert(result: HealthCheckResult): Promise<void> {
       throw new Error(`Telegram API error: ${response.status} ${response.statusText}`);
     }
     
-    console.log('✅ [HEALTH-CHECK] Telegram alert sent successfully');
+    if (logger) logger.info('Telegram alert sent successfully');
   } catch (error) {
-    console.error('❌ [HEALTH-CHECK] Failed to send Telegram alert:', error);
+    if (logger) logger.error('Failed to send Telegram alert', error);
     throw error;
   }
 }

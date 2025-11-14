@@ -55,7 +55,7 @@ struct FeaturedToolCard: View {
                 )
                 
                 // Tool Title - Prominent
-                Text(tool.title)
+                Text(tool.name)
                     .font(DesignTokens.Typography.title2)
                     .fontWeight(.bold)
                     .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
@@ -154,12 +154,10 @@ struct FeaturedToolCard: View {
     VStack(spacing: DesignTokens.Spacing.lg) {
         // Main Tools Featured Tool
         FeaturedToolCard(
-            tool: Tool(
+            tool: Theme(
                 id: "remove_object",
-                title: "Remove Object from Image",
-                imageURL: nil as URL?,
+                name: "Remove Object from Image",
                 category: "main_tools",
-                requiresPro: false,
                 modelName: "lama-cleaner",
                 placeholderIcon: "eraser.fill",
                 prompt: "Remove the selected object naturally"
@@ -174,12 +172,10 @@ struct FeaturedToolCard: View {
         
         // Pro Looks Featured Tool
         FeaturedToolCard(
-            tool: Tool(
+            tool: Theme(
                 id: "linkedin_headshot",
-                title: "LinkedIn Headshot",
-                imageURL: nil as URL?,
+                name: "LinkedIn Headshot",
                 category: "pro_looks",
-                requiresPro: false,
                 modelName: "professional-headshot",
                 placeholderIcon: "person.crop.square",
                 prompt: "Create a professional LinkedIn headshot"

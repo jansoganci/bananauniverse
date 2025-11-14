@@ -106,120 +106,6 @@ class SupabaseService: ObservableObject {
         return publicURL.absoluteString
     }
     
-    // MARK: - AI Processing
-
-    /// Process image with AI using raw image data (recommended for iOS)
-    /// Works for both authenticated and anonymous users
-    func processImageData(
-        model: String,
-        imageData: Data,
-        options: [String: Any] = [:]
-    ) async throws -> AIProcessResponse {
-        
-        // Check if user can process image (includes quota validation)
-        guard await CreditManager.shared.canProcessImage() else {
-            throw SupabaseError.insufficientCredits
-        }
-        
-        // Get user state from hybrid auth service
-        let userState = HybridAuthService.shared.userState
-        
-        if userState.isAuthenticated {
-        } else {
-        }
-        
-        // Convert image data to base64
-        let base64String = imageData.base64EncodedString()
-        let imageDataString = "data:image/jpeg;base64,\(base64String)"
-        
-        var body: [String: Any] = [
-            "model": model,
-            "image_data": imageDataString,
-            "options": options
-        ]
-        
-        // Add user context based on state
-        if userState.isAuthenticated {
-            body["user_id"] = userState.identifier
-        } else {
-            body["device_id"] = userState.identifier
-        }
-
-        
-        let jsonData = try JSONSerialization.data(withJSONObject: body)
-        
-        do {
-            
-            // Use URLSession directly instead of Supabase SDK to avoid response parsing issues
-            guard let functionURL = URL(string: "\(Config.supabaseURL)/functions/v1/ai-process") else {
-                throw SupabaseError.invalidURL
-            }
-            var request = URLRequest(url: functionURL)
-            request.httpMethod = "POST"
-            request.setValue("Bearer \(Config.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
-            request.setValue(Config.supabaseAnonKey, forHTTPHeaderField: "apikey")
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.httpBody = jsonData
-            
-            let (responseData, urlResponse) = try await URLSession.shared.data(for: request)
-            
-            if let httpResponse = urlResponse as? HTTPURLResponse {
-                
-                // Handle 202 Accepted (async processing)
-                if httpResponse.statusCode == 202 {
-                    
-                    // Parse job_id from response
-                    if let responseString = String(data: responseData, encoding: .utf8) {
-                    }
-                    
-                    // For now, throw error - we need to implement polling
-                    throw SupabaseError.processingFailed("Async processing not yet supported. Please wait and try again.")
-                }
-            }
-            
-            
-            // Debug: Print raw response data
-            if let responseString = String(data: responseData, encoding: .utf8) {
-            } else {
-            }
-            
-            let decoder = JSONDecoder()
-            decoder.keyDecodingStrategy = .convertFromSnakeCase
-            
-            do {
-                let response = try decoder.decode(AIProcessResponse.self, from: responseData)
-                
-                // ✅ Credit consumption is now handled by the edge function
-                
-                return response
-            } catch DecodingError.dataCorrupted(let context) {
-                throw SupabaseError.processingFailed("Data corrupted")
-            } catch DecodingError.keyNotFound(let key, let context) {
-                throw SupabaseError.processingFailed("Key '\(key)' not found")
-            } catch DecodingError.valueNotFound(let value, let context) {
-                throw SupabaseError.processingFailed("Value '\(value)' not found")
-            } catch DecodingError.typeMismatch(let type, let context) {
-                throw SupabaseError.processingFailed("Type '\(type)' mismatch")
-            } catch {
-                throw error
-            }
-            
-        } catch {
-            // ❌ Processing failed - credit NOT spent
-            
-            // Try to extract error details
-            if let data = error as? Data {
-                let errorString = String(data: data, encoding: .utf8) ?? "Could not decode error"
-            }
-            
-            // Check if it's a URLError or other network error
-            if let urlError = error as? URLError {
-            }
-            
-            throw error
-        }
-    }
-    
     // MARK: - Async Polling (Phase 2 Migration)
 
     /// Submit image job to async queue (new polling architecture)
@@ -362,194 +248,6 @@ class SupabaseService: ObservableObject {
         return response
     }
 
-    // MARK: - Async Processing (V2)
-    
-    /// Process image with AI using V2 async API (returns 202 immediately)
-    /// Works for both authenticated and anonymous users
-    func processImageDataV2(
-        model: String,
-        imageURL: String,
-        options: [String: Any] = [:]
-    ) async throws -> JobSubmissionResponse {
-        
-        // Check if user can process image (includes credits and quota validation)
-        guard await CreditManager.shared.canProcessImage() else {
-            throw SupabaseError.insufficientCredits
-        }
-        
-        // Get user state from hybrid auth service
-        let userState = HybridAuthService.shared.userState
-        
-        if userState.isAuthenticated {
-        } else {
-        }
-        
-        // Use image URL directly (no base64 conversion needed)
-        var body: [String: Any] = [
-            "model": model,
-            "image_url": imageURL,
-            "options": options
-        ]
-        
-        // Add user context based on state
-        if userState.isAuthenticated {
-            body["user_id"] = userState.identifier
-        } else {
-            body["device_id"] = userState.identifier
-        }
-
-        
-        let jsonData = try JSONSerialization.data(withJSONObject: body)
-        
-        do {
-            // Use URLSession directly for V2 endpoint
-            guard let functionURL = URL(string: "\(Config.supabaseURL)/functions/v1/ai-process-v2") else {
-                throw SupabaseError.invalidURL
-            }
-            var request = URLRequest(url: functionURL)
-            request.httpMethod = "POST"
-            request.setValue("Bearer \(Config.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
-            request.setValue(Config.supabaseAnonKey, forHTTPHeaderField: "apikey")
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.httpBody = jsonData
-            
-            let (responseData, urlResponse) = try await URLSession.shared.data(for: request)
-            
-            guard let httpResponse = urlResponse as? HTTPURLResponse else {
-                throw SupabaseError.invalidResponse
-            }
-            
-            
-            // V2 returns 202 Accepted
-            if httpResponse.statusCode == 202 {
-                
-                // Debug: Print raw response
-                if let rawResponse = String(data: responseData, encoding: .utf8) {
-                } else {
-                }
-                
-                // Enhanced debugging for decode process
-                
-                let decoder = JSONDecoder()
-                decoder.keyDecodingStrategy = .convertFromSnakeCase
-                
-                // Try to parse as JSON first to see structure
-                do {
-                    if let jsonObject = try JSONSerialization.jsonObject(with: responseData) as? [String: Any] {
-                        for (key, value) in jsonObject {
-                        }
-                    }
-                } catch {
-                }
-                
-                let response = try decoder.decode(JobSubmissionResponse.self, from: responseData)
-
-                // Note: Credit consumption is now handled server-side in submit-job Edge Function
-                // No client-side credit deduction needed
-
-                return response
-            } else if httpResponse.statusCode == 402 {
-                // Insufficient credits
-                if let errorString = String(data: responseData, encoding: .utf8) {
-                }
-                throw SupabaseError.insufficientCredits
-            } else {
-                // Other errors
-                if let errorString = String(data: responseData, encoding: .utf8) {
-                }
-                throw SupabaseError.serverError("Failed to submit job")
-            }
-            
-        } catch let error as SupabaseError {
-            throw error
-        } catch DecodingError.keyNotFound(let key, let context) {
-            throw SupabaseError.processingFailed("Key '\(key)' not found in response")
-        } catch DecodingError.typeMismatch(let type, let context) {
-            throw SupabaseError.processingFailed("Type mismatch: expected \(type)")
-        } catch DecodingError.valueNotFound(let value, let context) {
-            throw SupabaseError.processingFailed("Value '\(value)' not found")
-        } catch DecodingError.dataCorrupted(let context) {
-            throw SupabaseError.processingFailed("Data corrupted: \(context.debugDescription)")
-        } catch {
-            throw error
-        }
-    }
-    
-    /// Poll job status until completion with progress callbacks
-    func pollJobStatus(
-        jobId: String,
-        deviceId: String? = nil,
-        onProgress: @escaping (JobStatusResponse) -> Void
-    ) async throws -> JobStatusResponse {
-        
-        var attempts = 0
-        let maxAttempts = 120 // 10 minutes max (with exponential backoff)
-        var pollInterval: UInt64 = 3_000_000_000 // Start with 3 seconds
-        
-        while attempts < maxAttempts {
-            do {
-                // Build URL with parameters
-                var urlComponents = URLComponents(string: "\(Config.supabaseURL)/functions/v1/job-status")!
-                var queryItems = [URLQueryItem(name: "job_id", value: jobId)]
-                
-                // Add device_id for anonymous users
-                if let deviceId = deviceId {
-                    queryItems.append(URLQueryItem(name: "device_id", value: deviceId))
-                }
-                
-                urlComponents.queryItems = queryItems
-                
-                guard let url = urlComponents.url else {
-                    throw SupabaseError.invalidURL
-                }
-                var request = URLRequest(url: url)
-                request.httpMethod = "GET"
-                request.setValue("Bearer \(Config.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
-                request.setValue(Config.supabaseAnonKey, forHTTPHeaderField: "apikey")
-                
-                let (responseData, _) = try await URLSession.shared.data(for: request)
-                
-                let decoder = JSONDecoder()
-                decoder.keyDecodingStrategy = .convertFromSnakeCase
-                let status = try decoder.decode(JobStatusResponse.self, from: responseData)
-                
-                
-                // Call progress callback
-                onProgress(status)
-                
-                // Check if done
-                if status.status == "completed" {
-                    return status
-                } else if status.status == "failed" {
-                    throw SupabaseError.processingFailed(status.errorMessage ?? "Unknown error")
-                }
-                
-                // Exponential backoff: 3s → 5s → 8s → 10s (max)
-                try await Task.sleep(nanoseconds: pollInterval)
-                
-                if pollInterval < 10_000_000_000 {
-                    pollInterval = min(pollInterval + 2_000_000_000, 10_000_000_000)
-                }
-                
-                attempts += 1
-                
-            } catch let error as SupabaseError {
-                throw error
-            } catch {
-                
-                // Don't fail on network errors, just retry
-                if attempts >= maxAttempts - 1 {
-                    throw SupabaseError.timeout
-                }
-                
-                try await Task.sleep(nanoseconds: pollInterval)
-                attempts += 1
-            }
-        }
-        
-        throw SupabaseError.timeout
-    }
-    
     /// Get count of active (pending/processing) jobs for current user
     func getActiveJobCount() async throws -> Int {
         let userState = HybridAuthService.shared.userState
@@ -583,34 +281,6 @@ class SupabaseService: ObservableObject {
         }
         
         return 0 // Fail open
-    }
-    
-    /// Upscale image (convenience method)
-    func upscaleImage(
-        imageData: Data,
-        upscaleFactor: Int = 2,
-        creativity: Double = 0.35,
-        resemblance: Double = 0.6
-    ) async throws -> AIProcessResponse {
-        let options: [String: Any] = [
-            "upscale_factor": upscaleFactor,
-            "creativity": creativity,
-            "resemblance": resemblance
-        ]
-        
-        
-        do {
-            let response = try await processImageData(
-                model: "upscale",
-                imageData: imageData,
-                options: options
-            )
-            return response
-        } catch {
-            if let supabaseError = error as? SupabaseError {
-            }
-            throw error
-        }
     }
     
     // MARK: - Library / Job History
@@ -783,9 +453,9 @@ struct JobSubmissionResponse: Codable {
 struct UsageInfo: Codable {
     let requestsToday: Int
     let requestsMonth: Int
-    let subscriptionTier: String
     
     // ✅ REMOVED CodingKeys - using convertFromSnakeCase instead
+    // Note: subscription_tier column may exist in DB but is ignored
 }
 
 struct JobStatusResponse: Codable {
@@ -811,7 +481,6 @@ struct JobStatusResponse: Codable {
 struct UserProfile: Codable {
     let id: UUID
     let email: String
-    let subscriptionTier: String
     let requestsUsedToday: Int
     let requestsUsedThisMonth: Int
     let createdAt: Date
@@ -819,11 +488,11 @@ struct UserProfile: Codable {
     
     enum CodingKeys: String, CodingKey {
         case id, email
-        case subscriptionTier = "subscription_tier"
         case requestsUsedToday = "requests_used_today"
         case requestsUsedThisMonth = "requests_used_this_month"
         case createdAt = "created_at"
         case updatedAt = "updated_at"
+        // Note: subscription_tier column may exist in DB but is ignored
     }
 }
 

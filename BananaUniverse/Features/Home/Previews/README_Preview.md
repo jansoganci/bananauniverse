@@ -54,9 +54,10 @@ If you want to modify the preview:
 
 ## 📝 Notes:
 
-- Uses real tool data from `Tool.mainTools`, `Tool.seasonalTools`, etc.
+- Uses mock theme data from `Theme.mockThemes` for previews
 - Uses actual `ToolCard` component for consistency
 - Follows your existing design system completely
+- Production app uses database-driven themes via `ThemeService`
 
 ---
 

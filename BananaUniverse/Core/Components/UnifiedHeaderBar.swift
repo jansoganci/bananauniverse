@@ -69,32 +69,7 @@ struct UnifiedHeaderBar: View {
         case .appLogo(let size):
             AppLogo(size: size)
             
-        case .getProButton(let action):
-            Button(action: action) {
-                HStack(spacing: 4) {
-                    Image(systemName: "crown.fill")
-                        .font(.system(size: 10))
-                    Text("Get PRO")
-                        .font(.system(size: 13, weight: .medium))
-                }
-                .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
-                .padding(.horizontal, DesignTokens.Spacing.md)
-                .padding(.vertical, DesignTokens.Spacing.sm)
-                .background(
-                    RoundedRectangle(cornerRadius: 14)
-                        .fill(DesignTokens.Surface.primary(themeManager.resolvedColorScheme))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 14)
-                                .stroke(DesignTokens.Brand.primary(themeManager.resolvedColorScheme), lineWidth: 1)
-                        )
-                        .designShadow(DesignTokens.Shadow.sm)
-                )
-            }
-            
-        case .quotaBadge(_, _, let action):
-            QuotaDisplayView(style: .compact, action: action)
-            
-        case .unlimitedBadge(let action):
+        case .quotaBadge(_, let action):
             QuotaDisplayView(style: .compact, action: action)
             
         case .empty:
@@ -107,9 +82,7 @@ struct UnifiedHeaderBar: View {
 enum HeaderContent {
     case brandLogo(String)
     case appLogo(CGFloat)
-    case getProButton(() -> Void)
-    case quotaBadge(Int, Int, () -> Void) // quota, limit, action
-    case unlimitedBadge(() -> Void)
+    case quotaBadge(Int, () -> Void) // credits, action
     case empty
 }
 
@@ -119,21 +92,21 @@ enum HeaderContent {
         UnifiedHeaderBar(
             title: "Banana Universe",
             leftContent: .brandLogo("Banana Universe"),
-            rightContent: .getProButton({})
+            rightContent: .quotaBadge(10, {})
         )
         
         // Chat style - Free user
         UnifiedHeaderBar(
             title: "Banana Universe",
             leftContent: .brandLogo("Banana Universe"),
-            rightContent: .quotaBadge(0, 3, {})
+            rightContent: .quotaBadge(5, {})
         )
         
-        // Chat style - Unlimited mode with App Logo
+        // Chat style with App Logo
         UnifiedHeaderBar(
             title: "",
             leftContent: .appLogo(32),
-            rightContent: .unlimitedBadge({})
+            rightContent: .quotaBadge(10, {})
         )
         
         // Library/Profile style

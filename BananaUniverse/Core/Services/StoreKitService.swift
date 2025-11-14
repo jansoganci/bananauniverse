@@ -9,26 +9,27 @@
 import Foundation
 import StoreKit
 import SwiftUI
-import Adapty
 
-/// StoreKit 2 service for handling real Apple subscriptions
+/// StoreKit 2 service for handling credit purchases
 @MainActor
 class StoreKitService: ObservableObject {
     static let shared = StoreKitService()
     
-    @Published var products: [Product] = []
-    @Published var purchasedProducts: Set<String> = []
     @Published var isLoading = false
     @Published var errorMessage: String?
-    @Published var isPremiumUser = false
-    @Published var subscriptionRenewalDate: Date?
     
     // Success alert handling
     @Published var shouldShowSuccessAlert = false
     @Published var successAlertMessage = ""
     
     // Product IDs from App Store Connect
-    private let productIds = ["banana_weekly", "banana_yearly"]
+    private let creditProductIds = ["credits_10", "credits_25", "credits_50", "credits_100"]
+    
+    @Published var creditProducts: [Product] = []
+    
+    var hasCreditProducts: Bool {
+        !creditProducts.isEmpty
+    }
     
     // Transaction listener state
     private var transactionListenerTask: Task<Void, Never>?
@@ -36,7 +37,6 @@ class StoreKitService: ObservableObject {
     private init() {
         Task {
             await loadProducts()
-            await updateSubscriptionStatus()
         }
         startTransactionListener()
     }
@@ -48,8 +48,8 @@ class StoreKitService: ObservableObject {
         errorMessage = nil
         
         do {
-            products = try await Product.products(for: productIds)
-            print("✅ Loaded \(products.count) products from App Store")
+            creditProducts = try await Product.products(for: creditProductIds)
+            print("✅ Loaded \(creditProducts.count) credit products from App Store")
         } catch {
             errorMessage = "Failed to load products: \(error.localizedDescription)"
             print("❌ Product loading failed: \(error)")
@@ -71,16 +71,6 @@ class StoreKitService: ObservableObject {
             case .success(let verification):
                 let transaction = try checkVerified(verification)
                 await transaction.finish()
-
-                // Update purchased products
-                purchasedProducts.insert(product.id)
-                await updateSubscriptionStatus()
-
-                // Sync subscription to Supabase
-                await syncSubscriptionToSupabase(transaction: transaction, productId: product.id)
-
-                // Trigger premium status refresh in CreditManager
-                await CreditManager.shared.refreshPremiumStatus()
 
                 #if DEBUG
                 print("✅ Purchase successful and verified: \(product.id)")
@@ -130,123 +120,18 @@ class StoreKitService: ObservableObject {
         
         do {
             try await AppStore.sync()
-            try await Adapty.restorePurchases()
-            await updateSubscriptionStatus()
             #if DEBUG
             print("✅ Purchases restored successfully")
             #endif
         } catch {
-            errorMessage = "Subscription restore failed – please try again later"
+            errorMessage = "Restore failed – please try again later"
             #if DEBUG
-            print("❌ Subscription verification failed: \(error.localizedDescription)")
+            print("❌ Restore failed: \(error.localizedDescription)")
             #endif
             throw error
         }
         
         isLoading = false
-    }
-    
-    // MARK: - Subscription Status
-    
-    func hasActiveSubscription() async -> Bool {
-        for await result in Transaction.currentEntitlements {
-            if case .verified(let transaction) = result {
-                if transaction.productType == .autoRenewable {
-                    return true
-                }
-            }
-        }
-        return false
-    }
-    
-    func updateSubscriptionStatus() async {
-        var hasActiveSubscription = false
-        var latestRenewalDate: Date?
-
-        for await result in Transaction.currentEntitlements {
-            if case .verified(let transaction) = result {
-                if transaction.productType == .autoRenewable {
-                    hasActiveSubscription = true
-                    purchasedProducts.insert(transaction.productID)
-
-                    // Get renewal date from transaction
-                    if let renewalDate = transaction.expirationDate {
-                        latestRenewalDate = renewalDate
-                    }
-
-                    // Sync subscription to Supabase
-                    await syncSubscriptionToSupabase(transaction: transaction, productId: transaction.productID)
-
-                    #if DEBUG
-                    print("✅ Active subscription found: \(transaction.productID)")
-                    #endif
-                }
-            }
-        }
-
-        isPremiumUser = hasActiveSubscription
-        subscriptionRenewalDate = latestRenewalDate
-
-        #if DEBUG
-        print("📊 Premium status: \(isPremiumUser ? "Active" : "Inactive")")
-        if let renewalDate = latestRenewalDate {
-            print("📅 Renewal date: \(renewalDate)")
-        }
-        #endif
-    }
-    
-    // MARK: - Supabase Sync
-
-    /// Syncs StoreKit subscription to Supabase subscriptions table
-    private func syncSubscriptionToSupabase(transaction: StoreKit.Transaction, productId: String) async {
-        #if DEBUG
-        print("🔄 [SUBSCRIPTION] Syncing to Supabase...")
-        print("   Transaction ID: \(transaction.id)")
-        print("   Product ID: \(productId)")
-        if let expirationDate = transaction.expirationDate {
-            print("   Expires: \(expirationDate)")
-        }
-        #endif
-
-        do {
-            // Get user state
-            let userState = HybridAuthService.shared.userState
-            let userId: String? = userState.isAuthenticated ? userState.identifier : nil
-            let deviceId: String? = userState.isAuthenticated ? nil : await CreditManager.shared.getDeviceUUID()
-
-            // Prepare parameters for RPC call (must be Encodable - all String values)
-            var params: [String: String] = [
-                "p_product_id": productId,
-                "p_transaction_id": String(transaction.id),
-                "p_platform": "ios"
-            ]
-
-            if let userId = userId {
-                params["p_user_id"] = userId
-            }
-            if let deviceId = deviceId {
-                params["p_device_id"] = deviceId
-            }
-            if let expirationDate = transaction.expirationDate {
-                params["p_expires_at"] = ISO8601DateFormatter().string(from: expirationDate)
-            }
-
-            // Call sync_subscription RPC function
-            let _ = try await SupabaseService.shared.client
-                .rpc("sync_subscription", params: params)
-                .execute()
-
-            #if DEBUG
-            print("✅ [SUBSCRIPTION] Synced to Supabase successfully")
-            #endif
-
-        } catch {
-            // Log error but don't fail purchase
-            #if DEBUG
-            print("⚠️ [SUBSCRIPTION] Failed to sync to Supabase: \(error.localizedDescription)")
-            print("   This won't affect the purchase, subscription will sync on next app launch")
-            #endif
-        }
     }
 
     // MARK: - Helper Methods
@@ -286,15 +171,12 @@ class StoreKitService: ObservableObject {
                     print("✅ Transaction processed and verified: \(transaction?.id ?? 0)")
                     #endif
                     
-                    // Update subscription status and show success alert on main thread
-                    if let self = self {
+                    // Show success alert for verified credit purchases
+                    if let self = self, let transaction = transaction {
                         await MainActor.run {
-                            Task {
-                                await self.updateSubscriptionStatus()
-                                // Only show success alert for verified transactions
-                                if let transaction = transaction, transaction.productType == .autoRenewable {
-                                    self.showSuccessAlertForVerifiedTransaction(transaction)
-                                }
+                            // Only show success alert for credit purchases (non-subscription products)
+                            if transaction.productType != .autoRenewable {
+                                self.showSuccessAlertForVerifiedTransaction(transaction)
                             }
                         }
                     }
@@ -311,8 +193,7 @@ class StoreKitService: ObservableObject {
     
     private func showSuccessAlertForVerifiedTransaction(_ transaction: StoreKit.Transaction) {
         // Only show success alert for verified, finished transactions
-        isPremiumUser = true
-        successAlertMessage = "Welcome to Premium! You now have unlimited access to all features."
+        successAlertMessage = "Purchase successful! Credits have been added to your account."
         shouldShowSuccessAlert = true
         
         #if DEBUG
@@ -348,26 +229,8 @@ class StoreKitService: ObservableObject {
     
     // MARK: - Product Helpers
     
-    func getProduct(by id: String) -> Product? {
-        return products.first { $0.id == id }
-    }
-    
-    func isProductPurchased(_ product: Product) -> Bool {
-        return purchasedProducts.contains(product.id)
-    }
-    
-    // MARK: - Computed Properties
-    
-    var weeklyProduct: Product? {
-        return getProduct(by: "banana_weekly")
-    }
-    
-    var yearlyProduct: Product? {
-        return getProduct(by: "banana_yearly")
-    }
-    
-    var hasProducts: Bool {
-        return !products.isEmpty
+    func getCreditProduct(by id: String) -> Product? {
+        return creditProducts.first { $0.id == id }
     }
 }
 

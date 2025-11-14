@@ -94,29 +94,11 @@ class HybridAuthService: ObservableObject {
             
             // Initialize new user in backend if needed
             await CreditManager.shared.initializeNewUser()
-            
-            // Identify user in Adapty for purchase tracking
-            do {
-                // Mock identify - always succeeds
-                // try await AdaptyService.shared.identify(userId: user.id.uuidString)
-                print("Mock: User identified in Adapty")
-            } catch {
-                print("Mock: Adapty identification skipped")
-            }
         }
         
         // If transitioning from authenticated to anonymous, handle cleanup
         if case .authenticated = previousState, case .anonymous = newState {
             print("🔄 [AUTH] Authenticated → Anonymous transition")
-            
-            // Logout from Adapty
-            do {
-                // Mock logout - always succeeds
-                // try await AdaptyService.shared.logout()
-                print("Mock: User logged out from Adapty")
-            } catch {
-                print("Mock: Adapty logout skipped")
-            }
         }
     }
     

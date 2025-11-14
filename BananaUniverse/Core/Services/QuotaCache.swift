@@ -16,7 +16,6 @@ struct QuotaCache {
 
     // MARK: - Storage Keys (v3 for credit system)
     private let creditsRemainingKey = "credits_remaining_v3"
-    private let premiumStatusKey = "premium_status_v3"
     private let lastUpdateKey = "credits_last_update_v3"
 
     private init() {}
@@ -25,7 +24,6 @@ struct QuotaCache {
 
     struct CachedQuota {
         let creditsRemaining: Int
-        let premium: Bool
         let lastUpdate: Date
 
         var isStale: Bool {
@@ -39,14 +37,12 @@ struct QuotaCache {
     /// Saves credit balance to UserDefaults
     /// - Parameters:
     ///   - creditsRemaining: Current credit balance
-    ///   - premium: Premium status
-    func save(creditsRemaining: Int, premium: Bool) {
+    func save(creditsRemaining: Int) {
         UserDefaults.standard.set(creditsRemaining, forKey: creditsRemainingKey)
-        UserDefaults.standard.set(premium, forKey: premiumStatusKey)
         UserDefaults.standard.set(Date(), forKey: lastUpdateKey)
 
         #if DEBUG
-        print("💾 [CACHE] Saved: \(creditsRemaining) credits, premium: \(premium)")
+        print("💾 [CACHE] Saved: \(creditsRemaining) credits")
         #endif
     }
 
@@ -63,12 +59,11 @@ struct QuotaCache {
 
         let cached = CachedQuota(
             creditsRemaining: UserDefaults.standard.integer(forKey: creditsRemainingKey),
-            premium: UserDefaults.standard.bool(forKey: premiumStatusKey),
             lastUpdate: UserDefaults.standard.object(forKey: lastUpdateKey) as? Date ?? Date()
         )
 
         #if DEBUG
-        print("💾 [CACHE] Loaded: \(cached.creditsRemaining) credits, premium: \(cached.premium), stale: \(cached.isStale)")
+        print("💾 [CACHE] Loaded: \(cached.creditsRemaining) credits, stale: \(cached.isStale)")
         #endif
 
         return cached
@@ -77,7 +72,6 @@ struct QuotaCache {
     /// Clears all cached credit data
     func clear() {
         UserDefaults.standard.removeObject(forKey: creditsRemainingKey)
-        UserDefaults.standard.removeObject(forKey: premiumStatusKey)
         UserDefaults.standard.removeObject(forKey: lastUpdateKey)
 
         #if DEBUG
@@ -102,13 +96,12 @@ struct QuotaCache {
 
             let used = UserDefaults.standard.integer(forKey: quotaUsedKey)
             let limit = UserDefaults.standard.integer(forKey: quotaLimitKey)
-            let premium = UserDefaults.standard.bool(forKey: oldPremiumKey)
 
             // Convert quota to credits: remaining = limit - used
             let creditsRemaining = max(0, limit - used)
 
             // Migrate to new credit system
-            save(creditsRemaining: creditsRemaining, premium: premium)
+            save(creditsRemaining: creditsRemaining)
 
             // Clean up old keys
             UserDefaults.standard.removeObject(forKey: quotaUsedKey)
@@ -116,7 +109,7 @@ struct QuotaCache {
             UserDefaults.standard.removeObject(forKey: oldPremiumKey)
 
             #if DEBUG
-            print("💾 [CACHE] Migrated from v2 quota: \(used)/\(limit) → \(creditsRemaining) credits, premium: \(premium)")
+            print("💾 [CACHE] Migrated from v2 quota: \(used)/\(limit) → \(creditsRemaining) credits")
             #endif
         }
         // Check if v1 data exists
@@ -124,20 +117,19 @@ struct QuotaCache {
                 UserDefaults.standard.object(forKey: creditsRemainingKey) == nil {
 
             let oldUsed = UserDefaults.standard.integer(forKey: oldQuotaKey)
-            let oldPremium = UserDefaults.standard.bool(forKey: oldPremiumKeyV1)
 
             // v1 had limit of 3, convert to credits
             let creditsRemaining = max(0, 3 - oldUsed)
 
             // Migrate to new credit system
-            save(creditsRemaining: creditsRemaining, premium: oldPremium)
+            save(creditsRemaining: creditsRemaining)
 
             // Clean up old keys
             UserDefaults.standard.removeObject(forKey: oldQuotaKey)
             UserDefaults.standard.removeObject(forKey: oldPremiumKeyV1)
 
             #if DEBUG
-            print("💾 [CACHE] Migrated from v1 quota: \(oldUsed)/3 → \(creditsRemaining) credits, premium: \(oldPremium)")
+            print("💾 [CACHE] Migrated from v1 quota: \(oldUsed)/3 → \(creditsRemaining) credits")
             #endif
         }
     }

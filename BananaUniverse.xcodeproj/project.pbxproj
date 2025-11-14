@@ -11,7 +11,6 @@
 		C5B91CBD2E9D6A23000CA05D /* Realtime in Frameworks */ = {isa = PBXBuildFile; productRef = C5B91CBC2E9D6A23000CA05D /* Realtime */; };
 		C5B91CBF2E9D6A23000CA05D /* Storage in Frameworks */ = {isa = PBXBuildFile; productRef = C5B91CBE2E9D6A23000CA05D /* Storage */; };
 		C5B91CC12E9D6A23000CA05D /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = C5B91CC02E9D6A23000CA05D /* Supabase */; };
-		C5B91CC42E9D6D6D000CA05D /* Adapty in Frameworks */ = {isa = PBXBuildFile; productRef = C5B91CC32E9D6D6D000CA05D /* Adapty */; };
 		C5B91CC72E9D6D99000CA05D /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = C5B91CC62E9D6D99000CA05D /* Kingfisher */; };
 		C5C6DDF92E9EE24A00C63300 /* FalClient in Frameworks */ = {isa = PBXBuildFile; productRef = C5C6DDF82E9EE24A00C63300 /* FalClient */; };
 /* End PBXBuildFile section */
@@ -50,7 +49,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				C5B91CC72E9D6D99000CA05D /* Kingfisher in Frameworks */,
-				C5B91CC42E9D6D6D000CA05D /* Adapty in Frameworks */,
 				C5B91CC12E9D6A23000CA05D /* Supabase in Frameworks */,
 				C5B91CBF2E9D6A23000CA05D /* Storage in Frameworks */,
 				C5B91CBB2E9D6A23000CA05D /* Auth in Frameworks */,
@@ -105,7 +103,6 @@
 				C5B91CBC2E9D6A23000CA05D /* Realtime */,
 				C5B91CBE2E9D6A23000CA05D /* Storage */,
 				C5B91CC02E9D6A23000CA05D /* Supabase */,
-				C5B91CC32E9D6D6D000CA05D /* Adapty */,
 				C5B91CC62E9D6D99000CA05D /* Kingfisher */,
 				C5C6DDF82E9EE24A00C63300 /* FalClient */,
 			);
@@ -140,7 +137,6 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				C5B91CB92E9D6A23000CA05D /* XCRemoteSwiftPackageReference "supabase-swift" */,
-				C5B91CC22E9D6D6D000CA05D /* XCRemoteSwiftPackageReference "AdaptySDK-iOS" */,
 				C5B91CC52E9D6D99000CA05D /* XCRemoteSwiftPackageReference "Kingfisher" */,
 				C5C6DDF72E9EE24A00C63300 /* XCRemoteSwiftPackageReference "fal-swift" */,
 			);
@@ -420,14 +416,6 @@
 				minimumVersion = 2.5.1;
 			};
 		};
-		C5B91CC22E9D6D6D000CA05D /* XCRemoteSwiftPackageReference "AdaptySDK-iOS" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/adaptyteam/AdaptySDK-iOS";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 3.11.0;
-			};
-		};
 		C5B91CC52E9D6D99000CA05D /* XCRemoteSwiftPackageReference "Kingfisher" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/onevcat/Kingfisher";
@@ -466,11 +454,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = C5B91CB92E9D6A23000CA05D /* XCRemoteSwiftPackageReference "supabase-swift" */;
 			productName = Supabase;
-		};
-		C5B91CC32E9D6D6D000CA05D /* Adapty */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = C5B91CC22E9D6D6D000CA05D /* XCRemoteSwiftPackageReference "AdaptySDK-iOS" */;
-			productName = Adapty;
 		};
 		C5B91CC62E9D6D99000CA05D /* Kingfisher */ = {
 			isa = XCSwiftPackageProductDependency;

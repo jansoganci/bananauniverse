@@ -49,12 +49,12 @@ BananaUniverse is a comprehensive iOS app that transforms your photos using 27+ 
 ### 🚀 **Core Capabilities:**
 - **WhatsApp-Style Chat Interface**: Modern, intuitive messaging UI for AI interactions
 - **Instant Processing**: < 35 seconds total processing time
-- **Smart Quota System**: 5 free requests/day, unlimited for premium users
+- **Smart Credit System**: Credit-based access to AI processing
 - **Real-time Rate Limiting**: Built-in usage tracking and limits
 - **Image Library**: Complete history of processed images with save/share functionality
 - **Search & Discovery**: Quick search across all 27 tools
 - **Theme Support**: Light, Dark, and Auto modes
-- **Premium Subscriptions**: Weekly ($4.99/week) and Yearly ($79.99/year) with 3-day free trial
+- **Credit Purchases**: Buy credits to process AI images (no subscription required)
 - **Steve Jobs Architecture**: Single edge function, direct processing, no polling
 
 ## 🏗️ Tech Stack
@@ -65,8 +65,7 @@ BananaUniverse is a comprehensive iOS app that transforms your photos using 27+ 
 - **UI Framework**: SwiftUI with custom design system
 - **Libraries**: 
   - Supabase Swift SDK (auth + database + storage)
-  - StoreKit 2 (native subscription management)
-  - Adapty iOS (subscription analytics & optimization)
+  - StoreKit 2 (native credit purchases)
   - Kingfisher (image loading/caching)
   - FalClient (AI model integration)
 
@@ -81,8 +80,7 @@ BananaUniverse is a comprehensive iOS app that transforms your photos using 27+ 
 | Library | Purpose | Integration |
 |---------|---------|-------------|
 | **Supabase-Swift** | Auth + database + storage | SPM |
-| **StoreKit 2** | Native Apple subscriptions | Native |
-| **Adapty-iOS** | Subscription analytics | SPM |
+| **StoreKit 2** | Native Apple credit purchases | Native |
 | **Kingfisher** | Image loading/caching | SPM |
 | **FalClient** | AI model integration | SPM |
 
@@ -92,9 +90,8 @@ BananaUniverse is a comprehensive iOS app that transforms your photos using 27+ 
 
 - **Xcode 15.0+** with iOS 15.0+ target
 - **Supabase account** with project created
-- **Adapty account** (optional, for subscription analytics)
 - **fal.ai account** with API access
-- **App Store Connect** account (for subscriptions)
+- **App Store Connect** account (for credit purchases)
 
 ### Installation
 
@@ -119,11 +116,7 @@ open BananaUniverse.xcodeproj
    - Create `noname-banana-images-prod` bucket in Supabase
    - Set up RLS policies for user access
 
-5. **Configure Adapty (Optional):**
-   - Create Adapty project and get API key
-   - Adapty is used for analytics; subscriptions use StoreKit 2
-
-6. **Configure fal.ai:**
+5. **Configure fal.ai:**
    - Get API key from fal.ai dashboard
    - Update Edge Function environment variables:
    ```bash
@@ -159,8 +152,8 @@ BananaUniverse/
 │   ├── Chat/             # WhatsApp-style AI processing interface
 │   ├── Home/             # Main dashboard with search & categories
 │   ├── Library/          # Image history with save/share
-│   ├── Profile/          # User settings & subscription management
-│   └── Paywall/          # Premium subscription UI
+│   ├── Profile/          # User settings & account management
+│   └── Paywall/          # Credit purchase UI
 └── supabase/             # Backend functions and migrations
     ├── functions/        # Edge Functions
     └── migrations/       # Database migrations
@@ -208,18 +201,11 @@ struct Config {
 supabase secrets set FAL_KEY=your-fal-ai-key
 ```
 
-### Rate Limiting & Credits
+### Credit System
 
-- **Free Users**: 5 requests/day
-- **Premium Users**: Unlimited requests
-- **Reset**: Daily at midnight UTC
-- **Storage**: `daily_quotas` table with idempotency tracking
-
-### Subscription Plans
-
-- **Weekly Pro**: $4.99/week (3-day free trial available)
-- **Yearly Pro**: $79.99/year (3-day free trial, save 70%)
-- **Benefits**: Unlimited quota, faster processing, all tools unlocked
+- **Credit-Based Access**: Purchase credits to process AI images
+- **No Subscriptions**: Pay-as-you-go model
+- **Storage**: Credit balance tracked per user with idempotency protection
 
 ## 🎯 Performance & Architecture
 
@@ -264,5 +250,3 @@ This is a private project. For questions or support, contact the development tea
 - **Quota System**: Database migrations include comprehensive quota tracking
 
 ---
-
-**Built with ❤️ using the Steve Jobs philosophy: "Simplicity is the ultimate sophistication"**

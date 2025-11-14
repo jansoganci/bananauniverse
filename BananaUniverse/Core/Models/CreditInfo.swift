@@ -10,12 +10,10 @@ import Foundation
 
 struct CreditInfo: Codable {
     let creditsRemaining: Int
-    let isPremium: Bool
     let idempotent: Bool?  // Indicates cached/idempotent response from backend
 
     enum CodingKeys: String, CodingKey {
         case creditsRemaining = "credits_remaining"
-        case isPremium = "is_premium"
         case idempotent
     }
 }

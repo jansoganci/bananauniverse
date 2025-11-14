@@ -37,7 +37,7 @@ This is a **preview-only file** that shows the redesigned modern profile screen 
 
 ## 🎨 What You'll See:
 
-- **Account Section:** Username, Email, Subscription Status
+- **Account Section:** Username, Email
 - **Settings Section:** Theme (with working toggle!), Language, Notifications
 - **Support Section:** Help, Privacy Policy, Terms, AI Disclosure, Restore Purchases
 - **Modern Design:** SF Symbols, rounded cards, proper spacing

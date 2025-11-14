@@ -180,8 +180,8 @@ struct ChatBubbleView: View {
                                 // User bubble with gradient
                                 LinearGradient(
                                     gradient: Gradient(colors: [
-                                        DesignTokens.Gradients.premiumStart(colorScheme),
-                                        DesignTokens.Gradients.premiumEnd(colorScheme)
+                                        DesignTokens.Gradients.energeticStart(colorScheme),
+                                        DesignTokens.Gradients.energeticEnd(colorScheme)
                                     ]),
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
