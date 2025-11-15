@@ -90,40 +90,53 @@ Deno.serve(async (req: Request) => {
     logger.step('3. Setting device ID session');
     await setDeviceIdSession(supabase, device_id, logger);
 
-    // Consume credits
-    logger.step('4. Consuming credits');
-    const creditResult = await consumeCredits(supabase, userType, userIdentifier, requestId, corsHeaders, logger);
-    if (creditResult.error) {
-      logger.error('Credit consumption failed');
-      return creditResult.error;
+    // Atomic job creation (deduct credits + create job)
+    logger.step('4. Creating job atomically (credits + job record)');
+    const atomicResult = await supabase.rpc('submit_job_atomic', {
+      p_client_request_id: requestId,
+      p_user_id: userType === 'authenticated' ? userIdentifier : null,
+      p_device_id: userType === 'anonymous' ? userIdentifier : null,
+      p_idempotency_key: requestId
+    });
+
+    if (atomicResult.error || !atomicResult.data?.success) {
+      logger.error('Atomic job creation failed', {
+        error: atomicResult.error?.message || atomicResult.data?.error
+      });
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: atomicResult.data?.error || 'Failed to create job and deduct credits'
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
-    const { quotaResult } = creditResult.data!;
-    
-    logger.step('4.1. Credits consumed', {
-      creditsRemaining: quotaResult.credits_remaining,
-      idempotent: quotaResult.idempotent || false
+
+    const { job_id, credits_remaining, duplicate } = atomicResult.data;
+
+    logger.step('4.1. Job created atomically', {
+      jobId: job_id,
+      creditsRemaining: credits_remaining,
+      duplicate: duplicate || false
     });
 
     // Submit to fal.ai
     logger.step('5. Submitting to fal.ai');
     const falResult = await submitToFalAI(supabase, supabaseUrl, image_url, prompt, userType, userIdentifier, requestId, corsHeaders, logger);
     if (falResult.error) {
-      logger.error('Fal.ai submission failed');
+      logger.error('Fal.ai submission failed - marking job as failed and refunding credit');
+      await markJobFailedAndRefund(supabase, job_id, userType, userIdentifier, requestId, logger);
       return falResult.error;
     }
     const { falJobId } = falResult.data!;
-    
+
     logger.step('5.1. Submitted to fal.ai', { falJobId });
 
-    // Insert job result
-    logger.step('6. Inserting job result');
-    const insertResult = await insertJobResult(supabase, falJobId, userType, userIdentifier, requestId, corsHeaders, logger);
-    if (insertResult.error) {
-      logger.error('Job result insertion failed');
-      return insertResult.error;
-    }
-    
-    logger.step('6.1. Job result inserted', { jobId: falJobId });
+    // Update job with fal_job_id (job already created by atomic procedure)
+    logger.step('6. Updating job with fal_job_id');
+    await updateJobWithFalId(supabase, job_id, falJobId, logger);
+
+    logger.step('6.1. Job updated with fal_job_id', { jobId: job_id, falJobId });
 
     // Return success response
     const response: SubmitJobResponse = {
@@ -132,14 +145,14 @@ Deno.serve(async (req: Request) => {
       status: 'pending',
       estimated_time: 15,
       quota_info: {
-        credits_remaining: quotaResult.credits_remaining || 0,
+        credits_remaining: credits_remaining || 0,
         is_premium: false
       }
     };
 
     logger.summary('success', {
       jobId: falJobId,
-      creditsRemaining: quotaResult.credits_remaining
+      creditsRemaining: credits_remaining
     });
 
     return new Response(
@@ -302,92 +315,15 @@ async function setDeviceIdSession(supabase: any, device_id?: string, logger?: an
   }
 }
 
-async function consumeCredits(
-  supabase: any,
-  userType: 'authenticated' | 'anonymous',
-  userIdentifier: string,
-  requestId: string,
-  corsHeaders: Record<string, string>,
-  logger?: any
-): Promise<{ error?: Response; data?: { quotaResult: any } }> {
-    if (logger) logger.debug('Calling consume_credits RPC', { userType });
-
-    try {
-      const { data, error } = await supabase.rpc('consume_credits', {
-        p_user_id: userType === 'authenticated' ? userIdentifier : null,
-        p_device_id: userType === 'anonymous' ? userIdentifier : null,
-        p_amount: 1,
-        p_idempotency_key: requestId
-      });
-
-      if (error) {
-        if (logger) logger.error('consume_credits RPC failed', { error: error.message });
-      return {
-        error: new Response(
-          JSON.stringify({ success: false, error: 'Credit validation failed' }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-      };
-      }
-
-    const quotaResult = data;
-      if (logger) logger.debug('consume_credits RPC result', quotaResult);
-
-      // Check for idempotent request
-      if (quotaResult?.idempotent === true) {
-        if (logger) logger.info('Idempotent request detected', { previousJobId: quotaResult.previous_job_id });
-
-      return {
-        error: new Response(
-          JSON.stringify({
-            success: true,
-            idempotent: true,
-            job_id: quotaResult.previous_job_id || null,
-            status: 'completed',
-            quota_info: quotaResult
-          }),
-          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-      };
-    }
-
-    // Check credit result
-    if (!quotaResult.success) {
-      if (logger) logger.warn('Credit check failed', { 
-        error: quotaResult.error, 
-        creditsRemaining: quotaResult.credits_remaining 
-      });
-
-      return {
-        error: new Response(
-        JSON.stringify({
-          success: false,
-          error: quotaResult.error || 'Insufficient credits. Purchase more credits to continue.',
-          quota_info: {
-            credits_remaining: quotaResult.credits_remaining || 0,
-            is_premium: false
-          }
-        }),
-        { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-      };
-    }
-
-    if (logger) logger.info('Credit consumed successfully', { creditsRemaining: quotaResult.credits_remaining });
-
-    return {
-      data: { quotaResult }
-    };
-  } catch (error: any) {
-    if (logger) logger.error('Credit consumption exception', error);
-    return {
-      error: new Response(
-        JSON.stringify({ success: false, error: 'Credit system error' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    };
-  }
-}
+// ============================================
+// DEPRECATED: consumeCredits (no longer used)
+// Credit deduction now handled by submit_job_atomic()
+// ============================================
+// This function is kept for reference but is no longer called.
+// Credit deduction is now handled atomically with job creation
+// in the submit_job_atomic() stored procedure.
+//
+// async function consumeCredits(...) { ... }
 
 async function submitToFalAI(
   supabase: any,
@@ -405,10 +341,7 @@ async function submitToFalAI(
     const falAIKey = Deno.env.get('FAL_AI_API_KEY');
     if (!falAIKey) {
       if (logger) logger.error('FAL_AI_API_KEY not configured');
-      const refundResult = await refundCredit(supabase, userType, userIdentifier, requestId, logger);
-      if (!refundResult.success) {
-        if (logger) logger.warn('Credit refund failed (non-critical)', { error: refundResult.error });
-      }
+      // Refund handled by markJobFailedAndRefund in main flow
       return {
         error: new Response(
           JSON.stringify({ success: false, error: 'FAL_AI_API_KEY not configured' }),
@@ -423,7 +356,14 @@ async function submitToFalAI(
     // 2. Job validation (request_id must exist in database)
     // 3. Rate limiting per IP
     // 4. Optional: Fal.ai signature verification (can be added later)
-    const webhookUrl = `${supabaseUrl}/functions/v1/webhook-handler`;
+    //
+    // CRITICAL: Include client_request_id as query parameter for race condition protection
+    // The webhook receives fal.ai's request_id (which becomes fal_job_id), but if the
+    // webhook arrives before we update the job record with fal_job_id, the lookup would fail.
+    // By passing client_request_id, the webhook can find the job using either:
+    // - fal_job_id (normal case)
+    // - client_request_id (race condition fallback)
+    const webhookUrl = `${supabaseUrl}/functions/v1/webhook-handler?client_request_id=${encodeURIComponent(requestId)}`;
 
     const falAIRequest = {
       prompt: prompt,
@@ -453,15 +393,12 @@ async function submitToFalAI(
 
       if (!falResponse.ok) {
         const errorText = await falResponse.text();
-        if (logger) logger.error('Fal.ai queue submission failed', { 
-          status: falResponse.status, 
-          error: errorText.substring(0, 200) 
+        if (logger) logger.error('Fal.ai queue submission failed', {
+          status: falResponse.status,
+          error: errorText.substring(0, 200)
         });
 
-      const refundResult = await refundCredit(supabase, userType, userIdentifier, requestId, logger);
-      if (!refundResult.success) {
-        if (logger) logger.warn('Credit refund failed (non-critical)', { error: refundResult.error });
-      }
+      // Refund handled by markJobFailedAndRefund in main flow
 
       return {
         error: new Response(
@@ -488,10 +425,7 @@ async function submitToFalAI(
     } catch (error: any) {
       if (logger) logger.error('Fal.ai submission exception', error);
 
-    const refundResult = await refundCredit(supabase, userType, userIdentifier, requestId, logger);
-    if (!refundResult.success) {
-      if (logger) logger.warn('Credit refund failed (non-critical)', { error: refundResult.error });
-    }
+    // Refund handled by markJobFailedAndRefund in main flow
 
     return {
       error: new Response(
@@ -502,43 +436,15 @@ async function submitToFalAI(
     }
 }
 
-async function insertJobResult(
-  supabase: any,
-  falJobId: string,
-  userType: 'authenticated' | 'anonymous',
-  userIdentifier: string,
-  requestId: string,
-  corsHeaders: Record<string, string>,
-  logger?: any
-): Promise<{ error?: Response }> {
-    const { error: insertError } = await supabase
-      .from('job_results')
-      .insert({
-        fal_job_id: falJobId,
-        user_id: userType === 'authenticated' ? userIdentifier : null,
-        device_id: userType === 'anonymous' ? userIdentifier : null,
-        status: 'pending'
-      });
-
-    if (insertError) {
-      if (logger) logger.error('Job result insert failed', { error: insertError.message });
-
-    const refundResult = await refundCredit(supabase, userType, userIdentifier, requestId, logger);
-    if (!refundResult.success) {
-      if (logger) logger.warn('Credit refund failed (non-critical)', { error: refundResult.error });
-    }
-
-    return {
-      error: new Response(
-        JSON.stringify({ success: false, error: 'Failed to create job record' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    };
-    }
-
-    if (logger) logger.debug('Job result entry created', { falJobId, status: 'pending' });
-  return {};
-}
+// ============================================
+// DEPRECATED: insertJobResult (no longer used)
+// Job creation now handled by submit_job_atomic()
+// ============================================
+// This function is kept for reference but is no longer called.
+// Job records are now created atomically with credit deduction
+// in the submit_job_atomic() stored procedure.
+//
+// async function insertJobResult(...) { ... }
 
 // ============================================
 // HELPER: REFUND CREDIT ON FAILURE
@@ -580,5 +486,68 @@ async function refundCredit(
       success: false,
       error: error.message || 'Unexpected error during credit refund'
     };
+  }
+}
+
+// ============================================
+// HELPER: UPDATE JOB WITH FAL_JOB_ID
+// ============================================
+
+async function updateJobWithFalId(
+  supabase: any,
+  jobId: string,
+  falJobId: string,
+  logger?: any
+): Promise<{ error?: Response }> {
+  if (logger) logger.debug('Updating job with fal_job_id', { jobId, falJobId });
+
+  const { error } = await supabase
+    .from('job_results')
+    .update({ fal_job_id: falJobId })
+    .eq('id', jobId);
+
+  if (error) {
+    if (logger) logger.error('Failed to update job with fal_job_id', { error: error.message });
+    // This is non-critical - job exists, webhook can still find it by client_request_id
+  } else {
+    if (logger) logger.debug('Job updated with fal_job_id successfully');
+  }
+
+  return {};
+}
+
+// ============================================
+// HELPER: MARK JOB AS FAILED AND REFUND CREDIT
+// ============================================
+
+async function markJobFailedAndRefund(
+  supabase: any,
+  jobId: string,
+  userType: 'authenticated' | 'anonymous',
+  userIdentifier: string,
+  requestId: string,
+  logger?: any
+): Promise<void> {
+  if (logger) logger.debug('Marking job as failed and refunding credit', { jobId });
+
+  // Mark job as failed
+  const { error: updateError } = await supabase
+    .from('job_results')
+    .update({ status: 'failed', error: 'fal.ai submission failed' })
+    .eq('id', jobId);
+
+  if (updateError) {
+    if (logger) logger.error('Failed to mark job as failed', { error: updateError.message });
+  } else {
+    if (logger) logger.debug('Job marked as failed');
+  }
+
+  // Refund credit
+  const refundResult = await refundCredit(supabase, userType, userIdentifier, requestId, logger);
+  if (!refundResult.success) {
+    if (logger) logger.error('Credit refund failed after fal.ai failure', { error: refundResult.error });
+    // Critical: Log for manual intervention
+  } else {
+    if (logger) logger.info('Credit refunded successfully after fal.ai failure');
   }
 }

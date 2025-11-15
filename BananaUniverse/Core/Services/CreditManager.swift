@@ -39,7 +39,16 @@ class CreditManager: ObservableObject {
         }
     }
 
-    @Published private(set) var isLoading = false
+    @Published private(set) var creditsTotal: Int = 10 {
+        didSet {
+            guard oldValue != creditsTotal else { return }
+            #if DEBUG
+            print("💎 [CREDITS] Lifetime Total: \(oldValue) → \(creditsTotal)")
+            #endif
+        }
+    }
+
+    @Published private(set) var isLoading = true  // Start in loading state until backend confirms
 
     // MARK: - Private State
 
@@ -55,10 +64,11 @@ class CreditManager: ObservableObject {
 
     private init() {
         loadUserState()
-        loadCachedQuota()
+        // DON'T load cache on init - wait for backend to confirm real balance
+        // This prevents showing stale cached credits on app launch
         scheduleBackgroundRefresh()
 
-        // Migrate old cache if needed
+        // Migrate old cache if needed (cache still used for background refresh)
         QuotaCache.shared.migrateFromV1IfNeeded()
     }
 
@@ -70,20 +80,46 @@ class CreditManager: ObservableObject {
         loadQuotaTask?.cancel()
 
         loadQuotaTask = Task {
-            // Prevent concurrent calls
-            guard !isLoading else { return }
+            // Set loading state (removed guard - we want initial load to proceed even if already loading)
             isLoading = true
             defer { isLoading = false }
 
+            let previousBalance = creditsRemaining
+            
             do {
                 let userState = HybridAuthService.shared.userState
+                
+                #if DEBUG
+                if userState.isAuthenticated {
+                    print("👤 [CREDITS] Loading for authenticated user: \(userState.identifier)")
+                } else {
+                    print("📱 [CREDITS] Loading for anonymous device: \(userState.identifier)")
+                }
+                #endif
+                
                 let creditInfo = try await QuotaService.shared.getQuota(
                     userId: userState.isAuthenticated ? userState.identifier : nil,
                     deviceId: userState.isAuthenticated ? nil : userState.identifier
                 )
 
-                // Only update if values changed
-                await updateCredits(remaining: creditInfo.creditsRemaining)
+                // Log credit changes for debugging
+                #if DEBUG
+                if previousBalance != creditInfo.creditsRemaining {
+                    print("🔄 [CREDITS] Backend sync: \(previousBalance) → \(creditInfo.creditsRemaining)")
+                }
+                if let total = creditInfo.creditsTotal {
+                    print("💎 [CREDITS] Lifetime total: \(total)")
+                }
+                if let claimed = creditInfo.initialGrantClaimed {
+                    print("🎁 [CREDITS] Initial grant claimed: \(claimed)")
+                }
+                #endif
+
+                // Update credits (remaining + lifetime total)
+                await updateCredits(
+                    remaining: creditInfo.creditsRemaining,
+                    total: creditInfo.creditsTotal
+                )
 
             } catch let error as QuotaError {
                 print("❌ [CREDITS] Load failed: \(error.displayMessage)")
@@ -172,9 +208,12 @@ class CreditManager: ObservableObject {
     // MARK: - Private Helpers
 
     /// Updates credit state (atomic, with change detection)
-    private func updateCredits(remaining: Int) async {
-        // Only update if values actually changed
-        guard creditsRemaining != remaining else {
+    private func updateCredits(remaining: Int, total: Int? = nil) async {
+        // Check if anything changed
+        let remainingChanged = creditsRemaining != remaining
+        let totalChanged = total != nil && creditsTotal != total!
+
+        guard remainingChanged || totalChanged else {
             #if DEBUG
             print("⏭️ [CREDITS] No changes detected, skipping update")
             #endif
@@ -186,7 +225,12 @@ class CreditManager: ObservableObject {
 
         // Update UI state on main thread
         await MainActor.run {
-            creditsRemaining = remaining
+            if remainingChanged {
+                creditsRemaining = remaining
+            }
+            if let total = total, totalChanged {
+                creditsTotal = total
+            }
         }
     }
 
@@ -194,7 +238,8 @@ class CreditManager: ObservableObject {
     private func loadCachedQuota() {
         guard let cached = QuotaCache.shared.load() else {
             #if DEBUG
-            print("📱 [CREDITS] No cached data, using default: 10 credits")
+            let deviceId = getOrCreateDeviceUUID()
+            print("📱 [CREDITS] No cached data, using default: 10 credits (device: \(deviceId))")
             #endif
             return
         }
@@ -202,7 +247,8 @@ class CreditManager: ObservableObject {
         creditsRemaining = cached.creditsRemaining
 
         #if DEBUG
-        print("📱 [CREDITS] Loaded from cache: \(cached.creditsRemaining) credits")
+        let deviceId = getOrCreateDeviceUUID()
+        print("📱 [CREDITS] Loaded from cache: \(cached.creditsRemaining) credits (device: \(deviceId))")
         #endif
     }
 

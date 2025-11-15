@@ -152,6 +152,7 @@ struct HomeView_Redesign_Preview: View {
     // MARK: - Helper Methods
     
     private func getToolsForCategory(_ categoryId: String) -> [Tool] {
+        #if DEBUG
         switch categoryId {
         case "main_tools":
             return Theme.mockThemes
@@ -164,20 +165,28 @@ struct HomeView_Redesign_Preview: View {
         default:
             return []
         }
+        #else
+        return []
+        #endif
     }
     
     private var featuredTools: [Tool] {
+        #if DEBUG
         let mainTools = Array(Theme.mockThemes.prefix(2))
         let seasonalTools = Array(Theme.mockThemes.prefix(1))
         let proTools = Array(Theme.mockThemes.prefix(1))
         let restorationTools = Array(Theme.mockThemes.prefix(1))
         
         return Array((mainTools + seasonalTools + proTools + restorationTools).prefix(5))
+        #else
+        return []
+        #endif
     }
 }
 
 // MARK: - Xcode Preview
 
+#if DEBUG
 #Preview("Home Redesign") {
     HomeView_Redesign_Preview()
 }
@@ -186,3 +195,4 @@ struct HomeView_Redesign_Preview: View {
     HomeView_Redesign_Preview()
         .preferredColorScheme(.dark)
 }
+#endif

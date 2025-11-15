@@ -82,6 +82,7 @@ struct CollapsibleCategorySection: View {
 }
 
 // MARK: - Preview
+#if DEBUG
 #Preview {
     VStack(spacing: DesignTokens.Spacing.lg) {
         // Expanded section
@@ -121,3 +122,4 @@ struct CollapsibleCategorySection: View {
     .background(DesignTokens.Background.primary(.light))
     .environmentObject(ThemeManager())
 }
+#endif

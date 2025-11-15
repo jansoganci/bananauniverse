@@ -205,6 +205,7 @@ struct FeaturedCarouselCard: View {
 }
 
 // MARK: - Preview
+#if DEBUG
 #Preview {
     FeaturedCarouselView(
         tools: Array(Theme.mockThemes.prefix(5)),
@@ -212,3 +213,4 @@ struct FeaturedCarouselCard: View {
     )
     .environmentObject(ThemeManager())
 }
+#endif

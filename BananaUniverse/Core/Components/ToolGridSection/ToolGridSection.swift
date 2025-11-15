@@ -95,6 +95,7 @@ struct ToolGridSection: View {
 }
 
 // MARK: - Preview
+#if DEBUG
 #Preview {
     VStack(spacing: DesignTokens.Spacing.lg) {
         // iPhone SE (375px) - Main Tools: 2 columns, Others: 2 columns
@@ -141,3 +142,4 @@ struct ToolGridSection: View {
     .background(DesignTokens.Background.primary(.light))
     .environmentObject(ThemeManager())
 }
+#endif

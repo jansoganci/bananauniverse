@@ -88,14 +88,24 @@ Deno.serve(async (req: Request) => {
       return parseResult.error;
     }
     const { request_id, status, payload, error } = parseResult.payload!;
-    
-    // Update logger with job context (preserve duration tracking)
-    logger.setContext({ falJobId: request_id });
-    logger.step('3.1. Webhook payload parsed', { status, hasError: !!error, hasPayload: !!payload });
 
-    // Validate job exists
+    // Extract client_request_id from query parameters (for race condition protection)
+    // This allows us to find the job even if fal_job_id hasn't been set yet
+    const url = new URL(req.url);
+    const client_request_id = url.searchParams.get('client_request_id');
+
+    // Update logger with job context (preserve duration tracking)
+    logger.setContext({ falJobId: request_id, clientRequestId: client_request_id });
+    logger.step('3.1. Webhook payload parsed', {
+      status,
+      hasError: !!error,
+      hasPayload: !!payload,
+      hasClientRequestId: !!client_request_id
+    });
+
+    // Validate job exists (with fallback to client_request_id for race conditions)
     logger.step('4. Validating job exists');
-    const validateResult = await validateJobExists(supabase, request_id, corsHeaders, logger);
+    const validateResult = await validateJobExists(supabase, request_id, client_request_id, corsHeaders, logger);
     if (validateResult.error) {
       logger.error('Job validation failed');
       return validateResult.error;
@@ -103,7 +113,8 @@ Deno.serve(async (req: Request) => {
     const existingJob = validateResult.job!;
     logger.step('4.1. Job validated', {
       userId: existingJob.user_id || null,
-      deviceId: existingJob.device_id || null
+      deviceId: existingJob.device_id || null,
+      foundBy: validateResult.foundBy  // Log which field was used to find the job
     });
 
     // Handle failed/error status
@@ -166,7 +177,7 @@ Deno.serve(async (req: Request) => {
 
       // Update job result
       logger.step('6.4. Updating job result');
-      const updateResult = await updateJobResult(supabase, request_id, signedURL, corsHeaders, logger);
+      const updateResult = await updateJobResult(supabase, request_id, existingJob, signedURL, corsHeaders, logger);
       if (updateResult.error) {
         logger.error('Job result update failed');
         return updateResult.error;
@@ -319,61 +330,86 @@ async function parseWebhookPayload(
 async function validateJobExists(
   supabase: any,
   request_id: string,
+  client_request_id: string | null,
   corsHeaders: Record<string, string>,
   logger?: any
-): Promise<{ job?: any; error?: Response }> {
-    if (logger) logger.debug('Validating job exists in database');
+): Promise<{ job?: any; foundBy?: 'fal_job_id' | 'client_request_id'; error?: Response }> {
+    if (logger) logger.debug('Validating job exists in database', {
+      requestId: request_id,
+      hasClientRequestId: !!client_request_id
+    });
 
+    // ============================================
+    // DUAL LOOKUP: fal_job_id OR client_request_id
+    // ============================================
+    // Race condition protection: If webhook arrives before we update the job
+    // with fal_job_id, we can still find it using client_request_id
     const { data: existingJob, error: queryError } = await supabase
       .from('job_results')
-      .select('fal_job_id, status, user_id, device_id')
-      .eq('fal_job_id', request_id)
-      .single();
-
-    if (queryError && queryError.code === 'PGRST116') {
-      if (logger) logger.error('Job not found', { requestId: request_id });
-    return {
-      error: new Response(
-        JSON.stringify({ success: false, error: 'Job not found' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    };
-    }
+      .select('id, fal_job_id, status, user_id, device_id, client_request_id')
+      .or(`fal_job_id.eq.${request_id},client_request_id.eq.${request_id}`)
+      .maybeSingle();
 
     if (queryError) {
-      if (logger) logger.error('Database error', { error: queryError.message });
-    return {
-      error: new Response(
-        JSON.stringify({ success: false, error: 'Database error' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    };
+      if (logger) logger.error('Database error during job lookup', { error: queryError.message });
+      return {
+        error: new Response(
+          JSON.stringify({ success: false, error: 'Database error' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      };
+    }
+
+    if (!existingJob) {
+      if (logger) logger.error('Job not found', {
+        requestId: request_id,
+        clientRequestId: client_request_id
+      });
+      return {
+        error: new Response(
+          JSON.stringify({ success: false, error: 'Job not found' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      };
+    }
+
+    // Determine which field was used to find the job (for logging)
+    const foundBy = existingJob.fal_job_id === request_id ? 'fal_job_id' : 'client_request_id';
+
+    if (foundBy === 'client_request_id' && logger) {
+      logger.warn('RACE CONDITION DETECTED: Job found by client_request_id (fal_job_id not set yet)', {
+        jobId: existingJob.id,
+        clientRequestId: existingJob.client_request_id,
+        falJobId: existingJob.fal_job_id
+      });
     }
 
     if (existingJob.status !== 'pending') {
-      if (logger) logger.warn('Job already processed (idempotent)', { 
+      if (logger) logger.warn('Job already processed (idempotent)', {
         requestId: request_id,
-        currentStatus: existingJob.status
+        currentStatus: existingJob.status,
+        foundBy
       });
-    return {
-      error: new Response(
-        JSON.stringify({
-          success: true,
-          message: 'Job already processed (idempotent)',
-          status: existingJob.status
-        }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    };
+      return {
+        error: new Response(
+          JSON.stringify({
+            success: true,
+            message: 'Job already processed (idempotent)',
+            status: existingJob.status
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      };
     }
 
     if (logger) logger.debug('Valid pending job found', {
       requestId: request_id,
       userId: existingJob.user_id || null,
-      deviceId: existingJob.device_id || null
+      deviceId: existingJob.device_id || null,
+      foundBy
     });
 
-  return { job: existingJob };
+  return { job: existingJob, foundBy };
 }
 
 async function handleFailedJob(
@@ -386,14 +422,16 @@ async function handleFailedJob(
 ): Promise<Response> {
   if (logger) logger.error('Job failed', { errorMessage });
 
+      // Use internal id for update (race-safe, always available)
       const { error: updateError } = await supabase
         .from('job_results')
         .update({
           status: 'failed',
-      error: errorMessage,
-          completed_at: new Date().toISOString()
+          error: errorMessage,
+          completed_at: new Date().toISOString(),
+          fal_job_id: request_id  // Set fal_job_id now if it wasn't set before
         })
-        .eq('fal_job_id', request_id);
+        .eq('id', existingJob.id);
 
       if (updateError) {
         if (logger) logger.error('Failed to update job_results', { error: updateError.message });
@@ -604,20 +642,23 @@ async function generateSignedUrl(
 async function updateJobResult(
   supabase: any,
   request_id: string,
+  existingJob: any,
   signedURL: string,
   corsHeaders: Record<string, string>,
   logger?: any
 ): Promise<{ success?: boolean; error?: Response }> {
       if (logger) logger.debug('Updating job_results table');
 
+      // Use internal id for update (race-safe, always available)
       const { error: updateError } = await supabase
         .from('job_results')
         .update({
           status: 'completed',
           image_url: signedURL,
-          completed_at: new Date().toISOString()
+          completed_at: new Date().toISOString(),
+          fal_job_id: request_id  // Set fal_job_id now if it wasn't set before
         })
-        .eq('fal_job_id', request_id);
+        .eq('id', existingJob.id);
 
       if (updateError) {
         if (logger) logger.error('Failed to update job_results', { error: updateError.message });
@@ -655,10 +696,11 @@ async function updateJobStatus(
   }
 
   try {
+    // Use dual lookup for race condition safety (fal_job_id OR client_request_id)
     const { error: updateError } = await supabase
       .from('job_results')
       .update(updateData)
-      .eq('fal_job_id', request_id);
+      .or(`fal_job_id.eq.${request_id},client_request_id.eq.${request_id}`);
 
     if (updateError) {
       if (logger) logger.error('Failed to update job_results', { error: updateError.message, status });

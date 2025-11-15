@@ -170,6 +170,10 @@ class ChatViewModel: ObservableObject {
             return
         }
         
+        // ⚡ CRITICAL FIX: Refresh credits from backend before checking
+        // This ensures frontend and backend are in sync
+        await creditManager.loadQuota()
+        
         // Check credits for ALL users (anonymous AND authenticated)
         if !creditManager.canProcessImage() {
             showingPaywall = true

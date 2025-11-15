@@ -114,24 +114,48 @@ struct QuotaDisplayView: View {
     }
 
     private var valueView: some View {
-        Text("\(creditManager.creditsRemaining) credits")
-            .font(.system(size: style == .compact ? 13 : 14))
-            .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
+        Group {
+            if creditManager.isLoading {
+                HStack(spacing: 6) {
+                    ProgressView()
+                        .scaleEffect(0.7)
+                    Text("Syncing...")
+                        .font(.system(size: style == .compact ? 13 : 14))
+                        .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
+                }
+            } else {
+                Text("\(creditManager.creditsRemaining) credits")
+                    .font(.system(size: style == .compact ? 13 : 14))
+                    .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
+            }
+        }
     }
 
     private var textView: some View {
         HStack(spacing: 4) {
-            // Warning icon when credits are low
-            if creditManager.shouldShowQuotaWarning {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundColor(.orange)
-            }
+            // Show loading indicator while syncing with backend
+            if creditManager.isLoading {
+                ProgressView()
+                    .scaleEffect(0.7)
+                    .frame(width: 12, height: 12)
 
-            Text("\(creditManager.creditsRemaining) credits")
-                .font(.system(size: 13, weight: .medium))
-                .lineLimit(1)
-                .foregroundColor(creditManager.shouldShowQuotaWarning ? .orange : DesignTokens.Text.primary(themeManager.resolvedColorScheme))
+                Text("Syncing...")
+                    .font(.system(size: 13, weight: .medium))
+                    .lineLimit(1)
+                    .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
+            } else {
+                // Warning icon when credits are low
+                if creditManager.shouldShowQuotaWarning {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(.orange)
+                }
+
+                Text("\(creditManager.creditsRemaining) credits")
+                    .font(.system(size: 13, weight: .medium))
+                    .lineLimit(1)
+                    .foregroundColor(creditManager.shouldShowQuotaWarning ? .orange : DesignTokens.Text.primary(themeManager.resolvedColorScheme))
+            }
         }
     }
 }

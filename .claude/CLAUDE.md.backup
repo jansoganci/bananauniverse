@@ -1,0 +1,287 @@
+# CLAUDE.md
+
+**Project:** BananaUniverse
+**Type:** iOS App (SwiftUI + Supabase)
+**Purpose:** Professional AI Image Processing Suite with 19+ AI-powered tools
+
+## Tech Stack
+- **Frontend:** SwiftUI, MVVM architecture
+- **Backend:** Supabase Edge Functions (Deno/TypeScript)
+- **AI:** fal.ai models (19+ tools)
+- **Database:** Supabase PostgreSQL with RLS
+- **Auth:** Supabase Auth (anonymous + email + Apple Sign-In)
+- **Payments:** StoreKit 2 (IAP for credit purchases)
+
+## Architecture Overview
+
+### Design Pattern
+- Feature-based folder structure
+- MVVM with ObservableObject view models
+- Centralized AppState management
+- Reactive UI with @Published properties
+- Protocol-oriented services (enables testing/mocking)
+
+### Credit System (Persistent Model)
+- **Default:** 10 credits per user (persistent, not daily)
+- **Consumption:** 1 credit per image generation
+- **Purchasing:** Credit packs via StoreKit IAP (10, 25, 50, 100)
+- **Storage:** Device-local cache + backend sync
+- **Architecture:**
+  - `CreditManager` - UI state orchestration (@MainActor)
+  - `QuotaService` - Network calls (actor)
+  - `QuotaCache` - Persistent storage (UserDefaults)
+
+### Database-Driven Content
+- **Themes Table:** All 19+ tools stored in Supabase
+- **Categories Table:** Dynamic category system with display ordering
+- **Benefits:** Remote content management, no app updates for new tools
+- **Services:** `ThemeService`, `CategoryService` with 5-minute caching
+
+## Key Services
+
+### Core Services
+- `CreditManager` - Credit state management, UI orchestration
+- `HybridAuthService` - Authentication (anonymous/email/Apple)
+- `SupabaseService` - Supabase client wrapper
+- `ThemeService` - Fetches tools from database
+- `CategoryService` - Fetches categories from database
+- `StoreKitService` - IAP purchase handling
+- `QuotaService` - Credit network operations
+- `QuotaCache` - Credit persistence layer
+- `ThemeManager` - App theming (light/dark/auto)
+- `SeasonalManager` - Dynamic seasonal content
+- `StorageService` - User data persistence
+- `NetworkMonitor` - Connectivity monitoring
+
+### Edge Functions (12 Total)
+**Core Processing:**
+- `submit-job` - Submits AI generation jobs, consumes credits
+- `get-result` - Fetches generation results
+- `webhook-handler` - Handles fal.ai webhooks
+
+**IAP & Payments:**
+- `verify-iap-purchase` - Verifies App Store receipts
+- `iap-webhook` - Handles Apple server notifications
+
+**Maintenance:**
+- `cleanup-db` - Database cleanup tasks
+- `cleanup-images` - Storage cleanup
+- `cleanup-logs` - Log rotation
+
+**Monitoring:**
+- `health-check` - System health
+- `log-alert` - Alert notifications
+- `log-monitor` - Log monitoring
+
+## Database Schema (Key Tables)
+
+### User & Credits
+- `user_credits` - Persistent credit balances (user_id or device_id)
+- `credit_transactions` - Audit log of all credit changes
+- `iap_transactions` - Purchase history with Apple transaction IDs
+
+### Content Management
+- `themes` - AI tools/effects (19+ entries, database-driven)
+- `categories` - Tool categories with display ordering
+- `iap_products` - StoreKit product definitions
+
+### Processing
+- `processed_images` - Generation job tracking
+- `image_storage` - Storage bucket references
+
+### Monitoring
+- `rate_limits` - API rate limiting
+- `error_logs` - Error tracking
+
+## Development Rules
+
+### Code Quality
+- Use existing design tokens from `DesignTokens.swift`
+- Follow MVVM pattern with proper state management
+- Use protocol-oriented design for testability
+- Handle async/await properly with error boundaries
+- All @MainActor services should be marked explicitly
+
+### Testing & Deployment
+- Test locally with `supabase start` before deploying
+- Always use RLS policies for database security
+- Run migrations before deploying functions
+- Test IAP in sandbox environment first
+
+### Security
+- Never commit Supabase keys (use Config.swift)
+- Always validate purchases server-side
+- Use RLS policies for all tables
+- Sanitize user input (search queries, etc.)
+
+## Common Commands
+
+### iOS Development
+```bash
+cmd + R              # Run app
+cmd + B              # Build
+cmd + Shift + K      # Clean build folder
+cmd + U              # Run tests
+```
+
+### Supabase Local Development
+```bash
+supabase start       # Start local dev
+supabase db reset    # Reset with migrations
+supabase stop        # Stop local instance
+```
+
+### Edge Functions
+```bash
+# Deploy specific function
+supabase functions deploy submit-job
+supabase functions deploy get-result
+supabase functions deploy verify-iap-purchase
+
+# View logs
+supabase functions logs submit-job
+supabase functions logs get-result --tail
+```
+
+### Database
+```bash
+# Create new migration
+supabase migration new <migration_name>
+
+# Apply migrations
+supabase db push
+
+# View database
+supabase db diff
+```
+
+## Project Structure
+
+```
+BananaUniverse/
+├── App/
+│   ├── BananaUniverseApp.swift    # App entry point
+│   ├── ContentView.swift          # Main tab navigation
+│   └── AppDelegate.swift          # App lifecycle
+├── Core/
+│   ├── Models/                    # Data models (Theme, Category, CreditInfo, etc.)
+│   ├── Services/                  # Business logic services
+│   ├── Components/                # Reusable UI components
+│   ├── Design/                    # Design system (tokens, colors, extensions)
+│   ├── Config/                    # Configuration (Supabase keys, etc.)
+│   └── Extensions/                # Swift extensions
+├── Features/
+│   ├── Home/                      # Home screen (tool browsing)
+│   │   ├── Views/
+│   │   ├── ViewModels/
+│   │   └── Previews/
+│   ├── Chat/                      # AI generation interface
+│   ├── Library/                   # History & saved images
+│   ├── Profile/                   # User profile & settings
+│   ├── Paywall/                   # Credit purchase flow
+│   └── Authentication/            # Login/signup views
+└── supabase/
+    ├── functions/                 # Edge Functions (TypeScript/Deno)
+    └── migrations/                # SQL migrations (85+)
+```
+
+## File Locations (Detailed)
+- **Models:** `Core/Models/` (Theme.swift, Category.swift, CreditInfo.swift, UserState.swift)
+- **Services:** `Core/Services/` (CreditManager, ThemeService, StoreKitService, etc.)
+- **Views:** `Features/{Feature}/Views/`
+- **ViewModels:** `Features/{Feature}/ViewModels/`
+- **Components:** `Core/Components/` (QuotaDisplayView, FeaturedCarousel, etc.)
+- **Design System:** `Core/Design/` (DesignTokens.swift, Color+DesignSystem.swift)
+- **Edge Functions:** `supabase/functions/`
+- **Migrations:** `supabase/migrations/`
+
+## Current Features
+
+### AI Tools (19+, Database-Driven)
+- Object removal (lama-cleaner)
+- Background removal
+- Image upscaling
+- Style transfers (anime, retro, toy style)
+- Seasonal themes (Christmas, Thanksgiving)
+- Professional headshots
+- Meme generation
+- Animated vehicle transformations
+- And more...
+
+### User Features
+- Anonymous browsing (device-based credits)
+- Email/Apple Sign-In authentication
+- Credit-based usage model
+- Purchase history tracking
+- Image library with job status
+- Real-time generation progress
+- Dark/light mode support
+
+## Recent Updates (Nov 2025)
+- ✅ Converted to persistent credit system (Nov 13-14)
+- ✅ Database-driven tools/categories (Nov 14)
+- ✅ Seasonal expansion (Thanksgiving, Christmas)
+- ✅ StoreKit 2 IAP integration
+- ✅ Category display ordering improvements (Nov 15)
+- ✅ Credit transaction logging
+- ✅ Theme thumbnail support
+
+## Known Patterns
+
+### Credit Flow
+1. User starts with 10 credits (cached locally + backend)
+2. Submit job → `submit-job` function deducts 1 credit atomically
+3. Backend returns updated balance in response
+4. `CreditManager` updates UI state + cache
+5. Low credit warning at ≤1 credits
+6. Purchase flow via StoreKit → `verify-iap-purchase` → credits added
+
+### Tool Loading Flow
+1. `HomeViewModel` calls `ThemeService.fetchThemes()`
+2. ThemeService checks 5-minute cache
+3. If expired, fetches from Supabase `themes` table
+4. Themes filtered by `is_available=true`
+5. Sorted by `is_featured` and `name`
+6. UI updates reactively via @Published
+
+### Authentication Flow
+1. App starts → `HybridAuthService` checks session
+2. If no session → anonymous mode (device UUID)
+3. User signs in → `CreditManager.initializeNewUser()`
+4. Backend merges anonymous credits if applicable
+5. Auth state listener updates `userState` @Published property
+
+## Troubleshooting
+
+### Common Issues
+- **Credits not updating:** Check `QuotaCache` migration, restart app
+- **Tools not loading:** Verify Supabase connection, check `themes` table RLS
+- **IAP not working:** Ensure StoreKit testing in sandbox, check `verify-iap-purchase` logs
+- **Build errors:** Clean build folder (cmd+shift+K), delete DerivedData
+
+### Debug Flags
+- All services have `#if DEBUG` print statements
+- CreditManager logs: `📊 [CREDITS]`
+- ThemeService logs: `🌐 ThemeService:`
+- Auth logs: `🔄 [AUTH]`
+
+## Performance Notes
+- ThemeService: 5-minute cache (reduces API calls)
+- CategoryService: 5-minute cache
+- CreditManager: Single-flight loading (prevents concurrent calls)
+- Images: Lazy loading with thumbnail support
+- Background refresh: Credits update on app foreground
+
+## Security Considerations
+- RLS policies on all user tables
+- Server-side IAP verification (never trust client)
+- Device UUID for anonymous tracking (privacy-friendly)
+- Credit consumption is atomic (database-level)
+- Search input sanitization (100 char limit, alphanumeric only)
+
+---
+
+**Last Updated:** November 15, 2025
+**Migration Count:** 85+
+**Tools Available:** 19+
+**Edge Functions:** 12

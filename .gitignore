@@ -135,3 +135,6 @@ AuthKey_*.p8
 
 # Test files and logs
 tests/
+# Supabase Backend Specialists (optional - gitignore if you don't want to commit)
+# docs/backend-architecture/
+# templates/supabase-backend/

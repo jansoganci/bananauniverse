@@ -45,6 +45,8 @@ actor QuotaService {
             // Directly decode the RPC response as CreditInfo
             struct RPCCreditResponse: Decodable {
                 let credits_remaining: Int
+                let credits_total: Int?
+                let initial_grant_claimed: Bool?
                 let success: Bool?
                 let idempotent: Bool?
             }
@@ -56,6 +58,8 @@ actor QuotaService {
 
             return CreditInfo(
                 creditsRemaining: rpcResponse.credits_remaining,
+                creditsTotal: rpcResponse.credits_total,
+                initialGrantClaimed: rpcResponse.initial_grant_claimed,
                 idempotent: rpcResponse.idempotent
             )
 

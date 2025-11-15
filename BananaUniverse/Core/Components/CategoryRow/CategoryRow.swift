@@ -107,6 +107,7 @@ struct CategoryRow: View {
 }
 
 // MARK: - Preview
+#if DEBUG
 #Preview {
     VStack(spacing: DesignTokens.Spacing.xl) {
         // Category row without search
@@ -151,4 +152,5 @@ struct CategoryRow: View {
     .environmentObject(ThemeManager())
     .preferredColorScheme(.dark)
 }
+#endif
 

@@ -169,6 +169,22 @@ class SupabaseService: ObservableObject {
         }
 
         if httpResponse.statusCode == 402 {
+            // Try to parse error response to get actual credit balance from backend
+            struct ErrorResponse: Decodable {
+                let quota_info: QuotaInfo?
+            }
+            struct QuotaInfo: Decodable {
+                let credits_remaining: Int
+            }
+            
+            if let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: responseData),
+               let creditsRemaining = errorResponse.quota_info?.credits_remaining {
+                // Update credit manager with actual backend balance
+                await CreditManager.shared.updateFromBackendResponse(creditsRemaining: creditsRemaining)
+                #if DEBUG
+                print("⚠️ [CREDITS] Backend returned 402. Updated frontend balance to: \(creditsRemaining)")
+                #endif
+            }
             throw SupabaseError.insufficientCredits
         }
 
