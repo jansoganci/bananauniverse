@@ -18,7 +18,7 @@ This directory contains comprehensive backend documentation imported from the AI
 6. **backend-5-credit-system.md** (13KB) - Credit management, atomic operations, audit trails
 7. **backend-6-operations-testing.md** (18KB) - Monitoring, error tracking, deployment
 
-### Implementation Guides (in `docs/`)
+### Implementation Guides (in this directory)
 
 8 detailed strategy documents for specific backend features:
 

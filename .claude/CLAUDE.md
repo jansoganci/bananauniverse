@@ -595,7 +595,7 @@ Comprehensive backend documentation is now available in your project:
 
 **Total Backend Architecture Docs: ~100KB of production-tested patterns**
 
-### Implementation Guides (`docs/`)
+### Implementation Guides (`docs/backend-architecture/`)
 - `IAP-IMPLEMENTATION-STRATEGY.md` - Complete IAP guide (products, subscriptions, refunds, fraud detection) (35KB)
 - `EXTERNAL-API-STRATEGY.md` - Multi-provider integration, retry logic, failover, webhooks (32KB)
 - `AUTH-DECISION-FRAMEWORK.md` - Authentication strategy decision framework (18KB)

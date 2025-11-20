@@ -239,13 +239,13 @@ function calculateCreditCost(modelType: string, resolution?: string): number {
   if (modelType === 'nano-banana-pro') {
     switch (resolution) {
       case '1K':
-        return 2;
-      case '2K':
-        return 3; // Default pro tier
-      case '4K':
         return 4;
+      case '2K':
+        return 4; // Same as 1K
+      case '4K':
+        return 8;
       default:
-        return 2; // Fallback to 1K pricing
+        return 4; // Fallback to 1K pricing
     }
   }
 
