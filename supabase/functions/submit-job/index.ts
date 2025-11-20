@@ -10,11 +10,17 @@ import { createLogger } from '../_shared/logger.ts';
 // Execution time: < 2 seconds
 
 interface SubmitJobRequest {
-  image_url: string;
+  image_url: string;              // Backward compatibility (single image)
+  image_urls?: string[];          // NEW: Array of Storage URLs (preferred)
   prompt: string;
   device_id?: string;
   user_id?: string;
   client_request_id?: string;
+  // NEW PARAMETERS:
+  model_type?: 'nano-banana' | 'nano-banana-pro';
+  aspect_ratio?: string;          // '1:1', '16:9', '9:16', '4:3', etc.
+  output_format?: 'jpeg' | 'png' | 'webp';
+  resolution?: '1K' | '2K' | '4K'; // Pro model only
 }
 
 interface SubmitJobResponse {
@@ -54,7 +60,18 @@ Deno.serve(async (req: Request) => {
       logger.error('Request parsing failed');
       return parseResult.error;
     }
-    const { image_url, prompt, device_id, requestId, user_id } = parseResult.data!;
+    const {
+      image_url,
+      image_urls,
+      prompt,
+      device_id,
+      requestId,
+      user_id,
+      model_type,
+      aspect_ratio,
+      output_format,
+      resolution
+    } = parseResult.data!;
     
     // Update logger with request context
     logger = createLogger('submit-job', requestId, {
@@ -90,13 +107,27 @@ Deno.serve(async (req: Request) => {
     logger.step('3. Setting device ID session');
     await setDeviceIdSession(supabase, device_id, logger);
 
+    // Calculate credit cost based on model type and resolution
+    const credit_cost = calculateCreditCost(model_type, resolution);
+    logger.step('3.1. Calculated credit cost', {
+      modelType: model_type,
+      resolution: resolution,
+      cost: credit_cost
+    });
+
     // Atomic job creation (deduct credits + create job)
     logger.step('4. Creating job atomically (credits + job record)');
     const atomicResult = await supabase.rpc('submit_job_atomic', {
       p_client_request_id: requestId,
       p_user_id: userType === 'authenticated' ? userIdentifier : null,
       p_device_id: userType === 'anonymous' ? userIdentifier : null,
-      p_idempotency_key: requestId
+      p_idempotency_key: requestId,
+      p_credit_cost: credit_cost,        // NEW
+      p_model_type: model_type,          // NEW
+      p_aspect_ratio: aspect_ratio,      // NEW
+      p_output_format: output_format,    // NEW
+      p_resolution: resolution || null,  // NEW (nullable)
+      p_num_images: image_urls.length    // NEW
     });
 
     if (atomicResult.error || !atomicResult.data?.success) {
@@ -122,10 +153,24 @@ Deno.serve(async (req: Request) => {
 
     // Submit to fal.ai
     logger.step('5. Submitting to fal.ai');
-    const falResult = await submitToFalAI(supabase, supabaseUrl, image_url, prompt, userType, userIdentifier, requestId, corsHeaders, logger);
+    const falResult = await submitToFalAI(
+      supabase,
+      supabaseUrl,
+      image_urls,          // Changed to array
+      prompt,
+      model_type,          // NEW
+      aspect_ratio,        // NEW
+      output_format,       // NEW
+      resolution,          // NEW
+      userType,
+      userIdentifier,
+      requestId,
+      corsHeaders,
+      logger
+    );
     if (falResult.error) {
-      logger.error('Fal.ai submission failed - marking job as failed and refunding credit');
-      await markJobFailedAndRefund(supabase, job_id, userType, userIdentifier, requestId, logger);
+      logger.error('Fal.ai submission failed - marking job as failed and refunding credits');
+      await markJobFailedAndRefund(supabase, job_id, userType, userIdentifier, credit_cost, requestId, logger);
       return falResult.error;
     }
     const { falJobId } = falResult.data!;
@@ -179,17 +224,69 @@ Deno.serve(async (req: Request) => {
   }
 });
 
-    // ============================================
+// ============================================
 // HELPER FUNCTIONS
-    // ============================================
+// ============================================
+
+/**
+ * Calculate credit cost based on model type and resolution
+ */
+function calculateCreditCost(modelType: string, resolution?: string): number {
+  if (modelType === 'nano-banana') {
+    return 1; // Basic model: flat 1 credit
+  }
+
+  if (modelType === 'nano-banana-pro') {
+    switch (resolution) {
+      case '1K':
+        return 2;
+      case '2K':
+        return 3; // Default pro tier
+      case '4K':
+        return 4;
+      default:
+        return 2; // Fallback to 1K pricing
+    }
+  }
+
+  return 1; // Default fallback for unknown models
+}
 
 async function parseAndValidateRequest(
   req: Request,
   corsHeaders: Record<string, string>,
   logger?: any
-): Promise<{ error?: Response; data?: { image_url: string; prompt: string; device_id?: string; requestId: string; user_id?: string } }> {
+): Promise<{
+  error?: Response;
+  data?: {
+    image_url: string;
+    image_urls: string[];
+    prompt: string;
+    device_id?: string;
+    requestId: string;
+    user_id?: string;
+    model_type: string;
+    aspect_ratio: string;
+    output_format: string;
+    resolution?: string;
+  }
+}> {
     const requestData: SubmitJobRequest = await req.json();
-    let { image_url, prompt, device_id, user_id, client_request_id } = requestData;
+    let {
+      image_url,
+      image_urls,
+      prompt,
+      device_id,
+      user_id,
+      client_request_id,
+      model_type = 'nano-banana',
+      aspect_ratio = '1:1',
+      output_format = 'jpeg',
+      resolution
+    } = requestData;
+
+    // Normalize image URLs (support both single and array)
+    const normalizedImageUrls = image_urls || (image_url ? [image_url] : []);
 
     // Generate request ID for idempotency
     const requestId = client_request_id || crypto.randomUUID();
@@ -205,25 +302,44 @@ async function parseAndValidateRequest(
     }
 
     // Validate required fields
-    if (!image_url || !prompt) {
-      if (logger) logger.warn('Missing required fields', { hasImageUrl: !!image_url, hasPrompt: !!prompt });
+    if (normalizedImageUrls.length === 0 || !prompt) {
+      if (logger) logger.warn('Missing required fields', {
+        hasImageUrls: normalizedImageUrls.length > 0,
+        hasPrompt: !!prompt
+      });
       return {
         error: new Response(
-          JSON.stringify({ success: false, error: 'Missing image_url or prompt' }),
+          JSON.stringify({ success: false, error: 'Missing image_url(s) or prompt' }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       };
     }
 
-    if (logger) logger.debug('Request validated', { 
-      imageUrl: image_url.substring(0, 50) + '...',
+    if (logger) logger.debug('Request validated', {
+      numImages: normalizedImageUrls.length,
+      firstImageUrl: normalizedImageUrls[0].substring(0, 50) + '...',
       promptPreview: prompt.substring(0, 50) + '...',
+      modelType: model_type,
+      aspectRatio: aspect_ratio,
+      outputFormat: output_format,
+      resolution: resolution,
       hasDeviceId: !!device_id,
       hasUserId: !!user_id
     });
 
   return {
-    data: { image_url, prompt, device_id, requestId, user_id }
+    data: {
+      image_url: normalizedImageUrls[0], // Keep for backward compatibility
+      image_urls: normalizedImageUrls,
+      prompt,
+      device_id,
+      requestId,
+      user_id,
+      model_type,
+      aspect_ratio,
+      output_format,
+      resolution
+    }
   };
 }
 
@@ -328,15 +444,25 @@ async function setDeviceIdSession(supabase: any, device_id?: string, logger?: an
 async function submitToFalAI(
   supabase: any,
   supabaseUrl: string,
-  image_url: string,
+  image_urls: string[],       // Changed to array
   prompt: string,
+  model_type: string,         // NEW
+  aspect_ratio: string,       // NEW
+  output_format: string,      // NEW
+  resolution: string | undefined, // NEW
   userType: 'authenticated' | 'anonymous',
   userIdentifier: string,
   requestId: string,
   corsHeaders: Record<string, string>,
   logger?: any
 ): Promise<{ error?: Response; data?: { falJobId: string } }> {
-    if (logger) logger.debug('Submitting to fal.ai async queue');
+    if (logger) logger.debug('Submitting to fal.ai async queue', {
+      modelType: model_type,
+      numImages: image_urls.length,
+      aspectRatio: aspect_ratio,
+      outputFormat: output_format,
+      resolution: resolution
+    });
 
     const falAIKey = Deno.env.get('FAL_AI_API_KEY');
     if (!falAIKey) {
@@ -365,20 +491,39 @@ async function submitToFalAI(
     // - client_request_id (race condition fallback)
     const webhookUrl = `${supabaseUrl}/functions/v1/webhook-handler?client_request_id=${encodeURIComponent(requestId)}`;
 
-    const falAIRequest = {
+    // Build fal.ai request with new parameters
+    const falAIRequest: any = {
       prompt: prompt,
-      image_urls: [image_url],
+      image_urls: image_urls,     // Array of Storage URLs
       num_images: 1,
-      output_format: 'jpeg',
+      aspect_ratio: aspect_ratio,
+      output_format: output_format,
     };
 
-    // Build URL with fal_webhook query parameter (required by fal.ai)
-    const falApiUrl = `https://queue.fal.run/fal-ai/nano-banana/edit?fal_webhook=${encodeURIComponent(webhookUrl)}`;
+    // Add resolution only for pro model
+    if (model_type === 'nano-banana-pro' && resolution) {
+      falAIRequest.resolution = resolution; // '1K', '2K', or '4K'
+    }
 
-    if (logger) logger.debug('Fal.ai request prepared', { 
+    // Select correct endpoint
+    const endpoint = model_type === 'nano-banana-pro'
+      ? 'fal-ai/nano-banana-pro/edit'
+      : 'fal-ai/nano-banana/edit';
+
+    // Build URL with fal_webhook query parameter (required by fal.ai)
+    const falApiUrl = `https://queue.fal.run/${endpoint}?fal_webhook=${encodeURIComponent(webhookUrl)}`;
+
+    if (logger) logger.debug('Fal.ai request prepared', {
+      endpoint: endpoint,
       hasWebhook: !!webhookUrl,
       webhookUrl: webhookUrl,
-      falApiUrl: falApiUrl
+      falApiUrl: falApiUrl,
+      requestParams: {
+        numImages: image_urls.length,
+        aspectRatio: aspect_ratio,
+        outputFormat: output_format,
+        resolution: resolution || 'auto'
+      }
     });
 
     try {
@@ -454,16 +599,21 @@ async function refundCredit(
   supabase: any,
   userType: 'authenticated' | 'anonymous',
   userIdentifier: string,
+  amount: number,              // NEW: dynamic refund amount
   requestId: string,
   logger?: any
 ): Promise<{success: boolean, error?: string}> {
-  if (logger) logger.debug('Attempting credit refund', { userType, requestId });
+  if (logger) logger.debug('Attempting credit refund', {
+    userType,
+    amount,
+    requestId
+  });
 
   try {
     const { data, error } = await supabase.rpc('add_credits', {
       p_user_id: userType === 'authenticated' ? userIdentifier : null,
       p_device_id: userType === 'anonymous' ? userIdentifier : null,
-      p_amount: 1,
+      p_amount: amount,          // CHANGED: use dynamic amount
       p_idempotency_key: `refund-${requestId}`
     });
 
@@ -525,10 +675,14 @@ async function markJobFailedAndRefund(
   jobId: string,
   userType: 'authenticated' | 'anonymous',
   userIdentifier: string,
+  creditCost: number,        // NEW: amount to refund
   requestId: string,
   logger?: any
 ): Promise<void> {
-  if (logger) logger.debug('Marking job as failed and refunding credit', { jobId });
+  if (logger) logger.debug('Marking job as failed and refunding credits', {
+    jobId,
+    creditCost
+  });
 
   // Mark job as failed
   const { error: updateError } = await supabase
@@ -542,12 +696,14 @@ async function markJobFailedAndRefund(
     if (logger) logger.debug('Job marked as failed');
   }
 
-  // Refund credit
-  const refundResult = await refundCredit(supabase, userType, userIdentifier, requestId, logger);
+  // Refund credits (using the same amount that was deducted)
+  const refundResult = await refundCredit(supabase, userType, userIdentifier, creditCost, requestId, logger);
   if (!refundResult.success) {
     if (logger) logger.error('Credit refund failed after fal.ai failure', { error: refundResult.error });
     // Critical: Log for manual intervention
   } else {
-    if (logger) logger.info('Credit refunded successfully after fal.ai failure');
+    if (logger) logger.info('Credits refunded successfully after fal.ai failure', {
+      creditsRefunded: creditCost
+    });
   }
 }

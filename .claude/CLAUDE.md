@@ -582,31 +582,40 @@ These Supabase specialists follow strict principles:
 
 ## Documentation Reference
 
-Comprehensive backend documentation is available:
+Comprehensive backend documentation is now available in your project:
 
-### Backend Architecture (`docs/backend/`)
-- `backend-INDEX.md` - Overview of all backend docs
-- `backend-1-overview-database.md` - System architecture, database schemas, RLS
-- `backend-2-core-apis.md` - API endpoints, request/response patterns
-- `backend-3-generation-workflow.md` - Video generation, provider integration, webhooks
-- `backend-4-auth-security.md` - Authentication flows, security best practices
-- `backend-5-credit-system.md` - Credit management, atomic operations, transactions
-- `backend-6-operations-testing.md` - Monitoring, error tracking, deployment
+### Backend Architecture (`docs/backend-architecture/backend/`)
+- `backend-INDEX.md` - Overview of all backend documentation (6 comprehensive guides)
+- `backend-1-overview-database.md` - System architecture, database schemas, RLS policies (17KB)
+- `backend-2-core-apis.md` - API endpoints, request/response patterns (16KB)
+- `backend-3-generation-workflow.md` - Video generation, provider integration, webhooks (19KB)
+- `backend-4-auth-security.md` - Authentication flows, security best practices (13KB)
+- `backend-5-credit-system.md` - Credit management, atomic operations, audit trails (13KB)
+- `backend-6-operations-testing.md` - Monitoring, error tracking, deployment (18KB)
+
+**Total Backend Architecture Docs: ~100KB of production-tested patterns**
 
 ### Implementation Guides (`docs/`)
-- `IAP-IMPLEMENTATION-STRATEGY.md` - Complete IAP guide (products, subscriptions, refunds)
-- `EXTERNAL-API-STRATEGY.md` - Multi-provider integration, retry logic, failover
-- `AUTH-DECISION-FRAMEWORK.md` - Authentication strategy decision framework
-- `EMAIL-PASSWORD-AUTH.md` - Supabase Auth setup
-- `EMAIL-SERVICE-INTEGRATION.md` - Resend + Supabase for transactional emails
-- `OPERATIONS-MONITORING-CHECKLIST.md` - Production readiness (7 checklists)
-- `FRONTEND-SUPABASE-INTEGRATION.md` - Next.js + Supabase client patterns
+- `IAP-IMPLEMENTATION-STRATEGY.md` - Complete IAP guide (products, subscriptions, refunds, fraud detection) (35KB)
+- `EXTERNAL-API-STRATEGY.md` - Multi-provider integration, retry logic, failover, webhooks (32KB)
+- `AUTH-DECISION-FRAMEWORK.md` - Authentication strategy decision framework (18KB)
+- `EMAIL-PASSWORD-AUTH.md` - Supabase Auth setup with email/password (15KB)
+- `EMAIL-SERVICE-INTEGRATION.md` - Resend + Supabase for transactional emails (9KB)
+- `OPERATIONS-MONITORING-CHECKLIST.md` - Production readiness (7 checklists: Sentry, Telegram, Rate Limiting) (20KB)
+- `FRONTEND-SUPABASE-INTEGRATION.md` - Next.js + Supabase client patterns (15KB)
+- `FRONTEND-AUTH-PATTERNS.md` - Frontend authentication patterns and best practices (16KB)
 
-### Templates (`templates/`)
+**Total Implementation Guides: ~160KB of detailed strategies**
+
+### Templates (Available in `.ai-team/templates/`)
+Templates are available in the `.ai-team/` directory and can be copied when needed:
 - `ios/Services/` - Swift services (SupabaseAuth, CreditSystem, IAPManager)
-- `nextjs/` - Next.js auth pages, components, middleware
-- `supabase/functions/` - Edge Function examples
-- `supabase/migrations/` - Database migration templates
+- `ios-testing-suite/` - Complete iOS testing framework with mocks and examples
+- `nextjs/` - Next.js auth pages, components, middleware, Supabase client setup
+- `supabase/functions/` - Edge Function examples with shared utilities
+- `supabase/migrations/` - Database migration templates (credit system, IAP, async jobs)
+
+**Note**: Copy templates to your project when starting new features
 
 ## Agent Definition Format
 
