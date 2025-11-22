@@ -1,5 +1,5 @@
 {
-  "originHash" : "50e14d27209bd4054e3eb87dee7d13bb20d1fd06d43bc03b7b9e7b654aa3c6b6",
+  "originHash" : "8c0c1964a756e854a171ef4f94d8f4fa9894387ca9c3e00d07528d7a51c95242",
   "pins" : [
     {
       "identity" : "fal-swift",
@@ -17,6 +17,15 @@
       "state" : {
         "revision" : "4d75de347da985a70c63af4d799ed482021f6733",
         "version" : "8.6.1"
+      }
+    },
+    {
+      "identity" : "stableid",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/codykerns/StableID.git",
+      "state" : {
+        "revision" : "926428ac523e9ee4b5839fe7343e944f5deebee3",
+        "version" : "0.4.1"
       }
     },
     {

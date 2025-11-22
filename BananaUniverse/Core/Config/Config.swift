@@ -42,6 +42,10 @@ struct Config {
     #else
     static let isDebug = false
     #endif
+
+    // MARK: - StableID Migration
+    /// Legacy device UUID key for migration from UserDefaults to StableID
+    static let legacyDeviceIDKey = "device_uuid_v1"
     
     // MARK: - Paywall Configuration
     // All paywall triggers now use PreviewPaywallView directly

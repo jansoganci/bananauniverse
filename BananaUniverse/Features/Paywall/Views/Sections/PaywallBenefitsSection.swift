@@ -30,19 +30,19 @@ struct PaywallBenefit {
 enum PaywallBenefits {
     static let all: [PaywallBenefit] = [
         PaywallBenefit(
-            icon: "sparkles",
-            title: "Unlimited AI Image Edits",
-            description: "Process as many images as you want, no limits"
+            icon: "wand.and.stars",
+            title: "🎭 Boring → Viral",
+            description: "One tap away"
+        ),
+        PaywallBenefit(
+            icon: "camera.fill",
+            title: "📸 Your best look",
+            description: "Every single time"
         ),
         PaywallBenefit(
             icon: "bolt.fill",
-            title: "Faster Processing Priority",
-            description: "Skip the queue and get results instantly"
-        ),
-        PaywallBenefit(
-            icon: "star.fill",
-            title: "Advanced AI Filters",
-            description: "Access to advanced AI models and effects"
+            title: "⚡ Instant magic",
+            description: "Zero effort"
         )
     ]
 }

@@ -9,21 +9,33 @@ import Foundation
 import Supabase
 import Combine
 import AuthenticationServices
+import StableID
 
 /// Manages authentication for both anonymous and authenticated users
 @MainActor
 class HybridAuthService: ObservableObject {
     static let shared = HybridAuthService()
-    
-    @Published var userState: UserState = .anonymous(deviceId: UUID().uuidString)
+
+    @Published var userState: UserState = .anonymous(deviceId: "")  // Will be set in init()
     @Published var isLoading = false
     @Published var errorMessage: String?
-    
+
     private let supabase: SupabaseService
     private var authStateTask: Task<Void, Never>?
-    
+
     init(supabase: SupabaseService) {
         self.supabase = supabase
+
+        // CRITICAL: Initialize userState with StableID SYNCHRONOUSLY
+        // This prevents race condition where CreditManager.initializeNewUser()
+        // is called before checkCurrentUser() completes, causing wrong device ID
+        let deviceId = getOrCreateDeviceUUID()
+        userState = .anonymous(deviceId: deviceId)
+
+        #if DEBUG
+        print("🔐 [HybridAuth] Initialized with StableID: \(deviceId)")
+        #endif
+
         setupAuthStateListener()
         checkCurrentUser()
     }
@@ -256,15 +268,15 @@ class HybridAuthService: ObservableObject {
     }
     
     // MARK: - Helper Methods
-    
+
     private func getOrCreateDeviceUUID() -> String {
-        if let existingUUID = UserDefaults.standard.string(forKey: "device_uuid_v1") {
-            return existingUUID
-        }
-        
-        let newUUID = UUID().uuidString
-        UserDefaults.standard.set(newUUID, forKey: "device_uuid_v1")
-        return newUUID
+        // StableID is already configured in BananaUniverseApp.init()
+        // Migration from UserDefaults happens there before StableID.configure()
+        #if DEBUG
+        print("🔐 [HybridAuth] Using StableID: \(StableID.id)")
+        #endif
+
+        return StableID.id
     }
     
     // MARK: - Computed Properties

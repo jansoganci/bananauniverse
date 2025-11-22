@@ -44,15 +44,15 @@ struct PaywallHeroSection: View {
             .padding(.bottom, DesignTokens.Spacing.sm)
             
             // Title
-            Text("Unlock Unlimited AI Magic")
+            Text("Get More Credits")
                 .font(.system(size: 36, weight: .bold, design: .rounded))
                 .foregroundColor(DesignTokens.Text.primary(colorScheme))
                 .multilineTextAlignment(.center)
                 .lineLimit(3)
-            
+
             // Subtitle
             VStack(spacing: DesignTokens.Spacing.xs) {
-                Text("Get credits to process AI images")
+                Text("Keep creating amazing photos")
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(DesignTokens.Gradients.premiumStart(colorScheme))
                 

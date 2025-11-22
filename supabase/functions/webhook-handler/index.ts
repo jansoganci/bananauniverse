@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { createLogger } from '../_shared/logger.ts';
+import { sendTelegramGenerationNotification } from './telegram-notification.ts';
 
 // ============================================
 // WEBHOOK-HANDLER: FAL.AI CALLBACK RECEIVER
@@ -183,6 +184,21 @@ Deno.serve(async (req: Request) => {
         return updateResult.error;
       }
       logger.step('6.4.1. Job result updated');
+
+      // Send Telegram notification for successful generation
+      logger.step('6.5. Sending Telegram notification');
+      try {
+        await sendTelegramGenerationNotification({
+          userId: existingJob.user_id || 'anonymous',
+          deviceId: existingJob.device_id || 'unknown',
+          jobId: request_id,
+          status: 'completed'
+        }, supabase);
+        logger.step('6.5. Telegram notification sent');
+      } catch (telegramError) {
+        logger.warn('Telegram notification failed', { error: telegramError });
+        // Don't fail the webhook if Telegram fails
+      }
 
       logger.summary('success', {
         status: 'completed',

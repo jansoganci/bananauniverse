@@ -20,6 +20,7 @@ struct PreviewPaywallView: View {
     @State private var alertMessage = ""
     @State private var showRetryAlert = false
     @State private var retryAction: (() -> Void)?
+    @State private var showAI_Disclosure = false
     
     var body: some View {
         NavigationView {
@@ -94,6 +95,10 @@ struct PreviewPaywallView: View {
                     await storeKitService.loadProducts()
                 }
             }
+            .sheet(isPresented: $showAI_Disclosure) {
+                AI_Disclosure_View()
+                    .environmentObject(themeManager)
+            }
         }
     }
     
@@ -116,13 +121,13 @@ struct PreviewPaywallView: View {
     private var headerSection: some View {
         VStack(spacing: 12) {
             // Title
-            Text("Unlock Full Power")
+            Text("Get More Credits")
                 .font(.system(size: 32, weight: .bold, design: .rounded))
                 .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
                 .multilineTextAlignment(.center)
-            
+
             // Subtitle
-            Text("Get credits to process AI images")
+            Text("Keep creating amazing photos")
                 .font(.system(size: 16, weight: .medium))
                 .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
                 .multilineTextAlignment(.center)
@@ -136,29 +141,29 @@ struct PreviewPaywallView: View {
         VStack(spacing: 20) {
             // Benefit 1
                             PreviewPaywallBenefitRow(
-                icon: "sparkles",
-                title: "Unlimited AI image edits",
-                description: "Process as many images as you want"
+                icon: "wand.and.stars",
+                title: "🎭 Boring → Viral",
+                description: "One tap away"
             )
-            .accessibilityLabel("Unlimited AI image edits. Process as many images as you want")
+            .accessibilityLabel("Transform boring photos to viral content. One tap away")
             .accessibilityHint("Feature benefit")
-            
+
             // Benefit 2
                             PreviewPaywallBenefitRow(
-                icon: "bolt.fill",
-                title: "Faster processing priority",
-                description: "Skip the queue and get results instantly"
+                icon: "camera.fill",
+                title: "📸 Your best look",
+                description: "Every single time"
             )
-            .accessibilityLabel("Faster processing priority. Skip the queue and get results instantly")
+            .accessibilityLabel("Your best look. Every single time")
             .accessibilityHint("Feature benefit")
-            
+
             // Benefit 3
                             PreviewPaywallBenefitRow(
-                icon: "star.fill",
-                title: "Advanced AI filters",
-                description: "Access to advanced AI models and effects"
+                icon: "bolt.fill",
+                title: "⚡ Instant magic",
+                description: "Zero effort"
             )
-            .accessibilityLabel("Advanced AI filters. Access to advanced AI models and effects")
+            .accessibilityLabel("Instant magic. Zero effort")
             .accessibilityHint("Feature benefit")
         }
         .padding(.vertical, 24)
@@ -192,71 +197,16 @@ struct PreviewPaywallView: View {
             // Credit Products
             ForEach(Array(storeKitService.creditProducts.enumerated()), id: \.element.id) { index, product in
                 let isBestValue = product.id == "credits_100"
+                let isMostPopular = product.id == "credits_25"
                 CreditProductCard(
                     product: product,
                     isSelected: selectedProduct?.id == product.id,
-                    isBestValue: isBestValue
+                    isBestValue: isBestValue,
+                    isMostPopular: isMostPopular
                 ) {
                     selectedProduct = product
                 }
             }
-            
-            // Coming Soon Card for Yearly
-            VStack(spacing: 12) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Yearly Pro")
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(Color(hex: "1A202C"))
-                        
-                        Text("Best value - coming soon!")
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
-                            .lineLimit(2)
-                    }
-                    
-                    Spacer()
-                    
-                    // Coming Soon Badge
-                    Text("Coming Soon")
-                        .font(.system(size: 11, weight: .bold))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color.orange)
-                        .foregroundColor(.white)
-                        .cornerRadius(6)
-                }
-                
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("$79.99 / year")
-                            .font(.system(size: 20, weight: .bold))
-                            .foregroundColor(Color(hex: "1A202C"))
-                        
-                        Text("Save 70%")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundColor(Color.red)
-                    }
-                    
-                    Spacer()
-                }
-            }
-            .padding(20)
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.white.opacity(0.6))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                    )
-            )
-            .shadow(
-                color: .black.opacity(0.05),
-                radius: 8,
-                x: 0,
-                y: 4
-            )
-            .disabled(true)
         }
     }
     
@@ -314,13 +264,15 @@ struct PreviewPaywallView: View {
                     ProgressView()
                         .scaleEffect(0.8)
                         .tint(.white)
-                } else {
-                    Image(systemName: "crown.fill")
-                        .font(.system(size: 18, weight: .semibold))
                 }
-                
-                Text("Buy Credits")
+
+                Text("Continue Creating")
                     .font(.system(size: 18, weight: .bold))
+
+                if !storeKitService.isLoading {
+                    Image(systemName: "arrow.right")
+                        .font(.system(size: 16, weight: .semibold))
+                }
             }
             .foregroundColor(.white)
             .frame(maxWidth: .infinity)
@@ -396,9 +348,13 @@ struct PreviewPaywallView: View {
                 .font(.system(size: 12, weight: .regular))
                 .foregroundColor(DesignTokens.Text.link(themeManager.resolvedColorScheme))
                 .accessibilityLabel("Privacy Policy")
-                
-                // TODO: Consider adding AI Service Disclosure link here for Apple compliance
-                // Button("AI Disclosure") { showAI_Disclosure = true }
+
+                Button("AI Disclosure") {
+                    showAI_Disclosure = true
+                }
+                .font(.system(size: 12, weight: .regular))
+                .foregroundColor(DesignTokens.Text.link(themeManager.resolvedColorScheme))
+                .accessibilityLabel("AI Service Disclosure")
             }
         }
         .padding(.bottom, 20)

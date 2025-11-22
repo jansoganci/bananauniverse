@@ -9,52 +9,71 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var selectedTab = 0 // Start on Home tab with welcome screen
+    @State private var selectedTool: Tool? = nil
+    @State private var navigationPath = NavigationPath()
+
     @StateObject private var authService = HybridAuthService.shared
     @StateObject private var creditManager = CreditManager.shared
     @StateObject private var themeManager = ThemeManager()
     @StateObject private var appState = AppState()
-    @StateObject private var chatViewModel = ChatViewModel()
-    
+
     @Environment(\.colorScheme) var systemColorScheme
-    
+
     var body: some View {
-        TabView(selection: $selectedTab) {
-            // Home Tab - Welcome screen with quick actions
-            HomeView(onToolSelected: navigateToChatWithTool)
-                .tabItem {
-                    Label("Home", systemImage: "house.fill")
-                }
-                .tag(0)
-            
-            // Chat Tab - Main photo processing feature
-            ChatView(viewModel: chatViewModel)
-                .id(appState.sessionId)
-                .tabItem {
-                    Label("Chat", systemImage: "message.fill")
-                }
-                .tag(1)
-            
+        ZStack(alignment: .top) {
+            TabView(selection: $selectedTab) {
+            // Home Tab - Browse and select themes
+            NavigationStack(path: $navigationPath) {
+                HomeView(onToolSelected: navigateToImageProcessing)
+                    .navigationDestination(for: Tool.self) { tool in
+                        ImageProcessingView(
+                            viewModel: ImageProcessingViewModel(theme: tool),
+                            sourceTab: $selectedTab,
+                            targetTab: 0
+                        )
+                        .environmentObject(themeManager)
+                        .environmentObject(appState)
+                    }
+            }
+            .tabItem {
+                Label("Home", systemImage: "house.fill")
+            }
+            .tag(0)
+
+            // Create Tab - Image processing with nano-banana models
+            ImageProcessingView(
+                viewModel: ImageProcessingViewModel(theme: nil),
+                sourceTab: $selectedTab,
+                targetTab: 1
+            )
+            .environmentObject(themeManager)
+            .environmentObject(appState)
+            .tabItem {
+                Label("Create", systemImage: "wand.and.stars")
+            }
+            .tag(1)
+
             // Library Tab - Past jobs and history
             LibraryView()
                 .tabItem {
                     Label("Library", systemImage: "square.stack.3d.up.fill")
                 }
                 .tag(2)
-            
+
             // Profile Tab - User settings and account management
             ProfileView()
                 .tabItem {
                     Label("Profile", systemImage: "person.fill")
                 }
                 .tag(3)
-        }
-        .id(themeManager.resolvedColorScheme) // Force TabView recreation on theme change
-        .accentColor(DesignTokens.Brand.primary(themeManager.resolvedColorScheme))
-        .preferredColorScheme(themeManager.preference == .system ? nil : (themeManager.preference == .dark ? .dark : .light))
-        .environmentObject(authService)
-        .environmentObject(themeManager)
-        .environmentObject(appState)
-        .onChange(of: systemColorScheme) { newScheme in
+            }
+            .id(themeManager.resolvedColorScheme) // Force TabView recreation on theme change
+            .accentColor(DesignTokens.Brand.primary(themeManager.resolvedColorScheme))
+            .preferredColorScheme(themeManager.preference == .system ? nil : (themeManager.preference == .dark ? .dark : .light))
+            .environmentObject(authService)
+            .environmentObject(themeManager)
+            .environmentObject(appState)
+            .onChange(of: systemColorScheme) { newScheme in
             themeManager.updateResolvedScheme(systemScheme: newScheme)
             updateTabBarAppearance(for: themeManager.resolvedColorScheme)
         }
@@ -63,13 +82,18 @@ struct ContentView: View {
             themeManager.updateResolvedScheme(systemScheme: systemColorScheme)
             updateTabBarAppearance(for: resolvedScheme)
         }
-        .onChange(of: appState.sessionId) { _ in
-            chatViewModel.reset()
-            chatViewModel.apply(appState.currentPrompt)
-        }
-        .onAppear {
-            themeManager.updateResolvedScheme(systemScheme: systemColorScheme)
-            updateTabBarAppearance(for: themeManager.resolvedColorScheme)
+            .onAppear {
+                themeManager.updateResolvedScheme(systemScheme: systemColorScheme)
+                updateTabBarAppearance(for: themeManager.resolvedColorScheme)
+            }
+
+            // Offline Banner - Appears at top when no internet connection
+            VStack {
+                OfflineBanner()
+                    .environmentObject(themeManager)
+                Spacer()
+            }
+            .allowsHitTesting(false) // Allow taps to pass through to content below
         }
     }
     
@@ -113,10 +137,9 @@ struct ContentView: View {
         UITabBar.appearance().scrollEdgeAppearance = appearance
     }
     
-    // Function to handle navigation to Chat with tool
-    private func navigateToChatWithTool(_ tool: Tool) {
-        appState.selectPreset(id: tool.id, prompt: tool.prompt)
-        selectedTab = 1 // Switch to Chat tab
+    // Function to handle navigation to ImageProcessing with tool
+    private func navigateToImageProcessing(_ tool: Tool) {
+        navigationPath.append(tool)
     }
 }
 

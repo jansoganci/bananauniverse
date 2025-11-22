@@ -26,7 +26,7 @@ struct HomeView: View {
                 UnifiedHeaderBar(
                     title: "",
                     leftContent: .appLogo(32),
-                    rightContent: .quotaBadge(creditManager.creditsRemaining, { 
+                    rightContent: .quotaBadge(creditManager.creditsRemaining, {
                         showPaywall = true
                     })
                 )
@@ -88,7 +88,39 @@ struct HomeView: View {
                 )
                 .padding(.horizontal, DesignTokens.Spacing.md)
                 .padding(.vertical, DesignTokens.Spacing.xs)
-                
+
+                // Welcome Section (only show when not searching)
+                if searchQuery.isEmpty {
+                    VStack(spacing: 4) {
+                        HStack(spacing: 6) {
+                            Text("Transform Your Photos with AI")
+                                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                                .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
+
+                            Text("✨")
+                                .font(.system(size: 16))
+                        }
+
+                        Text("19+ professional tools at your fingertips")
+                            .font(.system(size: 13, weight: .regular))
+                            .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, DesignTokens.Spacing.md)
+                    .padding(.horizontal, DesignTokens.Spacing.md)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(DesignTokens.Background.secondary(themeManager.resolvedColorScheme))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(DesignTokens.Brand.primary(themeManager.resolvedColorScheme).opacity(0.1), lineWidth: 1)
+                            )
+                    )
+                    .padding(.horizontal, DesignTokens.Spacing.md)
+                    .padding(.top, DesignTokens.Spacing.xs)
+                    .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                }
+
                 // Content Area
                 ScrollView {
                     VStack(spacing: DesignTokens.Spacing.md) {

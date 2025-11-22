@@ -50,7 +50,17 @@ class SupabaseService: ObservableObject {
     func getCurrentSession() async throws -> Session? {
         return try await client.auth.session
     }
-    
+
+    // MARK: - Network Connectivity Check
+
+    /// Checks network connectivity before making API calls
+    /// Throws SupabaseError.offline if no internet connection
+    private func checkNetworkOrThrow() throws {
+        guard NetworkMonitor.shared.checkConnectivity() else {
+            throw SupabaseError.offline(NetworkMonitor.shared.networkErrorMessage)
+        }
+    }
+
     // MARK: - Storage
     func downloadImage(path: String) async throws -> Data {
         return try await client.storage
@@ -60,7 +70,9 @@ class SupabaseService: ObservableObject {
     
     /// Upload image to Supabase Storage and return public URL
     func uploadImageToStorage(imageData: Data, fileName: String? = nil) async throws -> String {
-        
+        // Check network connectivity before uploading
+        try checkNetworkOrThrow()
+
         // Generate unique filename if not provided
         let finalFileName = fileName ?? "\(UUID().uuidString).jpg"
         
@@ -111,9 +123,15 @@ class SupabaseService: ObservableObject {
     /// Submit image job to async queue (new polling architecture)
     /// Returns job_id immediately for polling
     func submitImageJob(
-        imageURL: String,
-        prompt: String
+        imageURLs: [String],
+        prompt: String,
+        modelType: ModelType = .nanoBananaPro,
+        aspectRatio: AspectRatio = .auto,
+        outputFormat: OutputFormat = .png,
+        resolution: Resolution? = .twoK
     ) async throws -> SubmitJobResponse {
+        // Check network connectivity before submitting job
+        try checkNetworkOrThrow()
 
         // Get user state from hybrid auth service
         let userState = HybridAuthService.shared.userState
@@ -121,12 +139,20 @@ class SupabaseService: ObservableObject {
         // Generate client request ID for idempotency
         let clientRequestId = UUID().uuidString
 
-        // Prepare request body
+        // Prepare request body with new parameters
         var body: [String: Any] = [
-            "image_url": imageURL,
+            "image_urls": imageURLs,  // Changed to array
             "prompt": prompt,
-            "client_request_id": clientRequestId
+            "client_request_id": clientRequestId,
+            "model_type": modelType.rawValue,
+            "aspect_ratio": aspectRatio.rawValue,
+            "output_format": outputFormat.rawValue
         ]
+
+        // Add resolution only for Pro model
+        if modelType.supportsResolution, let resolution = resolution {
+            body["resolution"] = resolution.rawValue
+        }
 
         // Add user identification
         if userState.isAuthenticated {
@@ -198,6 +224,24 @@ class SupabaseService: ObservableObject {
         return response
     }
 
+    /// Backward-compatible method for old ChatView (single image)
+    /// This maintains compatibility with existing code while supporting new features
+    @available(*, deprecated, message: "Use submitImageJob(imageURLs:...) instead")
+    func submitImageJob(
+        imageURL: String,
+        prompt: String
+    ) async throws -> SubmitJobResponse {
+        // Call new method with default parameters
+        return try await submitImageJob(
+            imageURLs: [imageURL],
+            prompt: prompt,
+            modelType: .nanoBanana,  // Use standard model for backward compatibility
+            aspectRatio: .auto,
+            outputFormat: .png,
+            resolution: nil
+        )
+    }
+
     /// Fetch job result from webhook architecture
     /// Returns status and image URL if completed
     func getJobResult(jobId: String) async throws -> GetResultResponse {
@@ -262,6 +306,21 @@ class SupabaseService: ObservableObject {
         let response = try JSONDecoder().decode(GetResultResponse.self, from: responseData)
 
         return response
+    }
+
+    // MARK: - Realtime Job Subscription
+
+    /// Subscribe to real-time job updates using Supabase Realtime
+    /// This is the preferred method - falls back to polling if Realtime fails
+    /// - Parameter jobId: The job ID to monitor
+    /// - Returns: AsyncStream of GetResultResponse updates
+    func subscribeToJobUpdates(jobId: String) -> AsyncStream<GetResultResponse> {
+        #if DEBUG
+        print("🎧 [SupabaseService] Starting Realtime subscription for job: \(jobId)")
+        #endif
+
+        // Delegate to RealtimeService
+        return RealtimeService.shared.subscribeToJobUpdates(jobId: jobId)
     }
 
     /// Get count of active (pending/processing) jobs for current user
@@ -577,6 +636,7 @@ enum SupabaseError: Error, LocalizedError {
     case rateLimitExceeded
     case quotaExceeded
     case invalidURL
+    case offline(String)
     
     var errorDescription: String? {
         switch self {
@@ -600,6 +660,8 @@ enum SupabaseError: Error, LocalizedError {
             return "Daily quota exceeded. Come back tomorrow or upgrade for unlimited access."
         case .invalidURL:
             return "Invalid URL configuration. Please contact support."
+        case .offline(let message):
+            return message
         }
     }
     
@@ -624,6 +686,8 @@ enum SupabaseError: Error, LocalizedError {
             return .invalidResponse
         case .invalidURL:
             return .serviceUnavailable
+        case .offline(_):
+            return .networkUnavailable
         }
     }
 }

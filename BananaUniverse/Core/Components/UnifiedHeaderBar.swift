@@ -36,7 +36,7 @@ struct UnifiedHeaderBar: View {
             Spacer()
             if !title.isEmpty {
                 Text(title)
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(.system(size: 16, weight: .bold, design: .rounded))
                     .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
                 Spacer()
             }
@@ -68,6 +68,19 @@ struct UnifiedHeaderBar: View {
             
         case .appLogo(let size):
             AppLogo(size: size)
+
+        case .appLogoWithTagline(let size, let tagline):
+            VStack(spacing: 4) {
+                Image("AppLogo")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: size, height: size)
+                    .clipShape(RoundedRectangle(cornerRadius: size * 0.2))
+
+                Text(tagline)
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
+            }
             
         case .quotaBadge(_, let action):
             QuotaDisplayView(style: .compact, action: action)
@@ -82,6 +95,7 @@ struct UnifiedHeaderBar: View {
 enum HeaderContent {
     case brandLogo(String)
     case appLogo(CGFloat)
+    case appLogoWithTagline(CGFloat, String) // size, tagline
     case quotaBadge(Int, () -> Void) // credits, action
     case empty
 }

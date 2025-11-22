@@ -13,10 +13,11 @@ import SwiftUI
 
 /// Theme represents a tool/effect that can be applied to images
 /// This model is fetched from Supabase database and supports remote content management
-struct Theme: Identifiable, Codable {
+struct Theme: Identifiable, Codable, Hashable {
     let id: String
     let name: String
     let description: String?
+    let shortDescription: String?
     let thumbnailURL: URL?
     let category: String
     let modelName: String
@@ -34,6 +35,7 @@ struct Theme: Identifiable, Codable {
         case id
         case name
         case description
+        case shortDescription = "short_description"
         case thumbnailURL = "thumbnail_url"
         case category
         case modelName = "model_name"
@@ -54,6 +56,7 @@ struct Theme: Identifiable, Codable {
         id = try container.decode(String.self, forKey: .id)
         name = try container.decode(String.self, forKey: .name)
         description = try container.decodeIfPresent(String.self, forKey: .description)
+        shortDescription = try container.decodeIfPresent(String.self, forKey: .shortDescription)
 
         // Decode thumbnail_url as URL
         if let urlString = try container.decodeIfPresent(String.self, forKey: .thumbnailURL),
@@ -90,6 +93,7 @@ struct Theme: Identifiable, Codable {
         try container.encode(id, forKey: .id)
         try container.encode(name, forKey: .name)
         try container.encodeIfPresent(description, forKey: .description)
+        try container.encodeIfPresent(shortDescription, forKey: .shortDescription)
         try container.encodeIfPresent(thumbnailURL?.absoluteString, forKey: .thumbnailURL)
         try container.encode(category, forKey: .category)
         try container.encode(modelName, forKey: .modelName)
@@ -113,6 +117,7 @@ struct Theme: Identifiable, Codable {
         id: String = UUID().uuidString,
         name: String,
         description: String? = nil,
+        shortDescription: String? = nil,
         thumbnailURL: URL? = nil,
         category: String,
         modelName: String,
@@ -127,6 +132,7 @@ struct Theme: Identifiable, Codable {
         self.id = id
         self.name = name
         self.description = description
+        self.shortDescription = shortDescription
         self.thumbnailURL = thumbnailURL
         self.category = category
         self.modelName = modelName
@@ -137,6 +143,23 @@ struct Theme: Identifiable, Codable {
         self.requiresPro = requiresPro
         self.defaultSettings = defaultSettings
         self.createdAt = createdAt
+    }
+
+    // MARK: - Hashable Conformance
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+        hasher.combine(name)
+        hasher.combine(category)
+        hasher.combine(prompt)
+        // Skip defaultSettings as it contains Any which is not hashable
+        // ID should be unique enough for hashing purposes
+    }
+
+    static func == (lhs: Theme, rhs: Theme) -> Bool {
+        return lhs.id == rhs.id &&
+               lhs.name == rhs.name &&
+               lhs.prompt == rhs.prompt
     }
 }
 

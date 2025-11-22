@@ -17,11 +17,10 @@ struct PaywallCTAButton: View {
     private var buttonText: String {
         if isLoading {
             return "Processing..."
-        } else if let product = selectedProduct {
-            let credits = CreditAmountHelper.getAmount(from: product.id)
-            return "Buy \(credits) Credits"
+        } else if selectedProduct != nil {
+            return "Continue Creating →"
         } else {
-            return "Buy Credits"
+            return "Select a Package"
         }
     }
     

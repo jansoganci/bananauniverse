@@ -22,6 +22,7 @@ import Foundation
 import Supabase
 import Combine
 import UIKit
+import StableID
 
 /// Orchestrates credit state between network, cache, and UI
 @MainActor
@@ -49,11 +50,16 @@ class CreditManager: ObservableObject {
     }
 
     @Published private(set) var isLoading = true  // Start in loading state until backend confirms
+    @Published private(set) var isOffline = false  // Indicates when using cached credits due to offline status
 
     // MARK: - Private State
 
     private var observerAdded = false
     private var loadQuotaTask: Task<Void, Never>?
+
+    // Debouncing to prevent rapid successive loads
+    private var lastLoadTime: Date?
+    private let minimumLoadInterval: TimeInterval = 2.0  // 2 seconds minimum between loads
 
     // Legacy user state management (kept for compatibility)
     @Published var userState: UserState = .anonymous(deviceId: UUID().uuidString)
@@ -76,19 +82,44 @@ class CreditManager: ObservableObject {
 
     /// Loads credit balance from backend (idempotent, single-flight)
     func loadQuota() async {
+        // Check network connectivity - if offline, use cached credits
+        guard NetworkMonitor.shared.checkConnectivity() else {
+            isOffline = true
+            #if DEBUG
+            print("⚠️ [CREDITS] Offline - using cached balance: \(creditsRemaining)")
+            #endif
+            return
+        }
+
+        // Debouncing: Skip if called too soon after last load
+        if let lastLoad = lastLoadTime {
+            let timeSinceLastLoad = Date().timeIntervalSince(lastLoad)
+            if timeSinceLastLoad < minimumLoadInterval {
+                #if DEBUG
+                print("⏭️ [CREDITS] Skipping load (too soon after last load: \(String(format: "%.1f", timeSinceLastLoad))s)")
+                #endif
+                return
+            }
+        }
+
         // Cancel any existing task (single-flight)
         loadQuotaTask?.cancel()
 
         loadQuotaTask = Task {
+            // Mark as online since we're making a network request
+            isOffline = false
+            // Update last load time
+            lastLoadTime = Date()
+
             // Set loading state (removed guard - we want initial load to proceed even if already loading)
             isLoading = true
             defer { isLoading = false }
 
             let previousBalance = creditsRemaining
-            
+
             do {
                 let userState = HybridAuthService.shared.userState
-                
+
                 #if DEBUG
                 if userState.isAuthenticated {
                     print("👤 [CREDITS] Loading for authenticated user: \(userState.identifier)")
@@ -96,7 +127,7 @@ class CreditManager: ObservableObject {
                     print("📱 [CREDITS] Loading for anonymous device: \(userState.identifier)")
                 }
                 #endif
-                
+
                 let creditInfo = try await QuotaService.shared.getQuota(
                     userId: userState.isAuthenticated ? userState.identifier : nil,
                     deviceId: userState.isAuthenticated ? nil : userState.identifier
@@ -276,12 +307,27 @@ class CreditManager: ObservableObject {
     // MARK: - User State (Legacy)
 
     private func loadUserState() {
+        // Get current device ID (source of truth)
+        let currentDeviceId = getOrCreateDeviceUUID()
+
         if let data = UserDefaults.standard.data(forKey: userStateKey),
            let state = try? JSONDecoder().decode(UserState.self, from: data) {
-            userState = state
+
+            // Check if device ID needs migration
+            if case .anonymous(let cachedDeviceId) = state, cachedDeviceId != currentDeviceId {
+                #if DEBUG
+                print("🔄 [CREDITS] Device ID migration: \(cachedDeviceId) → \(currentDeviceId)")
+                #endif
+
+                // Migrate to current device ID
+                userState = .anonymous(deviceId: currentDeviceId)
+                saveUserState()
+            } else {
+                userState = state
+            }
         } else {
-            let deviceId = getOrCreateDeviceUUID()
-            userState = .anonymous(deviceId: deviceId)
+            // No cached state, create new with current device ID
+            userState = .anonymous(deviceId: currentDeviceId)
             saveUserState()
         }
     }
@@ -293,12 +339,12 @@ class CreditManager: ObservableObject {
     }
 
     private func getOrCreateDeviceUUID() -> String {
-        if let existingUUID = UserDefaults.standard.string(forKey: deviceUUIDKey) {
-            return existingUUID
-        }
+        // StableID is already configured in BananaUniverseApp.init()
+        // Migration from UserDefaults happens there before StableID.configure()
+        #if DEBUG
+        print("🔐 [CreditManager] Using StableID: \(StableID.id)")
+        #endif
 
-        let newUUID = UUID().uuidString
-        UserDefaults.standard.set(newUUID, forKey: deviceUUIDKey)
-        return newUUID
+        return StableID.id
     }
 }

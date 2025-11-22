@@ -193,10 +193,12 @@ struct PreviewPaywallView_BACKUP: View {
             // Credit Products
             ForEach(Array(storeKitService.creditProducts.enumerated()), id: \.element.id) { index, product in
                 let isBestValue = product.id == "credits_100"
+                let isMostPopular = product.id == "credits_25"
                 CreditProductCard(
                     product: product,
                     isSelected: selectedProduct?.id == product.id,
-                    isBestValue: isBestValue
+                    isBestValue: isBestValue,
+                    isMostPopular: isMostPopular
                 ) {
                     selectedProduct = product
                 }

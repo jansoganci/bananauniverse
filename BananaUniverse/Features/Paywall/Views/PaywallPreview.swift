@@ -187,6 +187,7 @@ struct PaywallPreview: View {
                     product: product,
                     isSelected: selectedProductId == product.id,
                     isBestValue: product.id == "credits_100",
+                    isMostPopular: product.id == "credits_25",
                     onTap: {
                         DesignTokens.Haptics.selectionChanged()
                         selectedProduct = product

@@ -234,7 +234,29 @@ Deno.serve(async (req: Request) => {
     }
 
     // ============================================
-    // 8. RETURN SUCCESS
+    // 8. SEND TELEGRAM NOTIFICATION
+    // ============================================
+    logger.step('8. Sending Telegram notification');
+    try {
+      await sendTelegramPurchaseNotification({
+        userId: userId || 'anonymous',
+        deviceId: deviceId || 'unknown',
+        productId: product_id,
+        creditsGranted: totalCredits,
+        baseCredits: product.credits,
+        bonusCredits: product.bonus_credits || 0,
+        balanceAfter: creditResult.credits_remaining,
+        transactionId: verification.transaction_id,
+        originalTransactionId: verification.original_transaction_id
+      });
+      logger.step('8. Telegram notification sent');
+    } catch (telegramError) {
+      logger.warn('Telegram notification failed', { error: telegramError });
+      // Don't fail the purchase if Telegram fails
+    }
+
+    // ============================================
+    // 9. RETURN SUCCESS
     // ============================================
     const response = {
       success: true,
@@ -365,6 +387,83 @@ async function verifyAppleTransaction(transactionJWT: string, logger?: any): Pro
   } catch (error: any) {
     if (logger) logger.error('Verification error', error);
     return { valid: false };
+  }
+}
+
+// ============================================
+// TELEGRAM NOTIFICATION
+// ============================================
+
+async function sendTelegramPurchaseNotification(data: {
+  userId: string;
+  deviceId: string;
+  productId: string;
+  creditsGranted: number;
+  baseCredits: number;
+  bonusCredits: number;
+  balanceAfter: number;
+  transactionId: string;
+  originalTransactionId: string;
+}): Promise<void> {
+  const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
+  const chatId = Deno.env.get('TELEGRAM_CHAT_ID');
+
+  if (!botToken || !chatId) {
+    return; // Silently skip if not configured
+  }
+
+  // Map product IDs to prices (update these to match your actual prices)
+  const productPrices: Record<string, string> = {
+    'com.bananauniverse.credits.10': '$0.99',
+    'com.bananauniverse.credits.25': '$1.99',
+    'com.bananauniverse.credits.50': '$3.99',
+    'com.bananauniverse.credits.100': '$6.99',
+  };
+
+  const price = productPrices[data.productId] || 'Unknown';
+
+  const userDisplay = data.userId !== 'anonymous'
+    ? `👤 User: \`${data.userId.substring(0, 8)}...\``
+    : `📱 Device: \`${data.deviceId.substring(0, 8)}...\``;
+
+  const bonusLine = data.bonusCredits > 0
+    ? `   • Bonus: +${data.bonusCredits} 🎁\n`
+    : '';
+
+  const message = `💰 **NEW PURCHASE!**\n\n` +
+    `${userDisplay}\n\n` +
+    `**Package:**\n` +
+    `   • Product: \`${data.productId.split('.').pop()}\`\n` +
+    `   • Price: **${price}**\n` +
+    `   • Base Credits: ${data.baseCredits}\n` +
+    bonusLine +
+    `   • **Total: ${data.creditsGranted} credits**\n\n` +
+    `**Account:**\n` +
+    `   • Balance After: **${data.balanceAfter} credits**\n` +
+    `   • Credits Used: ${data.balanceAfter - data.creditsGranted} (before purchase)\n\n` +
+    `**Transaction:**\n` +
+    `   • ID: \`${data.transactionId.substring(0, 16)}...\`\n` +
+    `   • Original: \`${data.originalTransactionId.substring(0, 16)}...\`\n` +
+    `   • Time: ${new Date().toLocaleString('en-US', {
+      timeZone: 'UTC',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })} UTC`;
+
+  const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      chat_id: chatId,
+      text: message,
+      parse_mode: 'Markdown'
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Telegram API error: ${response.status}`);
   }
 }
 

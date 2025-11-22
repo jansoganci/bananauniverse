@@ -82,10 +82,9 @@ class Logger {
         console.warn(logMessage);
         break;
       case LogLevel.DEBUG:
-        // Only log debug in development
-        if (Deno.env.get('ENVIRONMENT') === 'development') {
-          console.log(logMessage);
-        }
+        // DEBUG logs disabled in production (too verbose)
+        // For debugging, check Supabase logs or use INFO/ERROR level
+        // console.log(logMessage);  // Commented out - only enable for urgent debugging
         break;
       default:
         console.log(logMessage);
@@ -114,7 +113,7 @@ class Logger {
 
   // Step tracking (for manual testing)
   step(stepName: string, data?: any): void {
-    this.info(`[STEP] ${stepName}`, data);
+    this.debug(`[STEP] ${stepName}`, data);  // Changed to DEBUG for production
   }
 
   // Performance tracking

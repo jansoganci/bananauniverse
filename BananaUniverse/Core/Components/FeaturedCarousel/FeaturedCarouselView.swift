@@ -26,17 +26,15 @@ struct FeaturedCarouselView: View {
             if !tools.isEmpty {
                 TabView(selection: $currentIndex) {
                     ForEach(Array(infiniteTools.enumerated()), id: \.offset) { index, tool in
-                        FeaturedCarouselCard(
-                            tool: tool,
-                            onTap: { 
+                        CarouselCard(tool: tool)
+                            .onTapGesture {
                                 handleToolTap(tool)
                             }
-                        )
-                        .tag(index)
+                            .tag(index)
                     }
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
-                .frame(height: 200)
+                .frame(height: 220)
                 .onAppear {
                     // Start at middle section for infinite scroll
                     currentIndex = tools.count
@@ -128,81 +126,8 @@ struct FeaturedCarouselView: View {
     }
 }
 
-// MARK: - Featured Carousel Card Component
-struct FeaturedCarouselCard: View {
-    // MARK: - Properties
-    let tool: Tool
-    let onTap: () -> Void
-    
-    // MARK: - State
-    @State private var isPressed = false
-    @StateObject private var creditManager = CreditManager.shared
-    @EnvironmentObject var themeManager: ThemeManager
-    
-    var body: some View {
-        Button(action: onTap) {
-            ZStack {
-                // Background gradient
-                LinearGradient(
-                    gradient: Gradient(colors: [
-                        DesignTokens.Brand.primary(.light).opacity(0.8),
-                        DesignTokens.Brand.primary(.light).opacity(0.6)
-                    ]),
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                
-                // Content overlay
-                VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
-                    // Featured Badge
-                    HStack(spacing: DesignTokens.Spacing.xs) {
-                        Text("Featured")
-                            .font(DesignTokens.Typography.caption1)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(
-                                Capsule()
-                                    .fill(Color.white.opacity(0.2))
-                            )
-                        
-                        Spacer()
-                    }
-                    
-                    Spacer()
-                    
-                    // Tool info
-                    VStack(alignment: .leading, spacing: 4) {
-                        // Icon
-                        Image(systemName: tool.placeholderIcon)
-                            .font(.system(size: 24, weight: .medium))
-                            .foregroundColor(.white)
-                        
-                        // Title
-                        Text(tool.name)
-                            .font(DesignTokens.Typography.title3)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.white)
-                            .lineLimit(2)
-                            .multilineTextAlignment(.leading)
-                    }
-                }
-                .padding(DesignTokens.Spacing.md)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            }
-        }
-        .buttonStyle(PlainButtonStyle())
-        .frame(height: 200)
-        .cornerRadius(DesignTokens.CornerRadius.lg)
-        .scaleEffect(isPressed ? 0.98 : 1.0)
-        .animation(.easeInOut(duration: 0.1), value: isPressed)
-        .onLongPressGesture(minimumDuration: 0) { pressing in
-            isPressed = pressing
-        } perform: {}
-        .padding(.horizontal, DesignTokens.Spacing.md)
-    }
-}
+// NOTE: CarouselCard component is now in separate file
+// See: BananaUniverse/Core/Components/FeaturedCarousel/CarouselCard.swift
 
 // MARK: - Preview
 #if DEBUG

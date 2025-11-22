@@ -12,6 +12,7 @@ struct CreditProductCard: View {
     let product: Product
     let isSelected: Bool
     let isBestValue: Bool
+    let isMostPopular: Bool
     let onTap: () -> Void
     @EnvironmentObject var themeManager: ThemeManager
     @Environment(\.colorScheme) var colorScheme
@@ -21,10 +22,10 @@ struct CreditProductCard: View {
             onTap()
         }) {
             VStack(spacing: 0) {
-                // Best Value Badge
+                // Badge (Best Value or Most Popular)
                 if isBestValue {
                     HStack {
-                        Image(systemName: "star.fill")
+                        Text("🔥")
                             .font(.system(size: 10))
                         Text("BEST VALUE")
                             .font(.system(size: 11, weight: .bold))
@@ -37,6 +38,27 @@ struct CreditProductCard: View {
                             colors: [
                                 DesignTokens.Gradients.premiumStart(colorScheme),
                                 DesignTokens.Gradients.premiumEnd(colorScheme)
+                            ],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .cornerRadius(DesignTokens.CornerRadius.xs, corners: [.topLeft, .topRight])
+                } else if isMostPopular {
+                    HStack {
+                        Text("💎")
+                            .font(.system(size: 10))
+                        Text("MOST POPULAR")
+                            .font(.system(size: 11, weight: .bold))
+                    }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, DesignTokens.Spacing.md)
+                    .padding(.vertical, DesignTokens.Spacing.xs)
+                    .background(
+                        LinearGradient(
+                            colors: [
+                                Color(red: 0.4, green: 0.5, blue: 1.0),
+                                Color(red: 0.5, green: 0.3, blue: 1.0)
                             ],
                             startPoint: .leading,
                             endPoint: .trailing

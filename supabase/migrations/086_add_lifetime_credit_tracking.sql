@@ -114,7 +114,7 @@ BEGIN
                 user_id,
                 amount,
                 balance_after,
-                source,
+                reason,
                 created_at
             )
             VALUES (
@@ -159,7 +159,7 @@ BEGIN
                 device_id,
                 amount,
                 balance_after,
-                source,
+                reason,
                 created_at
             )
             VALUES (
@@ -286,7 +286,7 @@ BEGIN
             user_id,
             amount,
             balance_after,
-            source,
+            reason,
             idempotency_key,
             created_at
         ) VALUES (
@@ -336,7 +336,7 @@ BEGIN
             device_id,
             amount,
             balance_after,
-            source,
+            reason,
             idempotency_key,
             created_at
         ) VALUES (
