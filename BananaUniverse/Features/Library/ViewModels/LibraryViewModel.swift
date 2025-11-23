@@ -167,16 +167,31 @@ class LibraryViewModel: ObservableObject {
         isLoading = true
         errorMessage = nil
         showingError = false
-        
+
+        #if DEBUG
+        print("📚 [LibraryViewModel] Starting loadHistory()...")
+        #endif
+
         do {
             // Get current user state
             let userState = authService.userState
+
+            #if DEBUG
+            print("📚 [LibraryViewModel] UserState: \(userState.isAuthenticated ? "authenticated" : "anonymous"), ID: \(userState.identifier)")
+            #endif
             
             // Fetch jobs from database
             let jobs = try await supabaseService.fetchUserJobs(
                 userState: userState,
                 limit: 50
             )
+
+            #if DEBUG
+            print("📚 [LibraryViewModel] Fetched \(jobs.count) jobs from database")
+            if !jobs.isEmpty {
+                print("📚 [LibraryViewModel] First job: ID=\(jobs[0].id), status=\(jobs[0].status), outputURL=\(jobs[0].outputURL != nil ? "YES" : "NO")")
+            }
+            #endif
             
             // Capture client reference while still on main actor
             let supabaseClient = supabaseService.client
@@ -191,10 +206,7 @@ class LibraryViewModel: ObservableObject {
                 await withTaskGroup(of: HistoryItem?.self) { group in
                     for job in jobs {
                         group.addTask {
-                            // Skip jobs without completion date
-                            guard let completedAt = job.completedAt else { return nil }
-                            
-                            // Get or generate signed URL
+                            // Get or generate signed URL (only for completed jobs)
                             let signedURL: URL?
                             if let outputURL = job.outputURL {
                                 // Check cache first
@@ -212,19 +224,19 @@ class LibraryViewModel: ObservableObject {
                             } else {
                                 signedURL = nil
                             }
-                            
-                            // Create history item with single signed URL reused for both
+
+                            // Create history item - use createdAt instead of completedAt
                             let historyItem = HistoryItem(
                                 id: job.id.uuidString,
                                 thumbnailURL: signedURL,
                                 effectTitle: self.extractEffectTitle(from: job),
-                                effectId: job.model,
+                                effectId: job.model ?? "unknown",  // Handle optional model
                                 status: self.mapJobStatus(job.status),
-                                createdAt: completedAt,
+                                createdAt: job.createdAt,  // Changed from completedAt to createdAt
                                 resultURL: signedURL,
                                 originalImageKey: job.inputURL
                             )
-                            
+
                             return historyItem
                         }
                     }
@@ -242,15 +254,28 @@ class LibraryViewModel: ObservableObject {
             
             // Update UI on main thread
             historyItems = newHistoryItems
-            
+
+            #if DEBUG
+            print("📚 [LibraryViewModel] ✅ Loaded \(newHistoryItems.count) history items")
+            #endif
+
         } catch {
             let appError = AppError.from(error)
             let libraryError = LibraryError.loadFailed(appError.errorDescription ?? "Failed to load history")
             errorMessage = libraryError.errorDescription
             showingError = true
+
+            #if DEBUG
+            print("📚 [LibraryViewModel] ❌ Error: \(error)")
+            print("📚 [LibraryViewModel] ❌ AppError: \(appError.errorDescription ?? "Unknown")")
+            #endif
         }
-        
+
         isLoading = false
+
+        #if DEBUG
+        print("📚 [LibraryViewModel] loadHistory() completed. Items: \(historyItems.count)")
+        #endif
     }
     
     func refreshHistory() async {
@@ -341,15 +366,19 @@ class LibraryViewModel: ObservableObject {
             let trimmed = String(prompt.prefix(40))
             return trimmed.count < prompt.count ? trimmed + "..." : trimmed
         }
-        
-        // Fallback to model name
-        switch job.model {
+
+        // Fallback to model name (handle optional)
+        guard let model = job.model else {
+            return "AI Effect"  // Default title when model is nil
+        }
+
+        switch model {
         case "nano-banana-edit":
             return "AI Enhancement"
         case "upscale":
             return "Upscale"
         default:
-            return job.model.capitalized
+            return model.capitalized
         }
     }
     

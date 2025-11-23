@@ -58,7 +58,7 @@ struct ImageProcessingView: View {
                 }
                 .padding(DesignTokens.Spacing.md)
             }
-            .scrollDismissesKeyboard(.interactively) // Swipe down to dismiss keyboard
+            .scrollDismissesKeyboard(.immediately) // Dismiss keyboard on scroll start
             .background(
                 DesignTokens.Background.primary(themeManager.resolvedColorScheme)
                     .ignoresSafeArea()
@@ -84,6 +84,13 @@ struct ImageProcessingView: View {
                         viewModel.handleProcessingError(error)
                     }
                 )
+            }
+        }
+        .onChange(of: viewModel.showingProcessing) { isShowing in
+            if !isShowing {
+                // Reset state when processing view is dismissed
+                viewModel.isProcessing = false
+                viewModel.processingJobId = nil
             }
         }
         .fullScreenCover(isPresented: $viewModel.showingResult) {

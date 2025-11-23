@@ -367,49 +367,74 @@ class SupabaseService: ObservableObject {
         limit: Int = 50,
         offset: Int = 0
     ) async throws -> [JobRecord] {
-        
+
+        #if DEBUG
+        print("🔍 [SupabaseService] fetchUserJobs() called")
+        print("🔍 [SupabaseService] UserState: \(userState.isAuthenticated ? "authenticated" : "anonymous"), ID: \(userState.identifier)")
+        #endif
+
         do {
             let decoder = JSONDecoder()
             decoder.dateDecodingStrategy = .iso8601
-            
+
             let response: [JobRecord]
-            
+
             if userState.isAuthenticated {
                 // Authenticated users: use direct table query
-                
+
                 let query = client
-                    .from("jobs")
+                    .from("job_results")  // Changed from "jobs" to "job_results"
                     .select()
-                    .eq("status", value: "completed")
+                    // Removed status filter - show all jobs (completed, processing, failed, pending)
                     .eq("user_id", value: userState.identifier)
-                    .order("completed_at", ascending: false)
+                    .order("created_at", ascending: false)  // Changed from completed_at to created_at
                     .limit(limit)
                     .range(from: offset, to: offset + limit - 1)
-                
+
                 response = try await query
                     .execute()
                     .value
-                    
+
             } else {
-                // Anonymous users: use custom function to bypass RLS
-                
+                // Anonymous users: use stored procedure (sets session + queries in single transaction)
+
+                #if DEBUG
+                print("🔍 [SupabaseService] Calling get_jobs_for_device RPC")
+                #endif
+
+                // Use AnyJSON for RPC params (Supabase SDK requirement)
+                let rpcParams: [String: AnyJSON] = [
+                    "p_device_id": .string(userState.identifier),
+                    "p_limit": .integer(limit),
+                    "p_offset": .integer(offset)
+                ]
+
                 response = try await client
-                    .rpc("get_jobs_by_device_id", params: ["device_id_param": userState.identifier])
+                    .rpc("get_jobs_for_device", params: rpcParams)
                     .execute()
                     .value
+
+                #if DEBUG
+                print("🔍 [SupabaseService] RPC completed successfully")
+                #endif
             }
-            
-            
-            // Debug: Print first few job details if any exist
+
+            #if DEBUG
+            print("🔍 [SupabaseService] ✅ Fetched \(response.count) jobs")
             if !response.isEmpty {
-                for (index, job) in response.prefix(3).enumerated() {
-                }
+                print("🔍 [SupabaseService] First job: ID=\(response[0].id), status=\(response[0].status)")
+                print("🔍 [SupabaseService] First job: outputURL=\(response[0].outputURL ?? "nil")")
             } else {
+                print("🔍 [SupabaseService] ⚠️ No jobs returned!")
             }
-            
+            #endif
+
             return response
-            
+
         } catch {
+            #if DEBUG
+            print("🔍 [SupabaseService] ❌ Error: \(error)")
+            #endif
             throw error
         }
     }
@@ -575,10 +600,10 @@ struct JobRecord: Codable, Identifiable {
     let id: UUID
     let userId: UUID?
     let deviceId: String?
-    let model: String
+    let model: String?  // Made optional - can be NULL in database
     let status: String
     let inputURL: String?
-    let outputURL: String?
+    let outputURL: String?  // Maps to image_url in database
     let options: JobOptions?
     let errorMessage: String?
     let falRequestId: String?
@@ -587,14 +612,14 @@ struct JobRecord: Codable, Identifiable {
     let updatedAt: Date
     let processingTimeSeconds: Int?
     let falStatus: String?
-    
+
     enum CodingKeys: String, CodingKey {
         case id
         case userId = "user_id"
         case deviceId = "device_id"
         case model, status
         case inputURL = "input_url"
-        case outputURL = "output_url"
+        case outputURL = "image_url"  // Database field: image_url (not output_url)
         case options
         case errorMessage = "error_message"
         case falRequestId = "fal_request_id"
