@@ -104,9 +104,27 @@ Deno.serve(async (req: Request) => {
     // ============================================
     logger.step('4. Fetching job result');
     const jobData = await fetchJobResult(supabase, job_id, logger);
+    
+    // ✅ NEW: Sign Image URL if it's a path (Security Upgrade)
+    let signedImageUrl = jobData.image_url;
+    if (signedImageUrl && !signedImageUrl.startsWith('http')) {
+      logger.step('4.2. Signing image path');
+      const { data, error } = await supabase.storage
+        .from('noname-banana-images-prod')
+        .createSignedUrl(signedImageUrl, 3600); // 1 hour validity
+        
+      if (!error && data?.signedUrl) {
+        signedImageUrl = data.signedUrl;
+        logger.debug('Image path signed successfully');
+      } else {
+        logger.error('Failed to sign image path', { error });
+        // We continue with the original path, though client likely won't be able to load it
+      }
+    }
+
     logger.step('4.1. Job result fetched', { 
       status: jobData.status,
-      hasImage: !!jobData.image_url,
+      hasImage: !!signedImageUrl,
       hasError: !!jobData.error
     });
 
@@ -117,7 +135,7 @@ Deno.serve(async (req: Request) => {
     const response: GetResultResponse = {
       success: true,
       status: jobData.status,
-      image_url: jobData.image_url || undefined,
+      image_url: signedImageUrl || undefined,
       error: jobData.error || undefined,
       created_at: jobData.created_at,
       completed_at: jobData.completed_at || undefined

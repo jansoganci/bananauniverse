@@ -45,10 +45,15 @@ struct OnboardingView: View {
                         .tag(OnboardingViewModel.OnboardingScreen.howItWorks)
 
                     OnboardingScreen3(onComplete: {
+                        viewModel.nextScreen()
+                    })
+                    .tag(OnboardingViewModel.OnboardingScreen.credits)
+                    
+                    OnboardingScreen4(onComplete: {
                         viewModel.complete()
                         onComplete()
                     })
-                    .tag(OnboardingViewModel.OnboardingScreen.credits)
+                    .tag(OnboardingViewModel.OnboardingScreen.dataPolicy)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
 

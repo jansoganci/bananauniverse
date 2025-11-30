@@ -105,6 +105,7 @@ struct ImageProcessingView: View {
                 }
             )
             .environmentObject(themeManager)
+            .environmentObject(viewModel) // ✅ Inject ViewModel
         }
         .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") { viewModel.clearError() }

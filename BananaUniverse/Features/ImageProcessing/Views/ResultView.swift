@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct ResultView: View {
     let resultImage: UIImage
@@ -15,9 +16,12 @@ struct ResultView: View {
     let onDismiss: () -> Void
 
     @EnvironmentObject var themeManager: ThemeManager
+    @EnvironmentObject var viewModel: ImageProcessingViewModel
+    
     @State private var showingShareSheet = false
     @State private var isSaving = false
     @State private var showSavedAlert = false
+    @State private var showWarningBanner = true
 
     var body: some View {
         VStack(spacing: 0) {
@@ -32,14 +36,19 @@ struct ResultView: View {
                 // Back button overlay
                 Button(action: { onDismiss() }) {
                     Image(systemName: "chevron.left")
-                        .font(.title3)
-                        .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
+                    .font(.title3)
+                    .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
                 }
                 .padding(.leading, DesignTokens.Spacing.md)
             }
 
             ScrollView {
                 VStack(spacing: DesignTokens.Spacing.lg) {
+                    // ✅ Compact Warning Banner
+                    if !viewModel.isImageSaved {
+                        WarningBanner(isVisible: $showWarningBanner)
+                    }
+                    
                     // Result Image
                     ResultImageCard(image: resultImage)
 
@@ -49,24 +58,9 @@ struct ResultView: View {
                         modelType: modelType
                     )
 
-                    // Action Buttons
-                    VStack(spacing: DesignTokens.Spacing.md) {
-                        // Share Button
-                        ShareButton(
-                            image: resultImage,
-                            isPresented: $showingShareSheet
-                        )
-
-                        // Download Button
-                        DownloadButton(
-                            image: resultImage,
-                            isSaving: $isSaving,
-                            showSavedAlert: $showSavedAlert
-                        )
-
-                        // Create Another Button
-                        CreateAnotherButton(onDismiss: onDismiss)
-                    }
+                    // Create Another Button (in scrollable area)
+                    CreateAnotherButton(onDismiss: onDismiss)
+                        .padding(.bottom, 100) // Space for sticky buttons
                 }
                 .padding(DesignTokens.Spacing.md)
             }
@@ -74,114 +68,59 @@ struct ResultView: View {
                 DesignTokens.Background.primary(themeManager.resolvedColorScheme)
                     .ignoresSafeArea()
             )
+            
+            // Sticky Action Buttons at Bottom
+            VStack(spacing: 0) {
+                Divider()
+                    .background(DesignTokens.Surface.dividerSubtle(themeManager.resolvedColorScheme))
+                
+                VStack(spacing: DesignTokens.Spacing.sm) {
+                    // Share and Download buttons in horizontal row
+                    HStack(spacing: DesignTokens.Spacing.sm) {
+                        // Share Button
+                        ShareButton(
+                            image: resultImage,
+                            isPresented: $showingShareSheet
+                        )
+                        
+                        // Download Button
+                        DownloadButton(
+                            isSaving: $isSaving,
+                            showSavedAlert: $showSavedAlert
+                        )
+                    }
+                }
+                .padding(DesignTokens.Spacing.md)
+                .background(
+                    DesignTokens.Background.primary(themeManager.resolvedColorScheme)
+                        .ignoresSafeArea(edges: .bottom)
+                )
+            }
         }
         .navigationBarBackButtonHidden(true)
+        .onDisappear {
+            handlePageClose()
+        }
         .alert("Saved!", isPresented: $showSavedAlert) {
             Button("OK", role: .cancel) { }
         } message: {
             Text("Image saved to your photo library")
         }
     }
-}
-
-// MARK: - Result Image Card
-
-struct ResultImageCard: View {
-    let image: UIImage
-    @EnvironmentObject var themeManager: ThemeManager
-
-    var body: some View {
-        VStack(spacing: DesignTokens.Spacing.sm) {
-            Image(uiImage: image)
-                .resizable()
-                .scaledToFit()
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-                .shadow(
-                    color: Color.black.opacity(0.1),
-                    radius: 20,
-                    x: 0,
-                    y: 10
-                )
-        }
-    }
-}
-
-// MARK: - Processing Info Card
-
-struct ProcessingInfoCard: View {
-    let creditCost: Int
-    let modelType: ModelType
-    @EnvironmentObject var themeManager: ThemeManager
-
-    var body: some View {
-        HStack(spacing: DesignTokens.Spacing.lg) {
-            // Model Info
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Model")
-                    .font(.caption)
-                    .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
-
-                HStack(spacing: 4) {
-                    Image(systemName: modelType.iconName)
-                    Text(modelType.displayName)
+    
+    private func handlePageClose() {
+        // If closed without saving, delete from server immediately
+        if !viewModel.isImageSaved, let jobId = viewModel.resultJobId {
+            Task {
+                do {
+                    try await SupabaseService.shared.deleteProcessedImage(jobId: jobId)
+                    #if DEBUG
+                    print("🗑️ [ResultView] Image deleted from server on close")
+                    #endif
+                } catch {
+                    print("⚠️ [ResultView] Failed to delete image: \(error)")
                 }
-                .font(.subheadline)
-                .fontWeight(.semibold)
-                .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
             }
-
-            Spacer()
-
-            // Credit Cost
-            VStack(alignment: .trailing, spacing: 4) {
-                Text("Cost")
-                    .font(.caption)
-                    .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
-
-                HStack(spacing: 4) {
-                    Text("\(creditCost)")
-                        .font(.subheadline)
-                        .fontWeight(.bold)
-                    Text("credits")
-                        .font(.caption)
-                }
-                .foregroundColor(DesignTokens.Brand.accent(themeManager.resolvedColorScheme))
-            }
-        }
-        .padding(DesignTokens.Spacing.md)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(DesignTokens.Background.secondary(themeManager.resolvedColorScheme))
-        )
-    }
-}
-
-// MARK: - Share Button
-
-struct ShareButton: View {
-    let image: UIImage
-    @Binding var isPresented: Bool
-    @EnvironmentObject var themeManager: ThemeManager
-
-    var body: some View {
-        Button {
-            isPresented = true
-        } label: {
-            HStack(spacing: DesignTokens.Spacing.sm) {
-                Image(systemName: "square.and.arrow.up")
-                Text("Share")
-            }
-            .font(.headline)
-            .foregroundColor(.white)
-            .frame(maxWidth: .infinity)
-            .padding(DesignTokens.Spacing.md)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(DesignTokens.Brand.accent(themeManager.resolvedColorScheme))
-            )
-        }
-        .sheet(isPresented: $isPresented) {
-            ActivityViewController(activityItems: [image])
         }
     }
 }
@@ -189,14 +128,14 @@ struct ShareButton: View {
 // MARK: - Download Button
 
 struct DownloadButton: View {
-    let image: UIImage
     @Binding var isSaving: Bool
     @Binding var showSavedAlert: Bool
     @EnvironmentObject var themeManager: ThemeManager
+    @EnvironmentObject var viewModel: ImageProcessingViewModel
 
     var body: some View {
         Button {
-            saveToPhotoLibrary()
+            saveImage()
         } label: {
             HStack(spacing: DesignTokens.Spacing.sm) {
                 if isSaving {
@@ -204,30 +143,39 @@ struct DownloadButton: View {
                         .progressViewStyle(CircularProgressViewStyle(tint: DesignTokens.Brand.accent(themeManager.resolvedColorScheme)))
                     Text("Saving...")
                 } else {
-                    Image(systemName: "arrow.down.circle")
-                    Text("Download")
+                    if viewModel.isImageSaved {
+                        Image(systemName: "checkmark.circle.fill")
+                        Text("Saved")
+                    } else {
+                        Image(systemName: "arrow.down.circle")
+                        Text("Download")
+                    }
                 }
             }
             .font(.headline)
-            .foregroundColor(DesignTokens.Brand.accent(themeManager.resolvedColorScheme))
+            .foregroundColor(viewModel.isImageSaved ? .green : DesignTokens.Brand.accent(themeManager.resolvedColorScheme))
             .frame(maxWidth: .infinity)
             .padding(DesignTokens.Spacing.md)
             .background(
                 RoundedRectangle(cornerRadius: 12)
-                    .stroke(DesignTokens.Brand.accent(themeManager.resolvedColorScheme), lineWidth: 2)
+                    .stroke(viewModel.isImageSaved ? Color.green : DesignTokens.Brand.accent(themeManager.resolvedColorScheme), lineWidth: 2)
             )
         }
-        .disabled(isSaving)
+        .disabled(isSaving || viewModel.isImageSaved)
     }
 
-    private func saveToPhotoLibrary() {
+    private func saveImage() {
         isSaving = true
-
-        UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            isSaving = false
-            showSavedAlert = true
+        
+        Task {
+            await viewModel.saveImageToDevice()
+            
+            await MainActor.run {
+                isSaving = false
+                if viewModel.isImageSaved {
+                    showSavedAlert = true
+                }
+            }
         }
     }
 }
@@ -273,6 +221,92 @@ struct ActivityViewController: UIViewControllerRepresentable {
 
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {
         // No updates needed
+    }
+}
+
+// MARK: - Result Image Card
+
+struct ResultImageCard: View {
+    let image: UIImage
+    
+    var body: some View {
+        Image(uiImage: image)
+            .resizable()
+            .aspectRatio(contentMode: .fit)
+            .cornerRadius(12)
+            .shadow(radius: 4)
+            .frame(maxWidth: .infinity)
+    }
+}
+
+// MARK: - Processing Info Card
+
+struct ProcessingInfoCard: View {
+    let creditCost: Int
+    let modelType: ModelType
+    @EnvironmentObject var themeManager: ThemeManager
+    
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading) {
+                Text("Model used")
+                    .font(.caption)
+                    .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
+                Text(modelType.displayName)
+                    .font(.headline)
+                    .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
+            }
+            
+            Spacer()
+            
+            VStack(alignment: .trailing) {
+                Text("Cost")
+                    .font(.caption)
+                    .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
+                HStack(spacing: 4) {
+                    Image(systemName: "bolt.fill")
+                        .foregroundColor(DesignTokens.Brand.accent(themeManager.resolvedColorScheme))
+                    Text("\(creditCost)")
+                        .font(.headline)
+                        .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
+                }
+            }
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(DesignTokens.Background.secondary(themeManager.resolvedColorScheme))
+        )
+    }
+}
+
+// MARK: - Share Button
+
+struct ShareButton: View {
+    let image: UIImage
+    @Binding var isPresented: Bool
+    @EnvironmentObject var themeManager: ThemeManager
+    
+    var body: some View {
+        Button {
+            isPresented = true
+        } label: {
+            HStack(spacing: DesignTokens.Spacing.sm) {
+                Image(systemName: "square.and.arrow.up")
+                Text("Share")
+            }
+            .font(.headline)
+            .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
+            .frame(maxWidth: .infinity)
+            .padding(DesignTokens.Spacing.md)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(DesignTokens.Background.secondary(themeManager.resolvedColorScheme))
+            )
+        }
+        .sheet(isPresented: $isPresented) {
+            ActivityViewController(activityItems: [image])
+        }
     }
 }
 

@@ -81,12 +81,21 @@ class HybridAuthService: ObservableObject {
             if let session = try? await supabase.getCurrentSession() {
                 let user = session.user
                 userState = .authenticated(user: user)
-            } else if let user = supabase.getCurrentUser() {
-                // Fallback synchronous check
-                userState = .authenticated(user: user)
+                
+                // Check for legacy migration even if session exists (in case it was skipped)
+                await checkAndMigrateLegacyData()
             } else {
-                let deviceId = getOrCreateDeviceUUID()
-                userState = .anonymous(deviceId: deviceId)
+                // No session -> Sign in anonymously
+                do {
+                    try await signInAnonymously()
+                } catch {
+                    print("❌ [HybridAuth] Anonymous sign-in failed: \(error)")
+                    // Fallback to legacy mode if network fails?
+                    // Or just show error?
+                    // For now, fallback to legacy local state so app works offline-ish
+                    let deviceId = getOrCreateDeviceUUID()
+                    userState = .anonymous(deviceId: deviceId)
+                }
             }
             
             // Update credit manager with the determined state
@@ -100,26 +109,63 @@ class HybridAuthService: ObservableObject {
         // CRITICAL: Update quota manager with new state
         CreditManager.shared.setUserState(newState)
         
-        // If transitioning from anonymous to authenticated, handle quota migration
-        if case .anonymous = previousState, case .authenticated(let user) = newState {
-            print("🔄 [AUTH] Anonymous → Authenticated transition")
-            
-            // Initialize new user in backend if needed
-            await CreditManager.shared.initializeNewUser()
-        }
-        
-        // If transitioning from authenticated to anonymous, handle cleanup
-        if case .authenticated = previousState, case .anonymous = newState {
-            print("🔄 [AUTH] Authenticated → Anonymous transition")
+        // Check for migration when entering authenticated state
+        if case .authenticated = newState {
+             await checkAndMigrateLegacyData()
         }
     }
     
     // MARK: - Anonymous Authentication
     
-    func signInAnonymously() {
-        let deviceId = getOrCreateDeviceUUID()
-        userState = .anonymous(deviceId: deviceId)
+    func signInAnonymously() async throws {
+        print("🔐 [HybridAuth] Attempting Supabase Anonymous Sign-In...")
+        let session = try await supabase.client.auth.signInAnonymously()
+        
+        userState = .authenticated(user: session.user)
         CreditManager.shared.setUserState(userState)
+        
+        await checkAndMigrateLegacyData()
+    }
+    
+    private func checkAndMigrateLegacyData() async {
+        let deviceId = getOrCreateDeviceUUID()
+        
+        // REMOVED: UserDefaults check - we want this to run EVERY time to recover credits
+        // This is critical for StableID-based credit recovery
+        
+        print("🔄 [HybridAuth] Running credit recovery for device: \(deviceId)")
+        
+        do {
+            let params = ["p_device_id": deviceId]
+            // Call the new recovery RPC that handles both new and existing devices
+            let response: [String: AnyJSON] = try await supabase.client
+                .rpc("recover_or_init_user", params: params)
+                .execute()
+                .value
+            
+            // Extract recovered credits from response
+            if let success = response["success"]?.boolValue, success {
+                if let credits = response["credits_remaining"]?.intValue {
+                    let isNewDevice = response["is_new_device"]?.boolValue ?? false
+                    let jobsMoved = response["jobs_moved"]?.intValue ?? 0
+                    
+                    print("✅ [HybridAuth] Recovery complete: \(credits) credits, new device: \(isNewDevice), jobs moved: \(jobsMoved)")
+                    
+                    // Update CreditManager with recovered balance
+                    await CreditManager.shared.updateFromRecovery(credits: credits)
+                } else {
+                    print("⚠️ [HybridAuth] Recovery response missing credits field")
+                }
+            } else {
+                let error = response["error"]?.stringValue ?? "Unknown error"
+                print("❌ [HybridAuth] Recovery failed: \(error)")
+            }
+        } catch {
+            print("⚠️ [HybridAuth] Recovery RPC call failed: \(error)")
+            // Don't fail silently - this is critical for credit persistence
+            // Fall back to normal credit loading
+            await CreditManager.shared.loadQuota()
+        }
     }
     
     // MARK: - Authenticated Authentication
@@ -243,10 +289,16 @@ class HybridAuthService: ObservableObject {
         do {
             try await supabase.signOut()
             
-            // Switch to anonymous state
-            let deviceId = getOrCreateDeviceUUID()
-            userState = .anonymous(deviceId: deviceId)
-            CreditManager.shared.setUserState(userState)
+            // Switch to anonymous state (Authenticated Anonymous)
+            do {
+                try await signInAnonymously()
+            } catch {
+                print("❌ [HybridAuth] Failed to sign in anonymously after sign out: \(error)")
+                // Fallback to local state if network fails, but this leaves us without a token
+                let deviceId = getOrCreateDeviceUUID()
+                userState = .anonymous(deviceId: deviceId)
+                CreditManager.shared.setUserState(userState)
+            }
             
             // Verify session cleared (best-effort diagnostics)
             let currentUser = supabase.getCurrentUser()

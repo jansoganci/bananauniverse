@@ -39,15 +39,17 @@ class ImageProcessingViewModel: ObservableObject {
     @Published var showingResult = false
     @Published var showingProcessing = false
     @Published var processingJobId: String?
+    @Published var resultJobId: String? // ✅ YENİ: Result page için job ID
     @Published var processingTheme: Tool?
     @Published private var processingComplete = false  // Guard against duplicate handler calls
+    @Published var isImageSaved: Bool = false // ✅ YENİ: Kaydedildi mi?
 
     // MARK: - Dependencies
-
+    
     private let supabaseService = SupabaseService.shared
     private let creditManager = CreditManager.shared
     private let storageService = StorageService.shared
-
+    
     // MARK: - Computed Properties
 
     /// Estimated credit cost based on current settings
@@ -268,18 +270,89 @@ class ImageProcessingViewModel: ObservableObject {
         }
 
         processingComplete = true
+        
+        // ✅ YENİ: Job ID'yi sakla (silme işlemi için)
+        if let jobId = processingJobId {
+            resultJobId = jobId
+        }
+        
+        // ✅ YENİ: Reset saved state
+        isImageSaved = false
 
         #if DEBUG
-        print("✅ [ImageProcessingViewModel] Processing completed: \(imageUrl)")
+        print("✅ [ImageProcessingViewModel] Processing completed: \(imageUrl), jobId: \(resultJobId ?? "nil")")
         #endif
 
         // Clear any previous error messages
         errorMessage = nil
 
-        if let url = URL(string: imageUrl) {
-            resultImageURL = url
-            showingProcessing = false
-            showingResult = true
+        Task {
+            // Check if we received a raw path (from Realtime) or a full URL
+            var finalURLString = imageUrl
+            
+            if !imageUrl.hasPrefix("http") {
+                // It's a storage path, we need to sign it
+                do {
+                    finalURLString = try await supabaseService.getSignedURL(for: imageUrl, expiresIn: 3600) // 1 hour
+                    #if DEBUG
+                    print("🔑 [ImageProcessingViewModel] Signed URL generated: \(finalURLString)")
+                    #endif
+                } catch {
+                    print("❌ [ImageProcessingViewModel] Failed to sign URL: \(error)")
+                    errorMessage = "Failed to load image secure link"
+                    return
+                }
+            }
+            
+            if let url = URL(string: finalURLString) {
+                await MainActor.run {
+                    resultImageURL = url
+                    showingProcessing = false
+                    showingResult = true
+                }
+            }
+        }
+    }
+    
+    /// Save image to device and mark as saved in backend
+    func saveImageToDevice() async {
+        guard let imageURL = resultImageURL else { return }
+        
+        do {
+            // 1. Download image
+            let (imageData, _) = try await URLSession.shared.data(from: imageURL)
+            guard let image = UIImage(data: imageData) else {
+                throw NSError(domain: "ImageProcessingViewModel", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to convert data to image"])
+            }
+            
+            // 2. Save to Photo Library
+            try await PHPhotoLibrary.shared().performChanges {
+                PHAssetChangeRequest.creationRequestForAsset(from: image)
+            }
+            
+            // 3. Mark as saved in backend (prevents auto-delete)
+            if let jobId = resultJobId {
+                try await supabaseService.markImageAsSaved(jobId: jobId)
+                
+                // 4. Optional: Delete from server immediately to save space?
+                // Plan says: "Cihaza indir, sunucudan sil"
+                // So yes, delete it.
+                try await supabaseService.deleteProcessedImage(jobId: jobId)
+            }
+            
+            await MainActor.run {
+                self.isImageSaved = true
+            }
+            
+            #if DEBUG
+            print("✅ [ImageProcessingViewModel] Image saved and marked for deletion")
+            #endif
+            
+        } catch {
+            #if DEBUG
+            print("❌ [ImageProcessingViewModel] Failed to save image: \(error)")
+            #endif
+            // Handle error (show alert?)
         }
     }
 

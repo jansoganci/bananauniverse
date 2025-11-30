@@ -174,6 +174,19 @@ class CreditManager: ObservableObject {
         await loadQuota()
     }
 
+    /// Updates credits from StableID recovery (bypasses normal load flow)
+    /// This is called by HybridAuthService after recover_or_init_user RPC
+    func updateFromRecovery(credits: Int) async {
+        await MainActor.run {
+            self.creditsRemaining = credits
+            self.isLoading = false
+            
+            #if DEBUG
+            print("💾 [CREDITS] Recovered from StableID: \(credits) credits")
+            #endif
+        }
+    }
+
     /// Updates credits from backend response (called by SupabaseService)
     func updateFromBackendResponse(creditsRemaining: Int, isPremium: Bool = false) async {
         // isPremium parameter kept for backward compatibility but ignored

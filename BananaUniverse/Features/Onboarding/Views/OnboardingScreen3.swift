@@ -90,9 +90,9 @@ struct OnboardingScreen3: View {
 
             Spacer()
 
-            // Get Started Button
+            // Next Button (changed from Get Started)
             PrimaryButton(
-                title: "Get Started",
+                title: "Next",
                 icon: "arrow.right",
                 action: onComplete
             )

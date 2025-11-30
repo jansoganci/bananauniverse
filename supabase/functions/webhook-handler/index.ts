@@ -166,24 +166,46 @@ Deno.serve(async (req: Request) => {
       const fileName = uploadResult.fileName!;
       logger.step('6.2.1. Image uploaded to storage', { fileName });
 
-      // Generate signed URL
-      logger.step('6.3. Generating signed URL');
-      const signedUrlResult = await generateSignedUrl(supabase, fileName, request_id, corsHeaders, logger);
-      if (signedUrlResult.error) {
-        logger.error('Signed URL generation failed');
-        return signedUrlResult.error;
-      }
-      const signedURL = signedUrlResult.signedUrl!;
-      logger.step('6.3.1. Signed URL generated');
-
+      // Store PATH instead of signed URL (Security Upgrade)
+      logger.step('6.3. Storing image path');
+      // Prevent double-prefixing if fileName already contains 'processed/'
+      const storagePath = fileName.startsWith('processed/') ? fileName : `processed/${fileName}`;
+      
       // Update job result
       logger.step('6.4. Updating job result');
-      const updateResult = await updateJobResult(supabase, request_id, existingJob, signedURL, corsHeaders, logger);
+      const updateResult = await updateJobResult(supabase, request_id, existingJob, storagePath, corsHeaders, logger);
       if (updateResult.error) {
         logger.error('Job result update failed');
         return updateResult.error;
       }
       logger.step('6.4.1. Job result updated');
+
+      // ✅ NEW: Delete Original Uploads (Cleanup)
+      // Clean up the user's upload folder to save space and improve privacy
+      if (existingJob.user_id) {
+        logger.step('6.5. Cleaning up uploads');
+        try {
+          const uploadFolder = `uploads/${existingJob.user_id}`;
+          const { data: files, error: listError } = await supabase.storage
+            .from('noname-banana-images-prod')
+            .list(uploadFolder);
+          
+          if (!listError && files && files.length > 0) {
+            const pathsToDelete = files.map((file: any) => `${uploadFolder}/${file.name}`);
+            const { error: deleteError } = await supabase.storage
+              .from('noname-banana-images-prod')
+              .remove(pathsToDelete);
+            
+            if (deleteError) {
+              logger.warn('Failed to delete uploads', { error: deleteError.message });
+            } else {
+              logger.info('Original uploads deleted', { count: pathsToDelete.length });
+            }
+          }
+        } catch (cleanupError) {
+          logger.warn('Cleanup exception', { error: cleanupError });
+        }
+      }
 
       // Send Telegram notification for successful generation
       logger.step('6.5. Sending Telegram notification');
@@ -659,31 +681,37 @@ async function updateJobResult(
   supabase: any,
   request_id: string,
   existingJob: any,
-  signedURL: string,
+  storagePath: string,
   corsHeaders: Record<string, string>,
   logger?: any
 ): Promise<{ success?: boolean; error?: Response }> {
       if (logger) logger.debug('Updating job_results table');
+
+      // Calculate auto-delete time (24 hours from now)
+      const autoDeleteAt = new Date();
+      autoDeleteAt.setHours(autoDeleteAt.getHours() + 24);
 
       // Use internal id for update (race-safe, always available)
       const { error: updateError } = await supabase
         .from('job_results')
         .update({
           status: 'completed',
-          image_url: signedURL,
+          image_url: storagePath,
           completed_at: new Date().toISOString(),
-          fal_job_id: request_id  // Set fal_job_id now if it wasn't set before
+          fal_job_id: request_id,  // Set fal_job_id now if it wasn't set before
+          saved_to_device: false,
+          auto_delete_at: autoDeleteAt.toISOString()
         })
         .eq('id', existingJob.id);
 
       if (updateError) {
         if (logger) logger.error('Failed to update job_results', { error: updateError.message });
-    return {
-      error: new Response(
-          JSON.stringify({ success: false, error: 'Database update failed' }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    };
+        return {
+          error: new Response(
+            JSON.stringify({ success: false, error: 'Database update failed' }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        };
       }
 
       if (logger) logger.info('Job result saved successfully', { requestId: request_id });

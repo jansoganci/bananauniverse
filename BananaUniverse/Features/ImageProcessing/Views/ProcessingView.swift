@@ -235,21 +235,50 @@ struct ProcessingView: View {
         progressAnimationTask?.cancel()
         
         progressAnimationTask = Task {
-            // Simulate progress while waiting for real updates
-            var currentProgress: Double = 0.1
+            var currentProgress: Double = 0.0
+            let startTime = Date()
+            let fastPhaseDuration: TimeInterval = 5.0 // 5 seconds fast phase
+            let fastPhaseTarget: Double = 0.6 // Target 60% quickly
             
             while !Task.isCancelled {
-                // Gradually increase progress (slowly, to show activity)
-                currentProgress = min(currentProgress + 0.02, 0.85) // Cap at 85% until real update
+                let elapsed = Date().timeIntervalSince(startTime)
                 
-                await MainActor.run {
-                    if progress < 0.85 {
-                        progress = currentProgress
+                if elapsed < fastPhaseDuration {
+                    // PHASE 1: Fast Progress (0% -> 60% in 5 seconds)
+                    let fastProgress = (elapsed / fastPhaseDuration) * fastPhaseTarget
+                    currentProgress = min(fastProgress, fastPhaseTarget)
+                    
+                    await MainActor.run {
+                        // Only update if we haven't received a better real update
+                        if progress < fastPhaseTarget {
+                            withAnimation(.linear(duration: 0.1)) {
+                                progress = currentProgress
+                            }
+                        }
                     }
+                    
+                    // Update every 0.1s for smoothness
+                    try? await Task.sleep(nanoseconds: 100_000_000)
+                    
+                } else {
+                    // PHASE 2: Slow Progress (60% -> 95%)
+                    // Slow down significantly to show work is happening but taking time
+                    let slowPhaseElapsed = elapsed - fastPhaseDuration
+                    // Target 95% over next 60 seconds
+                    let slowProgress = fastPhaseTarget + (slowPhaseElapsed / 60.0) * 0.35 
+                    currentProgress = min(slowProgress, 0.95) // Cap at 95%
+                    
+                    await MainActor.run {
+                        if progress < 0.95 {
+                            withAnimation(.linear(duration: 1.0)) {
+                                progress = currentProgress
+                            }
+                        }
+                    }
+                    
+                    // Update every 1s
+                    try? await Task.sleep(nanoseconds: 1_000_000_000) 
                 }
-                
-                // Wait 2 seconds between updates
-                try? await Task.sleep(nanoseconds: 2_000_000_000)
             }
         }
     }
@@ -258,28 +287,40 @@ struct ProcessingView: View {
 
     @MainActor
     private func updateUI(with response: GetResultResponse) {
-        // Cancel animation when we get real updates
-        progressAnimationTask?.cancel()
         switch response.status {
         case "pending":
+            // Jump to 60% if behind (show activity)
+            if progress < 0.6 {
+                withAnimation(.easeOut(duration: 0.3)) {
+                    progress = 0.6
+                }
+            }
             statusMessage = "Queued..."
-            progress = 0.1
-
+            
         case "processing":
+            // Ensure we are at least at 60%
+            if progress < 0.6 {
+                withAnimation(.easeOut(duration: 0.3)) {
+                    progress = 0.6
+                }
+            }
             statusMessage = "Creating your masterpiece..."
-            progress = 0.5
-
+            
         case "completed":
-            statusMessage = "Almost there..."
-            progress = 0.95
-
+            // Cancel fake progress and finish
+            progressAnimationTask?.cancel()
+            withAnimation(.easeOut(duration: 0.5)) {
+                progress = 1.0
+            }
+            statusMessage = "Complete!"
+            
         case "failed":
+            progressAnimationTask?.cancel()
             statusMessage = "Something went wrong"
             progress = 0.0
-
+            
         default:
             statusMessage = "Processing..."
-            progress = 0.3
         }
     }
 }
