@@ -17,34 +17,32 @@ struct OnboardingScreen3: View {
         VStack(spacing: DesignTokens.Spacing.xl) {
             Spacer()
 
-            // Credit Badge
+            // Credit Badge (smaller, less prominent)
             ZStack {
                 Circle()
                     .fill(
                         LinearGradient(
                             colors: [
-                                DesignTokens.Brand.secondary(colorScheme).opacity(0.3),
-                                DesignTokens.Brand.secondary(colorScheme).opacity(0.2)
+                                DesignTokens.Brand.secondary(colorScheme).opacity(0.2),
+                                DesignTokens.Brand.secondary(colorScheme).opacity(0.15)
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
                     )
-                    .frame(width: 120, height: 120)
-                    .shadow(color: DesignTokens.Brand.secondary(colorScheme).opacity(0.4), radius: 20, x: 0, y: 10)
+                    .frame(width: 80, height: 80)
+                    .shadow(color: DesignTokens.Brand.secondary(colorScheme).opacity(0.2), radius: 8, x: 0, y: 4)
 
-                VStack(spacing: 4) {
+                VStack(spacing: 2) {
                     Text("10")
-                        .font(.system(size: 48, weight: .bold))
+                        .font(.system(size: 32, weight: .bold))
                         .foregroundColor(DesignTokens.Brand.secondary(colorScheme))
 
                     Text("Credits")
-                        .font(DesignTokens.Typography.caption1)
+                        .font(.system(size: 10, weight: .medium))
                         .foregroundColor(DesignTokens.Text.secondary(colorScheme))
                 }
             }
-            .scaleEffect(1.0)
-            .animation(DesignTokens.Animation.spring, value: true)
 
             // Title
             Text("Start with 10 Free Credits")

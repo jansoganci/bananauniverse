@@ -21,14 +21,12 @@ class OnboardingViewModel: ObservableObject {
         case welcome = 0
         case howItWorks = 1
         case credits = 2
-        case dataPolicy = 3
 
         var title: String {
             switch self {
             case .welcome: return "Welcome to BananaUniverse"
             case .howItWorks: return "How It Works"
             case .credits: return "Start with 10 Free Credits"
-            case .dataPolicy: return "Important: Save Your Images"
             }
         }
     }

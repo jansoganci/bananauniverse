@@ -1,0 +1,191 @@
+//
+//  BeforeAfterSlider.swift
+//  BananaUniverse
+//
+//  Created by AI Assistant
+//  Purpose: Interactive before/after image comparison slider
+//
+
+import SwiftUI
+
+struct BeforeAfterSlider: View {
+    @State private var sliderPosition: CGFloat = 0.5
+    @State private var isDragging = false
+    
+    let beforeImageName: String?
+    let afterImageName: String?
+    let beforeImageURL: String?
+    let afterImageURL: String?
+    
+    @Environment(\.colorScheme) var colorScheme
+    
+    init(
+        beforeImageName: String? = nil,
+        afterImageName: String? = nil,
+        beforeImageURL: String? = nil,
+        afterImageURL: String? = nil
+    ) {
+        self.beforeImageName = beforeImageName
+        self.afterImageName = afterImageName
+        self.beforeImageURL = beforeImageURL
+        self.afterImageURL = afterImageURL
+    }
+    
+    var body: some View {
+        GeometryReader { geometry in
+            let width = max(1, geometry.size.width)
+            let height = max(1, geometry.size.height)
+            let maskWidth = max(0, width * sliderPosition)
+            let handleOffset = max(0, width * sliderPosition - 20)
+            let dividerOffset = width * sliderPosition - 1
+            
+            ZStack(alignment: .leading) {
+                // Before image (background)
+                if let beforeImageName = beforeImageName {
+                    Image(beforeImageName)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: width, height: height)
+                        .clipped()
+                } else if let beforeImageURL = beforeImageURL {
+                    AsyncImage(url: URL(string: beforeImageURL)) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: width, height: height)
+                                .clipped()
+                        case .empty, .failure:
+                            placeholderView(size: CGSize(width: width, height: height))
+                        @unknown default:
+                            placeholderView(size: CGSize(width: width, height: height))
+                        }
+                    }
+                } else {
+                    placeholderView(size: CGSize(width: width, height: height))
+                }
+                
+                // After image (masked based on slider position)
+                if let afterImageName = afterImageName {
+                    Image(afterImageName)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: width, height: height)
+                        .clipped()
+                        .mask(
+                            Rectangle()
+                                .frame(width: maskWidth)
+                        )
+                } else if let afterImageURL = afterImageURL {
+                    AsyncImage(url: URL(string: afterImageURL)) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: width, height: height)
+                                .clipped()
+                                .mask(
+                                    Rectangle()
+                                        .frame(width: maskWidth)
+                                )
+                        case .empty, .failure:
+                            placeholderView(size: CGSize(width: width, height: height))
+                        @unknown default:
+                            placeholderView(size: CGSize(width: width, height: height))
+                        }
+                    }
+                } else {
+                    placeholderView(size: CGSize(width: width, height: height))
+                }
+                
+                // Slider handle
+                VStack {
+                    Spacer()
+                    HStack(spacing: 0) {
+                        Spacer()
+                            .frame(width: handleOffset)
+                        
+                        ZStack {
+                            Circle()
+                                .fill(Color.white)
+                                .frame(width: 40, height: 40)
+                                .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 2)
+                            
+                            Image(systemName: "line.horizontal.3")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.gray)
+                        }
+                        
+                        Spacer()
+                    }
+                    Spacer()
+                }
+                
+                // Divider line
+                Rectangle()
+                    .fill(Color.white.opacity(0.8))
+                    .frame(width: 2)
+                    .offset(x: dividerOffset)
+            }
+            .cornerRadius(DesignTokens.CornerRadius.lg)
+            .shadow(color: .black.opacity(0.3), radius: 12, x: 0, y: 6)
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { value in
+                        guard width > 0 else { return }
+                        isDragging = true
+                        let newPosition = max(0, min(1, value.location.x / width))
+                        withAnimation(.interactiveSpring()) {
+                            sliderPosition = newPosition
+                        }
+                    }
+                    .onEnded { _ in
+                        isDragging = false
+                    }
+            )
+        }
+        .frame(height: 280)
+    }
+    
+    private func placeholderView(size: CGSize) -> some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.lg)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            DesignTokens.Brand.secondary(colorScheme).opacity(0.3),
+                            DesignTokens.Brand.secondary(colorScheme).opacity(0.2)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+            
+            VStack(spacing: 8) {
+                Image(systemName: "photo")
+                    .font(.system(size: 40))
+                    .foregroundColor(DesignTokens.Brand.secondary(colorScheme))
+                
+                Text("Loading...")
+                    .font(DesignTokens.Typography.caption1)
+                    .foregroundColor(DesignTokens.Text.secondary(colorScheme))
+            }
+        }
+        .frame(width: size.width, height: size.height)
+    }
+}
+
+// MARK: - Preview
+#if DEBUG
+#Preview {
+    BeforeAfterSlider(
+        beforeImageName: "OnboardingBefore",
+        afterImageName: "OnboardingAfter"
+    )
+    .padding()
+    .background(Color.black)
+}
+#endif
+

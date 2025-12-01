@@ -15,25 +15,12 @@ struct OnboardingScreen1: View {
         VStack(spacing: DesignTokens.Spacing.xl) {
             Spacer()
 
-            // Hero Image - Medieval Painting
-            AsyncImage(url: URL(string: "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/medieval-painting.jpg")) { phase in
-                switch phase {
-                case .success(let image):
-                    image
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: 280, height: 180)
-                        .cornerRadius(DesignTokens.CornerRadius.lg)
-                        .shadow(color: .black.opacity(0.3), radius: 12, x: 0, y: 6)
-                case .empty:
-                    placeholderView
-                case .failure:
-                    placeholderView
-                @unknown default:
-                    placeholderView
-                }
-            }
-            .frame(width: 280, height: 180)
+            // Before/After Slider
+            BeforeAfterSlider(
+                beforeImageName: "OnboardingBefore",
+                afterImageName: "OnboardingAfter"
+            )
+            .padding(.horizontal, DesignTokens.Spacing.md)
 
             // Title
             Text("Welcome to BananaUniverse")
@@ -54,34 +41,6 @@ struct OnboardingScreen1: View {
         .padding(.horizontal, DesignTokens.Spacing.md)
     }
 
-    // MARK: - Placeholder View
-
-    private var placeholderView: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.lg)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            DesignTokens.Brand.secondary(colorScheme).opacity(0.3),
-                            DesignTokens.Brand.secondary(colorScheme).opacity(0.2)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-
-            VStack(spacing: 8) {
-                Image(systemName: "figure.stand")
-                    .font(.system(size: 60))
-                    .foregroundColor(DesignTokens.Brand.secondary(colorScheme))
-
-                Text("Loading...")
-                    .font(DesignTokens.Typography.caption1)
-                    .foregroundColor(DesignTokens.Text.secondary(colorScheme))
-            }
-        }
-        .frame(width: 280, height: 180)
-    }
 }
 
 // MARK: - Preview

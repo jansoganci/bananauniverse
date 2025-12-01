@@ -18,6 +18,8 @@ struct ProfileView: View {
     @State private var showOnboarding = false
     @State private var authStateRefreshTrigger = false
     @State private var mockNotificationEnabled = true
+    @State private var selectedLanguage = "English"
+    @State private var selectedNotificationSetting = "Enabled"
     @Environment(\.openURL) var openURL
     @Environment(\.colorScheme) var colorScheme
 
@@ -100,6 +102,7 @@ struct ProfileView: View {
                 }
             )
             .padding(.horizontal, DesignTokens.Spacing.md)
+            .padding(.top, DesignTokens.Spacing.md)
             
             // Sign In or Create Account Button (for anonymous users)
             if !authService.isAuthenticated {
@@ -145,8 +148,17 @@ struct ProfileView: View {
                             .background(DesignTokens.Surface.secondary(colorScheme))
                             .padding(.leading, 56)
                         
-                        // Quota Display
-                        QuotaDisplayView(style: .detailed)
+                        // Credits Row
+                        ProfileRow(
+                            icon: "star.fill",
+                            title: "Credits",
+                            subtitle: "\(creditManager.creditsRemaining) credits",
+                            iconColor: DesignTokens.Brand.primary(colorScheme),
+                            showChevron: false,
+                            action: {
+                                showPaywall = true
+                            }
+                        )
                         
                         Divider()
                             .background(DesignTokens.Surface.secondary(colorScheme))
@@ -182,24 +194,22 @@ struct ProfileView: View {
                 // Settings Card
                 VStack(spacing: 0) {
                     // Theme Selector
-                    HStack(spacing: 16) {
+                    HStack(spacing: DesignTokens.Spacing.md) {
+                        // Icon with circular background (matching ProfileRow)
                         Image(systemName: "paintbrush.fill")
-                            .font(.system(size: 20))
+                            .font(.system(size: 22, weight: .medium))
                             .foregroundColor(DesignTokens.Brand.primary(colorScheme))
-                            .frame(width: 24)
+                            .frame(width: 32, height: 32)
+                            .background(
+                                Circle()
+                                    .fill(DesignTokens.Brand.primary(colorScheme).opacity(0.1))
+                            )
                         
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Theme")
-                                .font(.system(size: 16))
-                                .foregroundColor(DesignTokens.Text.primary(colorScheme))
-                            
-                            // Show subtitle only for Auto mode
-                            if themeManager.preference == .system {
-                                Text("(Follow System)")
-                                    .font(.system(size: 12))
-                                    .foregroundColor(DesignTokens.Text.secondary(colorScheme))
-                            }
-                        }
+                        // Text Content (matching ProfileRow)
+                        Text("Theme")
+                            .font(DesignTokens.Typography.body)
+                            .foregroundColor(DesignTokens.Text.primary(colorScheme))
+                            .multilineTextAlignment(.leading)
                         
                         Spacer()
                         
@@ -212,7 +222,7 @@ struct ProfileView: View {
                             }) {
                                 HStack {
                                     Image(systemName: "sun.max.fill")
-                                        .foregroundColor(.orange)
+                                        .foregroundColor(DesignTokens.Brand.accent(colorScheme))
                                     Text("Light")
                                     if themeManager.preference == .light {
                                         Spacer()
@@ -229,7 +239,7 @@ struct ProfileView: View {
                             }) {
                                 HStack {
                                     Image(systemName: "moon.fill")
-                                        .foregroundColor(.blue)
+                                        .foregroundColor(DesignTokens.Brand.secondary(colorScheme))
                                     Text("Dark")
                                     if themeManager.preference == .dark {
                                         Spacer()
@@ -246,7 +256,7 @@ struct ProfileView: View {
                             }) {
                                 HStack {
                                     Image(systemName: "circle.lefthalf.filled")
-                                        .foregroundColor(.gray)
+                                        .foregroundColor(DesignTokens.Text.tertiary(colorScheme))
                                     Text("Auto")
                                     if themeManager.preference == .system {
                                         Spacer()
@@ -279,43 +289,161 @@ struct ProfileView: View {
                         .menuStyle(BorderlessButtonMenuStyle())
                     }
                     .padding(.horizontal, DesignTokens.Spacing.md)
-                    .frame(height: 50)
+                    .padding(.vertical, DesignTokens.Spacing.sm)
                     
                     Divider()
                         .background(DesignTokens.Surface.secondary(colorScheme))
                         .padding(.leading, 56)
                     
-                    // Language Row
-                    ProfileRow(
-                        icon: "globe",
-                        title: "Language",
-                        subtitle: "English",
-                        iconColor: DesignTokens.Brand.primary(colorScheme),
-                        showChevron: true,
-                        action: {
-                            // Mock action
-                            print("Language settings tapped")
-                        }
-                    )
-                    
-                    Divider()
-                        .background(DesignTokens.Surface.secondary(colorScheme))
-                        .padding(.leading, 56)
-                    
-                    // Notifications Row
-                    ProfileRow(
-                        icon: "bell.fill",
-                        title: "Notifications",
-                        subtitle: mockNotificationEnabled ? "Enabled" : "Disabled",
-                        iconColor: DesignTokens.Brand.secondary(colorScheme),
-                        showChevron: true,
-                        action: {
-                            // Mock toggle
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                mockNotificationEnabled.toggle()
+                    // Language Selector
+                    HStack(spacing: DesignTokens.Spacing.md) {
+                        // Icon with circular background (matching ProfileRow)
+                        Image(systemName: "globe")
+                            .font(.system(size: 22, weight: .medium))
+                            .foregroundColor(DesignTokens.Brand.primary(colorScheme))
+                            .frame(width: 32, height: 32)
+                            .background(
+                                Circle()
+                                    .fill(DesignTokens.Brand.primary(colorScheme).opacity(0.1))
+                            )
+                        
+                        // Text Content (matching ProfileRow)
+                        Text("Language")
+                            .font(DesignTokens.Typography.body)
+                            .foregroundColor(DesignTokens.Text.primary(colorScheme))
+                            .multilineTextAlignment(.leading)
+                        
+                        Spacer()
+                        
+                        // Language dropdown picker
+                        Menu {
+                            Button(action: {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    selectedLanguage = "English"
+                                }
+                            }) {
+                                HStack {
+                                    Text("English")
+                                    if selectedLanguage == "English" {
+                                        Spacer()
+                                        Image(systemName: "checkmark")
+                                            .foregroundColor(DesignTokens.Brand.primary(colorScheme))
+                                    }
+                                }
                             }
+                            
+                            Button(action: {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    selectedLanguage = "Turkish"
+                                }
+                            }) {
+                                HStack {
+                                    Text("Turkish")
+                                    if selectedLanguage == "Turkish" {
+                                        Spacer()
+                                        Image(systemName: "checkmark")
+                                            .foregroundColor(DesignTokens.Brand.primary(colorScheme))
+                                    }
+                                }
+                            }
+                        } label: {
+                            HStack(spacing: 6) {
+                                Text(selectedLanguage)
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundColor(DesignTokens.Text.primary(colorScheme))
+                                    .lineLimit(1)
+                                    .fixedSize(horizontal: true, vertical: false)
+                                
+                                Image(systemName: "chevron.down")
+                                    .font(.system(size: 10, weight: .semibold))
+                                    .foregroundColor(DesignTokens.Text.secondary(colorScheme))
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .frame(minWidth: 80)
                         }
-                    )
+                        .menuStyle(BorderlessButtonMenuStyle())
+                    }
+                    .padding(.horizontal, DesignTokens.Spacing.md)
+                    .padding(.vertical, DesignTokens.Spacing.sm)
+                    
+                    Divider()
+                        .background(DesignTokens.Surface.secondary(colorScheme))
+                        .padding(.leading, 56)
+                    
+                    // Notifications Selector
+                    HStack(spacing: DesignTokens.Spacing.md) {
+                        // Icon with circular background (matching ProfileRow)
+                        Image(systemName: "bell.fill")
+                            .font(.system(size: 22, weight: .medium))
+                            .foregroundColor(DesignTokens.Brand.primary(colorScheme))
+                            .frame(width: 32, height: 32)
+                            .background(
+                                Circle()
+                                    .fill(DesignTokens.Brand.primary(colorScheme).opacity(0.1))
+                            )
+                        
+                        // Text Content (matching ProfileRow)
+                        Text("Notifications")
+                            .font(DesignTokens.Typography.body)
+                            .foregroundColor(DesignTokens.Text.primary(colorScheme))
+                            .multilineTextAlignment(.leading)
+                        
+                        Spacer()
+                        
+                        // Notifications dropdown picker
+                        Menu {
+                            Button(action: {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    selectedNotificationSetting = "Enabled"
+                                    mockNotificationEnabled = true
+                                }
+                            }) {
+                                HStack {
+                                    Text("Enabled")
+                                    if selectedNotificationSetting == "Enabled" {
+                                        Spacer()
+                                        Image(systemName: "checkmark")
+                                            .foregroundColor(DesignTokens.Brand.primary(colorScheme))
+                                    }
+                                }
+                            }
+                            
+                            Button(action: {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    selectedNotificationSetting = "Disabled"
+                                    mockNotificationEnabled = false
+                                }
+                            }) {
+                                HStack {
+                                    Text("Disabled")
+                                    if selectedNotificationSetting == "Disabled" {
+                                        Spacer()
+                                        Image(systemName: "checkmark")
+                                            .foregroundColor(DesignTokens.Brand.primary(colorScheme))
+                                    }
+                                }
+                            }
+                        } label: {
+                            HStack(spacing: 6) {
+                                Text(selectedNotificationSetting)
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundColor(DesignTokens.Text.primary(colorScheme))
+                                    .lineLimit(1)
+                                    .fixedSize(horizontal: true, vertical: false)
+                                
+                                Image(systemName: "chevron.down")
+                                    .font(.system(size: 10, weight: .semibold))
+                                    .foregroundColor(DesignTokens.Text.secondary(colorScheme))
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .frame(minWidth: 80)
+                        }
+                        .menuStyle(BorderlessButtonMenuStyle())
+                    }
+                    .padding(.horizontal, DesignTokens.Spacing.md)
+                    .padding(.vertical, DesignTokens.Spacing.sm)
                     
                     // Only show Delete Account for authenticated users
                     if authService.isAuthenticated {
@@ -328,26 +456,33 @@ struct ProfileView: View {
                                 viewModel.showDeleteAccountConfirmation()
                             }
                         }) {
-                            HStack(spacing: 16) {
+                            HStack(spacing: DesignTokens.Spacing.md) {
+                                // Icon with circular background (matching ProfileRow)
                                 if viewModel.isDeletingAccount {
                                     ProgressView()
                                         .scaleEffect(0.8)
-                                        .frame(width: 24, height: 24)
+                                        .frame(width: 32, height: 32)
                                 } else {
                                     Image(systemName: "trash")
-                                        .font(.system(size: 20))
+                                        .font(.system(size: 22, weight: .medium))
                                         .foregroundColor(DesignTokens.Semantic.error(colorScheme))
-                                        .frame(width: 24)
+                                        .frame(width: 32, height: 32)
+                                        .background(
+                                            Circle()
+                                                .fill(DesignTokens.Semantic.error(colorScheme).opacity(0.1))
+                                        )
                                 }
                                 
+                                // Text Content (matching ProfileRow)
                                 Text(viewModel.isDeletingAccount ? "Deleting Account..." : "Delete Account")
-                                    .font(.system(size: 16))
+                                    .font(DesignTokens.Typography.body)
                                     .foregroundColor(DesignTokens.Semantic.error(colorScheme))
+                                    .multilineTextAlignment(.leading)
                                 
                                 Spacer()
                             }
                             .padding(.horizontal, DesignTokens.Spacing.md)
-                            .frame(height: 50)
+                            .padding(.vertical, DesignTokens.Spacing.sm)
                         }
                         .buttonStyle(PlainButtonStyle())
                         .disabled(viewModel.isDeletingAccount)
@@ -362,7 +497,6 @@ struct ProfileView: View {
                     ProfileRow(
                         icon: "arrow.counterclockwise.circle.fill",
                         title: "Restore Onboarding",
-                        subtitle: "Test onboarding screens",
                         iconColor: DesignTokens.Brand.secondary(colorScheme),
                         showChevron: true,
                         action: {
@@ -442,7 +576,7 @@ struct ProfileView: View {
                     ProfileRow(
                         icon: "brain.head.profile",
                         title: "AI Service Disclosure",
-                        iconColor: DesignTokens.Brand.secondary(colorScheme),
+                        iconColor: DesignTokens.Brand.primary(colorScheme),
                         showChevron: true,
                         action: {
                             showAI_Disclosure = true
@@ -457,7 +591,7 @@ struct ProfileView: View {
                     ProfileRow(
                         icon: "arrow.clockwise.circle.fill",
                         title: "Restore Purchases",
-                        iconColor: DesignTokens.Brand.accent(colorScheme),
+                        iconColor: DesignTokens.Brand.primary(colorScheme),
                         showChevron: true,
                         action: {
                             Task {
@@ -470,6 +604,7 @@ struct ProfileView: View {
                 .cornerRadius(DesignTokens.CornerRadius.md)
                 .padding(.horizontal, DesignTokens.Spacing.md)
             }
+            .padding(.bottom, DesignTokens.Spacing.md)
         }
         .padding(.horizontal, DesignTokens.Spacing.md)
     }
@@ -489,11 +624,11 @@ struct CreditCard: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Your Credits")
                         .font(.system(size: 20, weight: .bold))
-                        .foregroundColor(colorScheme == .light ? Color(hex: "1A1A1A") : .white)
+                        .foregroundColor(DesignTokens.Text.primary(colorScheme))
 
                     Text("\(creditsRemaining) credit\(creditsRemaining == 1 ? "" : "s") available")
                         .font(.system(size: 14))
-                        .foregroundColor(colorScheme == .light ? Color(hex: "1A1A1A").opacity(0.7) : .white.opacity(0.8))
+                        .foregroundColor(DesignTokens.Text.secondary(colorScheme))
                 }
 
                 Spacer()
@@ -507,10 +642,10 @@ struct CreditCard: View {
                 ForEach(features, id: \.self) { feature in
                     HStack(spacing: 8) {
                         Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(colorScheme == .light ? Color(hex: "00E5FF") : DesignTokens.Brand.secondary(colorScheme))
+                            .foregroundColor(DesignTokens.Brand.primary(colorScheme))
                         Text(feature)
                             .font(.system(size: 14))
-                            .foregroundColor(colorScheme == .light ? Color(hex: "1A1A1A").opacity(0.8) : .white.opacity(0.9))
+                            .foregroundColor(DesignTokens.Text.primary(colorScheme))
                     }
                 }
             }
@@ -518,30 +653,22 @@ struct CreditCard: View {
             Button(action: onBuyCreditsTap) {
                 Text("Buy Credits")
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(Color(hex: "FFFFFF"))
+                    .foregroundColor(DesignTokens.Text.onBrand(colorScheme))
                     .frame(maxWidth: .infinity)
                     .frame(height: 44)
-                    .background(Color(hex: "6B21C0"))
+                    .background(DesignTokens.Brand.primary(colorScheme))
                     .cornerRadius(12)
             }
         }
         .padding(20)
         .background(
-            LinearGradient(
-                colors: colorScheme == .light
-                    ? [Color(hex: "EDEBFF"), Color(hex: "FFFFFF")]
-                    : [DesignTokens.Brand.purple, DesignTokens.Brand.primary(colorScheme)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
+            DesignTokens.Surface.secondary(colorScheme)
         )
         .cornerRadius(16)
         .overlay(
             RoundedRectangle(cornerRadius: 16)
                 .stroke(
-                    colorScheme == .light
-                        ? Color(hex: "9D7FD6").opacity(0.25)
-                        : Color.clear,
+                    DesignTokens.Brand.primary(colorScheme).opacity(0.2),
                     lineWidth: 1
                 )
         )

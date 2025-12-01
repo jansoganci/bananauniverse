@@ -45,17 +45,13 @@ struct OnboardingView: View {
                         .tag(OnboardingViewModel.OnboardingScreen.howItWorks)
 
                     OnboardingScreen3(onComplete: {
-                        viewModel.nextScreen()
-                    })
-                    .tag(OnboardingViewModel.OnboardingScreen.credits)
-                    
-                    OnboardingScreen4(onComplete: {
                         viewModel.complete()
                         onComplete()
                     })
-                    .tag(OnboardingViewModel.OnboardingScreen.dataPolicy)
+                    .tag(OnboardingViewModel.OnboardingScreen.credits)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
+                .animation(.easeInOut(duration: 0.25), value: viewModel.currentScreen)
 
                 // Progress dots
                 OnboardingProgressDots(
@@ -88,6 +84,18 @@ struct OnboardingView: View {
                             action: { viewModel.nextScreen() }
                         )
                         .frame(maxWidth: 100)
+                    } else {
+                        // Last screen: Show "Start Creating" button
+                        PrimaryButton(
+                            title: "Start Creating",
+                            icon: "sparkles",
+                            accentColor: DesignTokens.Brand.secondary,
+                            action: {
+                                viewModel.complete()
+                                onComplete()
+                            }
+                        )
+                        .frame(maxWidth: .infinity)
                     }
                 }
                 .padding(.horizontal, DesignTokens.Spacing.md)

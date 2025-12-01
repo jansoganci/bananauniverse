@@ -73,7 +73,7 @@ struct ProfileRow: View {
                 }
             }
             .padding(.horizontal, DesignTokens.Spacing.md)
-            .padding(.vertical, DesignTokens.Spacing.md)
+            .padding(.vertical, DesignTokens.Spacing.sm)
         }
         .buttonStyle(PlainButtonStyle())
     }

@@ -26,7 +26,8 @@ struct OnboardingScreen2: View {
                     iconName: "paintpalette.fill",
                     title: "Choose your style",
                     description: "Browse 19+ AI themes: toys, art, pro photos",
-                    iconColor: DesignTokens.Brand.secondary(colorScheme)
+                    iconColor: DesignTokens.Brand.secondary(colorScheme),
+                    screenshotImageName: "onboarding_screenshot_step1" // Add to Assets.xcassets
                 )
 
                 // Step 2: Upload your photo
@@ -35,7 +36,8 @@ struct OnboardingScreen2: View {
                     iconName: "camera.fill",
                     title: "Upload your photo",
                     description: "Take a picture or choose from your photo library",
-                    iconColor: .blue
+                    iconColor: DesignTokens.Brand.secondary(colorScheme),
+                    screenshotImageName: "onboarding_screenshot_step2" // Add to Assets.xcassets
                 )
 
                 // Step 3: Generate & share
@@ -44,7 +46,8 @@ struct OnboardingScreen2: View {
                     iconName: "sparkles",
                     title: "Generate & share",
                     description: "Customize settings, hit generate, and share!",
-                    iconColor: DesignTokens.Brand.secondary(colorScheme)
+                    iconColor: DesignTokens.Brand.secondary(colorScheme),
+                    screenshotImageName: "onboarding_screenshot_step3" // Add to Assets.xcassets
                 )
             }
             .padding(.horizontal, DesignTokens.Spacing.md)

@@ -13,7 +13,7 @@ struct CarouselCard: View {
     @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
-        ZStack(alignment: .bottomLeading) {
+        ZStack {
             // Background image
             AsyncImage(url: tool.thumbnailURL) { phase in
                 switch phase {
@@ -32,70 +32,82 @@ struct CarouselCard: View {
             .frame(width: 350, height: 220)
             .clipped()
 
-            // Text overlay with gradient background
-            VStack(alignment: .leading, spacing: 4) {
-                // Category badge
-                Text(getCategoryName(tool.category))
-                    .font(.caption2.bold())
-                    .foregroundColor(.white.opacity(0.9))
-                    .textCase(.uppercase)
-                    .shadow(color: .black.opacity(0.4), radius: 2, x: 0, y: 1)
-
-                // Tool name
-                Text(tool.name)
-                    .font(.title3.bold())
-                    .foregroundColor(.white)
-                    .lineLimit(1)
-                    .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
-
-                // Short description
-                if let shortDesc = tool.shortDescription {
-                    Text(shortDesc)
-                        .font(.caption)
+            // Floating category badge - top-right
+            VStack {
+                HStack {
+                    Spacer()
+                    Text(getCategoryName(tool.category))
+                        .font(DesignTokens.Typography.caption2.bold())
                         .foregroundColor(.white.opacity(0.95))
-                        .lineLimit(2)
-                        .shadow(color: .black.opacity(0.4), radius: 2, x: 0, y: 1)
-                } else if let desc = tool.description {
-                    // Fallback to truncated description if shortDescription doesn't exist
-                    Text(desc)
-                        .font(.caption)
-                        .foregroundColor(.white.opacity(0.95))
-                        .lineLimit(2)
-                        .shadow(color: .black.opacity(0.4), radius: 2, x: 0, y: 1)
-                }
-
-                // CTA button (Option 1: 14pt semibold rounded)
-                HStack(spacing: 4) {
-                    Text("Try Now")
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
-                    Image(systemName: "arrow.right")
-                        .font(.system(size: 12, weight: .semibold))
-                }
-                .foregroundColor(.white)
-                .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 1)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(
-                    Capsule()
-                        .fill(Color.white.opacity(0.3))
-                        .overlay(
-                            Capsule().stroke(Color.white.opacity(0.5), lineWidth: 1)
+                        .textCase(.uppercase)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 4)
+                        .background(
+                            Capsule()
+                                .fill(Color.black.opacity(0.6))
+                                .background(.ultraThinMaterial)
                         )
-                )
-                .padding(.top, 4)
+                        .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 2)
+                        .padding(.top, 8)
+                        .padding(.trailing, 8)
+                }
+                Spacer()
             }
-            .padding(DesignTokens.Spacing.md)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                LinearGradient(
-                    colors: [
-                        .black.opacity(0.3),     // Darker at top
-                        .black.opacity(0.85)     // Much darker at bottom
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
+
+            // Bottom bar overlay
+            VStack {
+                Spacer()
+                HStack(alignment: .center, spacing: 8) {
+                    // Tool name
+                    Text(tool.name)
+                        .font(DesignTokens.Typography.headline.bold())
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                        .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
+                    
+                    Spacer()
+                    
+                    // CTA button
+                    HStack(spacing: 4) {
+                        Text("Try Now")
+                            .font(.system(size: 15, weight: .semibold, design: .default))
+                        Image(systemName: "arrow.right")
+                            .font(.system(size: 12, weight: .semibold))
+                    }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 6)
+                    .background(
+                        Capsule()
+                            .fill(Color.white.opacity(0.25))
+                            .overlay(
+                                Capsule().stroke(Color.white.opacity(0.4), lineWidth: 1)
+                            )
+                            .background(.ultraThinMaterial)
+                    )
+                    .shadow(color: .black.opacity(0.2), radius: 2, x: 0, y: 1)
+                }
+                .padding(.horizontal, 12)
+                .padding(.top, 10)
+                .padding(.bottom, 10)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.black.opacity(0.6))
+                        .background(.ultraThinMaterial)
                 )
-            )
+                .frame(maxWidth: .infinity)
+                .background(
+                    LinearGradient(
+                        colors: [
+                            .black.opacity(0.0),     // Start at 75% from top
+                            .black.opacity(0.3),     // Mid at 87.5%
+                            .black.opacity(0.7)      // End at bottom
+                        ],
+                        startPoint: UnitPoint(x: 0.5, y: 0.75),
+                        endPoint: UnitPoint(x: 0.5, y: 1.0)
+                    )
+                )
+            }
         }
         .frame(width: 350, height: 220)
         .cornerRadius(DesignTokens.CornerRadius.lg)
