@@ -23,20 +23,20 @@ struct OnboardingScreen3: View {
                     .fill(
                         LinearGradient(
                             colors: [
-                                DesignTokens.Brand.primary(colorScheme).opacity(0.3),
-                                DesignTokens.Brand.secondary(colorScheme).opacity(0.3)
+                                DesignTokens.Brand.secondary(colorScheme).opacity(0.3),
+                                DesignTokens.Brand.secondary(colorScheme).opacity(0.2)
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
                     )
                     .frame(width: 120, height: 120)
-                    .shadow(color: DesignTokens.Brand.primary(colorScheme).opacity(0.4), radius: 20, x: 0, y: 10)
+                    .shadow(color: DesignTokens.Brand.secondary(colorScheme).opacity(0.4), radius: 20, x: 0, y: 10)
 
                 VStack(spacing: 4) {
                     Text("10")
                         .font(.system(size: 48, weight: .bold))
-                        .foregroundColor(DesignTokens.Brand.primary(colorScheme))
+                        .foregroundColor(DesignTokens.Brand.secondary(colorScheme))
 
                     Text("Credits")
                         .font(DesignTokens.Typography.caption1)
@@ -54,7 +54,7 @@ struct OnboardingScreen3: View {
                 .padding(.horizontal, DesignTokens.Spacing.md)
 
             // Description
-            Text("Each transformation uses 1 credit. Buy more anytime.")
+            Text("Standard tools: 1 credit. Pro tools: 4-8 credits. Buy more anytime.")
                 .font(DesignTokens.Typography.callout)
                 .foregroundColor(DesignTokens.Text.secondary(colorScheme))
                 .multilineTextAlignment(.center)
@@ -64,7 +64,7 @@ struct OnboardingScreen3: View {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(DesignTokens.Brand.primary(colorScheme))
+                        .foregroundColor(DesignTokens.Brand.secondary(colorScheme))
                     Text("Collectible Figure — 1 credit")
                         .font(DesignTokens.Typography.subheadline)
                         .foregroundColor(DesignTokens.Text.secondary(colorScheme))
@@ -72,15 +72,15 @@ struct OnboardingScreen3: View {
 
                 HStack {
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(DesignTokens.Brand.primary(colorScheme))
-                    Text("Professional Headshot — 1 credit")
+                        .foregroundColor(DesignTokens.Brand.secondary(colorScheme))
+                    Text("Professional Headshot — 4 credits")
                         .font(DesignTokens.Typography.subheadline)
                         .foregroundColor(DesignTokens.Text.secondary(colorScheme))
                 }
 
                 HStack {
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(DesignTokens.Brand.primary(colorScheme))
+                        .foregroundColor(DesignTokens.Brand.secondary(colorScheme))
                     Text("All tools included — No hidden fees")
                         .font(DesignTokens.Typography.subheadline)
                         .foregroundColor(DesignTokens.Text.secondary(colorScheme))
@@ -89,15 +89,6 @@ struct OnboardingScreen3: View {
             .padding(.horizontal, DesignTokens.Spacing.lg)
 
             Spacer()
-
-            // Next Button (changed from Get Started)
-            PrimaryButton(
-                title: "Next",
-                icon: "arrow.right",
-                action: onComplete
-            )
-            .padding(.horizontal, DesignTokens.Spacing.md)
-            .padding(.bottom, DesignTokens.Spacing.lg)
         }
     }
 }

@@ -71,6 +71,7 @@ struct OnboardingView: View {
                         SecondaryButton(
                             title: "Back",
                             icon: "chevron.left",
+                            accentColor: DesignTokens.Brand.secondary,
                             action: { viewModel.previousScreen() }
                         )
                         .frame(maxWidth: 100)
@@ -83,9 +84,10 @@ struct OnboardingView: View {
                         PrimaryButton(
                             title: "Next",
                             icon: "arrow.right",
+                            accentColor: DesignTokens.Brand.secondary,
                             action: { viewModel.nextScreen() }
                         )
-                        .frame(maxWidth: .infinity)
+                        .frame(maxWidth: 100)
                     }
                 }
                 .padding(.horizontal, DesignTokens.Spacing.md)

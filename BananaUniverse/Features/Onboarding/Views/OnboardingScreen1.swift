@@ -62,8 +62,8 @@ struct OnboardingScreen1: View {
                 .fill(
                     LinearGradient(
                         colors: [
-                            DesignTokens.Brand.primary(colorScheme).opacity(0.3),
-                            DesignTokens.Brand.secondary(colorScheme).opacity(0.3)
+                            DesignTokens.Brand.secondary(colorScheme).opacity(0.3),
+                            DesignTokens.Brand.secondary(colorScheme).opacity(0.2)
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
@@ -73,7 +73,7 @@ struct OnboardingScreen1: View {
             VStack(spacing: 8) {
                 Image(systemName: "figure.stand")
                     .font(.system(size: 60))
-                    .foregroundColor(DesignTokens.Brand.primary(colorScheme))
+                    .foregroundColor(DesignTokens.Brand.secondary(colorScheme))
 
                 Text("Loading...")
                     .font(DesignTokens.Typography.caption1)

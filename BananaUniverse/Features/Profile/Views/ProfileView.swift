@@ -15,6 +15,7 @@ struct ProfileView: View {
     @State private var showPaywall = false
     @State private var showSignIn = false
     @State private var showAI_Disclosure = false
+    @State private var showOnboarding = false
     @State private var authStateRefreshTrigger = false
     @State private var mockNotificationEnabled = true
     @Environment(\.openURL) var openURL
@@ -48,6 +49,11 @@ struct ProfileView: View {
         }
         .sheet(isPresented: $showAI_Disclosure) {
             AI_Disclosure_View()
+        }
+        .sheet(isPresented: $showOnboarding) {
+            OnboardingView(onComplete: {
+                showOnboarding = false
+            })
         }
         .onReceive(authService.$userState) { newState in
             // Force UI refresh by toggling the trigger
@@ -346,6 +352,29 @@ struct ProfileView: View {
                         .buttonStyle(PlainButtonStyle())
                         .disabled(viewModel.isDeletingAccount)
                     }
+                    
+                    // Restore Onboarding Button (for testing)
+                    #if DEBUG
+                    Divider()
+                        .background(DesignTokens.Surface.secondary(colorScheme))
+                        .padding(.leading, 56)
+                    
+                    ProfileRow(
+                        icon: "arrow.counterclockwise.circle.fill",
+                        title: "Restore Onboarding",
+                        subtitle: "Test onboarding screens",
+                        iconColor: DesignTokens.Brand.secondary(colorScheme),
+                        showChevron: true,
+                        action: {
+                            // Reset the flag and show onboarding immediately
+                            UserDefaults.standard.set(false, forKey: "hasSeenOnboarding")
+                            showOnboarding = true
+                            #if DEBUG
+                            print("✅ [PROFILE] Onboarding flag reset - showing onboarding now")
+                            #endif
+                        }
+                    )
+                    #endif
                 }
                 .background(DesignTokens.Surface.secondary(colorScheme))
                 .cornerRadius(DesignTokens.CornerRadius.md)

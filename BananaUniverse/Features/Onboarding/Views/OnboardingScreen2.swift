@@ -26,7 +26,7 @@ struct OnboardingScreen2: View {
                     iconName: "paintpalette.fill",
                     title: "Choose your style",
                     description: "Browse 19+ AI themes: toys, art, pro photos",
-                    iconColor: DesignTokens.Brand.primary(colorScheme)
+                    iconColor: DesignTokens.Brand.secondary(colorScheme)
                 )
 
                 // Step 2: Upload your photo

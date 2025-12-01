@@ -23,8 +23,8 @@ struct OnboardingScreen4: View {
                     .fill(
                         LinearGradient(
                             colors: [
-                                DesignTokens.Brand.primary(colorScheme).opacity(0.2),
-                                DesignTokens.Brand.secondary(colorScheme).opacity(0.2)
+                                DesignTokens.Brand.secondary(colorScheme).opacity(0.2),
+                                DesignTokens.Brand.secondary(colorScheme).opacity(0.15)
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
@@ -34,7 +34,7 @@ struct OnboardingScreen4: View {
                 
                 Image(systemName: "clock.badge.exclamationmark")
                     .font(.system(size: 50))
-                    .foregroundColor(DesignTokens.Brand.primary(colorScheme))
+                    .foregroundColor(DesignTokens.Brand.secondary(colorScheme))
             }
             .padding(.bottom, DesignTokens.Spacing.md)
 
@@ -91,6 +91,7 @@ struct OnboardingScreen4: View {
             PrimaryButton(
                 title: "I Understand",
                 icon: "checkmark.circle.fill",
+                accentColor: DesignTokens.Brand.secondary,
                 action: onComplete
             )
             .padding(.horizontal, DesignTokens.Spacing.md)

@@ -16,6 +16,7 @@ struct PrimaryButton: View {
     let icon: String?
     let isLoading: Bool
     let isEnabled: Bool
+    let accentColor: ((ColorScheme) -> Color)?
     let action: () -> Void
     
     @State private var isPressed = false
@@ -26,13 +27,19 @@ struct PrimaryButton: View {
         icon: String? = nil,
         isLoading: Bool = false,
         isEnabled: Bool = true,
+        accentColor: ((ColorScheme) -> Color)? = nil,
         action: @escaping () -> Void
     ) {
         self.title = title
         self.icon = icon
         self.isLoading = isLoading
         self.isEnabled = isEnabled
+        self.accentColor = accentColor
         self.action = action
+    }
+    
+    private var buttonColor: Color {
+        accentColor?(colorScheme) ?? DesignTokens.Brand.primary(colorScheme)
     }
     
     var body: some View {
@@ -62,7 +69,7 @@ struct PrimaryButton: View {
             .frame(height: DesignTokens.Layout.buttonHeight)
             .background(
                 RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.sm)
-                    .fill(isEnabled ? DesignTokens.Brand.primary(colorScheme) : DesignTokens.Background.tertiary(colorScheme))
+                    .fill(isEnabled ? buttonColor : DesignTokens.Background.tertiary(colorScheme))
             )
             .scaleEffect(isPressed ? 0.96 : 1.0)
         }
@@ -93,6 +100,7 @@ struct SecondaryButton: View {
     let icon: String?
     let isLoading: Bool
     let isEnabled: Bool
+    let accentColor: ((ColorScheme) -> Color)?
     let action: () -> Void
     
     @State private var isPressed = false
@@ -103,13 +111,19 @@ struct SecondaryButton: View {
         icon: String? = nil,
         isLoading: Bool = false,
         isEnabled: Bool = true,
+        accentColor: ((ColorScheme) -> Color)? = nil,
         action: @escaping () -> Void
     ) {
         self.title = title
         self.icon = icon
         self.isLoading = isLoading
         self.isEnabled = isEnabled
+        self.accentColor = accentColor
         self.action = action
+    }
+    
+    private var buttonColor: Color {
+        accentColor?(colorScheme) ?? DesignTokens.Brand.primary(colorScheme)
     }
     
     var body: some View {
@@ -122,7 +136,7 @@ struct SecondaryButton: View {
             HStack(spacing: DesignTokens.Spacing.sm) {
                 if isLoading {
                     ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: DesignTokens.Brand.primary(colorScheme)))
+                        .progressViewStyle(CircularProgressViewStyle(tint: buttonColor))
                         .scaleEffect(0.8)
                 } else if let icon = icon {
                     Image(systemName: icon)
@@ -133,13 +147,13 @@ struct SecondaryButton: View {
                     .font(DesignTokens.Typography.headline)
                     .fontWeight(.medium)
             }
-            .foregroundColor(isEnabled ? DesignTokens.Brand.primary(colorScheme) : DesignTokens.Text.quaternary(colorScheme))
+            .foregroundColor(isEnabled ? buttonColor : DesignTokens.Text.quaternary(colorScheme))
             .frame(maxWidth: .infinity)
             .frame(height: DesignTokens.Layout.buttonHeight)
             .background(
                 RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.sm)
                     .stroke(
-                        isEnabled ? DesignTokens.Brand.primary(colorScheme) : DesignTokens.Text.quaternary(colorScheme),
+                        isEnabled ? buttonColor : DesignTokens.Text.quaternary(colorScheme),
                         lineWidth: 1.5
                     )
                     .background(
