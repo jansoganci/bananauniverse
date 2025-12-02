@@ -503,6 +503,85 @@ class SupabaseService: ObservableObject {
         }
     }
     
+    // MARK: - In-App Purchase Verification
+    
+    /// Verify IAP purchase with backend and grant credits
+    /// - Parameters:
+    ///   - transactionId: The transaction ID (StoreKit 2) - backend will fetch from Apple
+    ///   - productId: The product ID that was purchased
+    /// - Returns: Verification response with credits granted
+    func verifyIAPPurchase(transactionId: String, productId: String) async throws -> IAPVerificationResponse {
+        // Check network connectivity
+        try checkNetworkOrThrow()
+        
+        // Get user state from hybrid auth service
+        let userState = HybridAuthService.shared.userState
+        
+        // Prepare request body
+        // Backend accepts transaction_id (StoreKit 2) or transaction_jwt (StoreKit 1)
+        var body: [String: Any] = [
+            "transaction_id": transactionId,
+            "product_id": productId
+        ]
+        
+        // Add device_id for anonymous users (required by backend)
+        if !userState.isAuthenticated {
+            body["device_id"] = userState.identifier
+        }
+        
+        let jsonData = try JSONSerialization.data(withJSONObject: body)
+        
+        // Call verify-iap-purchase Edge Function
+        guard let functionURL = URL(string: "\(Config.supabaseURL)/functions/v1/verify-iap-purchase") else {
+            throw SupabaseError.invalidURL
+        }
+        
+        var request = URLRequest(url: functionURL)
+        request.httpMethod = "POST"
+        
+        // Set authorization header
+        if userState.isAuthenticated {
+            if let session = try? await client.auth.session {
+                request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
+            } else {
+                request.setValue("Bearer \(Config.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+            }
+        } else {
+            request.setValue("Bearer \(Config.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+        }
+        
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(userState.identifier, forHTTPHeaderField: "device-id")
+        request.httpBody = jsonData
+        request.timeoutInterval = 30
+        
+        let (responseData, urlResponse) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = urlResponse as? HTTPURLResponse else {
+            throw SupabaseError.invalidResponse
+        }
+        
+        // Parse error responses
+        if httpResponse.statusCode != 200 {
+            struct ErrorResponse: Decodable {
+                let success: Bool?
+                let error: String?
+                let code: String?
+            }
+            
+            if let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: responseData) {
+                let errorMessage = errorResponse.error ?? "Verification failed"
+                throw SupabaseError.serverError(errorMessage)
+            }
+            throw SupabaseError.serverError("IAP verification failed with status: \(httpResponse.statusCode)")
+        }
+        
+        // Parse success response
+        let response = try JSONDecoder().decode(IAPVerificationResponse.self, from: responseData)
+        
+        return response
+    }
+    
     // MARK: - Snapchat Logic (Ephemeral Images)
     
     /// Mark image as saved to device (prevents auto-deletion)
@@ -681,6 +760,14 @@ struct JobOptions: Codable {
 struct ErrorResponse: Codable {
     let error: String
     let details: String?
+}
+
+struct IAPVerificationResponse: Codable {
+    let success: Bool
+    let credits_granted: Int
+    let balance_after: Int
+    let transaction_id: String
+    let original_transaction_id: String
 }
 
 enum SupabaseError: Error, LocalizedError {

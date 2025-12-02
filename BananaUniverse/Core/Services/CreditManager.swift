@@ -56,10 +56,12 @@ class CreditManager: ObservableObject {
 
     private var observerAdded = false
     private var loadQuotaTask: Task<Void, Never>?
+    private var recoveryTime: Date?  // Track when recovery happened to skip loadQuota for a short period
 
     // Debouncing to prevent rapid successive loads
     private var lastLoadTime: Date?
     private let minimumLoadInterval: TimeInterval = 2.0  // 2 seconds minimum between loads
+    private let recoverySkipInterval: TimeInterval = 5.0  // Skip loadQuota for 5 seconds after recovery
 
     // Legacy user state management (kept for compatibility)
     @Published var userState: UserState = .anonymous(deviceId: UUID().uuidString)
@@ -82,6 +84,17 @@ class CreditManager: ObservableObject {
 
     /// Loads credit balance from backend (idempotent, single-flight)
     func loadQuota() async {
+        // Skip if we just recovered from StableID (recovery value is more accurate)
+        if let recoveryTime = recoveryTime {
+            let timeSinceRecovery = Date().timeIntervalSince(recoveryTime)
+            if timeSinceRecovery < recoverySkipInterval {
+                #if DEBUG
+                print("⏭️ [CREDITS] Skipping load (recently recovered from StableID: \(String(format: "%.1f", timeSinceRecovery))s ago)")
+                #endif
+                return
+            }
+        }
+        
         // Check network connectivity - if offline, use cached credits
         guard NetworkMonitor.shared.checkConnectivity() else {
             isOffline = true
@@ -177,6 +190,15 @@ class CreditManager: ObservableObject {
     /// Updates credits from StableID recovery (bypasses normal load flow)
     /// This is called by HybridAuthService after recover_or_init_user RPC
     func updateFromRecovery(credits: Int) async {
+        // Save to cache first
+        QuotaCache.shared.save(creditsRemaining: credits)
+        
+        // Update last load time to prevent debouncing from skipping subsequent loads
+        lastLoadTime = Date()
+        
+        // Track recovery time to prevent loadQuota from overwriting recovery value
+        recoveryTime = Date()
+        
         await MainActor.run {
             self.creditsRemaining = credits
             self.isLoading = false

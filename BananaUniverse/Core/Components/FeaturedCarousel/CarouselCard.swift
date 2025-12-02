@@ -45,8 +45,9 @@ struct CarouselCard: View {
                         .background(
                             Capsule()
                                 .fill(Color.black.opacity(0.6))
-                                .background(.ultraThinMaterial)
                         )
+                        .background(.ultraThinMaterial)
+                        .clipShape(Capsule())
                         .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 2)
                         .padding(.top, 8)
                         .padding(.trailing, 8)
@@ -77,15 +78,6 @@ struct CarouselCard: View {
                     .foregroundColor(.white)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 6)
-                    .background(
-                        Capsule()
-                            .fill(Color.white.opacity(0.25))
-                            .overlay(
-                                Capsule().stroke(Color.white.opacity(0.4), lineWidth: 1)
-                            )
-                            .background(.ultraThinMaterial)
-                    )
-                    .shadow(color: .black.opacity(0.2), radius: 2, x: 0, y: 1)
                 }
                 .padding(.horizontal, 12)
                 .padding(.top, 10)
@@ -93,8 +85,9 @@ struct CarouselCard: View {
                 .background(
                     RoundedRectangle(cornerRadius: 12)
                         .fill(Color.black.opacity(0.6))
-                        .background(.ultraThinMaterial)
                 )
+                .background(.ultraThinMaterial)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
                 .frame(maxWidth: .infinity)
                 .background(
                     LinearGradient(

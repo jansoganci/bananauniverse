@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		C5185E9D2EDF0BB8005DB7E6 /* storekit.storekit in Resources */ = {isa = PBXBuildFile; fileRef = C5185E9C2EDF0BB8005DB7E6 /* storekit.storekit */; };
 		C5B91CBB2E9D6A23000CA05D /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = C5B91CBA2E9D6A23000CA05D /* Auth */; };
 		C5B91CBD2E9D6A23000CA05D /* Realtime in Frameworks */ = {isa = PBXBuildFile; productRef = C5B91CBC2E9D6A23000CA05D /* Realtime */; };
 		C5B91CBF2E9D6A23000CA05D /* Storage in Frameworks */ = {isa = PBXBuildFile; productRef = C5B91CBE2E9D6A23000CA05D /* Storage */; };
@@ -17,8 +18,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		C5185E9C2EDF0BB8005DB7E6 /* storekit.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = storekit.storekit; sourceTree = "<group>"; };
 		C5B91B602E9C4E54000CA05D /* BananaUniverse.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BananaUniverse.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		C5B91CC82E9D6E00000CA05D /* BananaUniverse.storekit */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = BananaUniverse.storekit; sourceTree = "<group>"; };
 		C5XCONFIG0001 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
 		C5XCONFIG0002 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -65,8 +66,8 @@
 		C5B91B572E9C4E54000CA05D = {
 			isa = PBXGroup;
 			children = (
+				C5185E9C2EDF0BB8005DB7E6 /* storekit.storekit */,
 				C5B91B622E9C4E54000CA05D /* BananaUniverse */,
-				C5B91CC82E9D6E00000CA05D /* BananaUniverse.storekit */,
 				C5XCONFIG0001 /* Debug.xcconfig */,
 				C5XCONFIG0002 /* Release.xcconfig */,
 				C5B91B612E9C4E54000CA05D /* Products */,
@@ -159,6 +160,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C5185E9D2EDF0BB8005DB7E6 /* storekit.storekit in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

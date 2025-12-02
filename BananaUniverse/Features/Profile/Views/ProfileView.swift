@@ -604,7 +604,15 @@ struct ProfileView: View {
                 .cornerRadius(DesignTokens.CornerRadius.md)
                 .padding(.horizontal, DesignTokens.Spacing.md)
             }
-            .padding(.bottom, DesignTokens.Spacing.md)
+            
+            // Debug Section (only in debug builds)
+            #if DEBUG
+            if Config.enablePaymentTestMode {
+                PaymentDebugView()
+                    .padding(.horizontal, DesignTokens.Spacing.md)
+                    .padding(.bottom, DesignTokens.Spacing.md)
+            }
+            #endif
         }
         .padding(.horizontal, DesignTokens.Spacing.md)
     }

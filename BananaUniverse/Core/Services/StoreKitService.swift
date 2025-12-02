@@ -47,12 +47,47 @@ class StoreKitService: ObservableObject {
         isLoading = true
         errorMessage = nil
         
+        // 🧪 TEST MODE: Create mock products
+        if Config.enablePaymentTestMode {
+            #if DEBUG
+            print("🧪 [TEST MODE] Creating mock products (bypassing App Store)")
+            #endif
+            
+            // Create mock products for testing
+            // In test mode, we'll use the real Product type but they won't be from App Store
+            // The purchase method will handle test mode differently
+            do {
+                creditProducts = try await Product.products(for: creditProductIds)
+                #if DEBUG
+                print("🧪 [TEST MODE] Loaded \(creditProducts.count) products (will use test mode for purchases)")
+                #endif
+            } catch {
+                #if DEBUG
+                print("⚠️ [TEST MODE] Could not load products from App Store: \(error)")
+                print("   This is OK in test mode - purchases will still work")
+                #endif
+                // In test mode, we can continue even if products don't load
+                creditProducts = []
+            }
+            
+            isLoading = false
+            return
+        }
+        
+        // Real product loading from App Store
         do {
             creditProducts = try await Product.products(for: creditProductIds)
-            print("✅ Loaded \(creditProducts.count) credit products from App Store")
+            #if DEBUG
+            print("✅ [PAYMENT] Loaded \(creditProducts.count) credit products from App Store")
+            for product in creditProducts {
+                print("   - \(product.id): \(product.displayName) - \(product.displayPrice)")
+            }
+            #endif
         } catch {
             errorMessage = "Failed to load products: \(error.localizedDescription)"
-            print("❌ Product loading failed: \(error)")
+            #if DEBUG
+            print("❌ [PAYMENT] Product loading failed: \(error)")
+            #endif
         }
         
         isLoading = false
@@ -64,34 +99,68 @@ class StoreKitService: ObservableObject {
         isLoading = true
         errorMessage = nil
         
+        // 🧪 TEST MODE: Bypass StoreKit for testing
+        if Config.enablePaymentTestMode {
+            return try await simulateTestPurchase(product: product)
+        }
+        
+        // Real StoreKit purchase flow
         do {
             let result = try await product.purchase()
             
             switch result {
             case .success(let verification):
                 let transaction = try checkVerified(verification)
+                
+                #if DEBUG
+                print("✅ [PAYMENT] Apple purchase successful: \(product.id)")
+                print("   Transaction ID: \(transaction.id)")
+                print("   Product ID: \(product.id)")
+                #endif
+                
+                // ✅ CRITICAL FIX: Verify purchase with backend to grant credits
+                do {
+                    try await verifyPurchaseWithBackend(transaction: transaction, productId: product.id)
+                    #if DEBUG
+                    print("✅ [PAYMENT] Backend verification successful - credits granted")
+                    #endif
+                } catch {
+                    #if DEBUG
+                    print("⚠️ [PAYMENT] Backend verification failed: \(error.localizedDescription)")
+                    print("   Purchase is still valid, but credits may not be granted")
+                    #endif
+                    // Don't fail the purchase if backend verification fails
+                    // User can restore purchases later
+                    errorMessage = "Purchase successful, but credit grant may be delayed. Please check your balance or try 'Restore Purchases'."
+                }
+                
                 await transaction.finish()
 
                 #if DEBUG
-                print("✅ Purchase successful and verified: \(product.id)")
+                print("✅ [PAYMENT] Transaction finished")
                 #endif
+                
                 isLoading = false
                 return transaction
                 
             case .userCancelled:
                 #if DEBUG
-                print("ℹ️ User cancelled purchase - no success alert")
+                print("ℹ️ [PAYMENT] User cancelled purchase")
                 #endif
                 isLoading = false
                 return nil
                 
             case .pending:
-                print("⏳ Purchase pending approval")
+                #if DEBUG
+                print("⏳ [PAYMENT] Purchase pending approval")
+                #endif
                 isLoading = false
                 return nil
                 
             @unknown default:
-                print("❌ Unknown purchase result")
+                #if DEBUG
+                print("❌ [PAYMENT] Unknown purchase result")
+                #endif
                 isLoading = false
                 return nil
             }
@@ -99,17 +168,112 @@ class StoreKitService: ObservableObject {
             // Handle specific error cases without showing success alerts
             if isUserCancelledError(error) || isASDErrorDomain509(error) {
                 #if DEBUG
-                print("ℹ️ Purchase cancelled or failed (Code=509) - no success alert: \(error.localizedDescription)")
+                print("ℹ️ [PAYMENT] Purchase cancelled or failed (Code=509): \(error.localizedDescription)")
                 #endif
                 isLoading = false
                 return nil
             }
             
             errorMessage = "Purchase failed: \(error.localizedDescription)"
-            print("❌ Purchase error: \(error)")
+            #if DEBUG
+            print("❌ [PAYMENT] Purchase error: \(error)")
+            #endif
             isLoading = false
             throw error
         }
+    }
+    
+    // MARK: - Test Mode
+    
+    /// Simulates a purchase in test mode (bypasses StoreKit)
+    private func simulateTestPurchase(product: Product) async throws -> StoreKit.Transaction? {
+        #if DEBUG
+        print("🧪 [TEST MODE] Simulating purchase for: \(product.id)")
+        print("   Product: \(product.displayName)")
+        print("   Price: \(product.displayPrice)")
+        #endif
+        
+        // Simulate network delay
+        try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 second
+        
+        // Get credit amount from product ID
+        let creditAmount = getCreditAmount(for: product.id)
+        
+        #if DEBUG
+        print("🧪 [TEST MODE] Granting \(creditAmount) credits...")
+        #endif
+        
+        // Grant credits directly (bypassing backend verification)
+        // This simulates what should happen after backend verification
+        do {
+            // Get current balance
+            let currentBalance = CreditManager.shared.creditsRemaining
+            
+            // Update credit balance
+            await CreditManager.shared.updateFromBackendResponse(creditsRemaining: currentBalance + creditAmount)
+            
+            #if DEBUG
+            print("✅ [TEST MODE] Credits granted successfully!")
+            print("   Credits added: \(creditAmount)")
+            print("   Old balance: \(currentBalance)")
+            print("   New balance: \(currentBalance + creditAmount)")
+            #endif
+            
+            // Show success alert
+            successAlertMessage = "Test purchase successful! \(creditAmount) credits added. (Test Mode)"
+            shouldShowSuccessAlert = true
+            
+            isLoading = false
+            return nil // No real transaction in test mode
+            
+        } catch {
+            #if DEBUG
+            print("❌ [TEST MODE] Failed to grant credits: \(error)")
+            #endif
+            errorMessage = "Test purchase failed: \(error.localizedDescription)"
+            isLoading = false
+            throw error
+        }
+    }
+    
+    /// Gets credit amount from product ID
+    private func getCreditAmount(for productId: String) -> Int {
+        switch productId {
+        case "credits_10": return 10
+        case "credits_25": return 25
+        case "credits_50": return 50
+        case "credits_100": return 100
+        default: return 10
+        }
+    }
+    
+    // MARK: - Backend Verification
+    
+    /// Verifies purchase with backend using transaction ID (StoreKit 2 compatible)
+    private func verifyPurchaseWithBackend(transaction: StoreKit.Transaction, productId: String) async throws {
+        let transactionId = String(transaction.id)
+        
+        #if DEBUG
+        print("🔐 [PAYMENT] Verifying with backend...")
+        print("   Transaction ID: \(transactionId)")
+        print("   Product ID: \(productId)")
+        #endif
+        
+        // Call backend verification with transaction_id (backend will fetch from Apple)
+        let response = try await SupabaseService.shared.verifyIAPPurchase(
+            transactionId: transactionId,
+            productId: productId
+        )
+        
+        #if DEBUG
+        print("✅ [PAYMENT] Backend verification successful:")
+        print("   Credits granted: \(response.credits_granted)")
+        print("   Balance after: \(response.balance_after)")
+        print("   Transaction ID: \(response.transaction_id)")
+        #endif
+        
+        // Update credit balance in CreditManager
+        await CreditManager.shared.updateFromBackendResponse(creditsRemaining: response.balance_after)
     }
     
     // MARK: - Restore Purchases

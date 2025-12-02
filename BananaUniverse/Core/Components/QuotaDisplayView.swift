@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct QuotaDisplayView: View {
-    let creditManager: CreditManager
+    @ObservedObject var creditManager: CreditManager
     @EnvironmentObject var themeManager: ThemeManager
     let style: QuotaDisplayStyle
     let action: (() -> Void)?
@@ -19,7 +19,7 @@ struct QuotaDisplayView: View {
         style: QuotaDisplayStyle = .compact,
         action: (() -> Void)? = nil
     ) {
-        self.creditManager = creditManager ?? CreditManager.shared
+        self._creditManager = ObservedObject(wrappedValue: creditManager ?? CreditManager.shared)
         self.style = style
         self.action = action
     }

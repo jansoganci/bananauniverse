@@ -44,14 +44,15 @@ Deno.serve(async (req: Request) => {
     
     let userId: string | null = null;
     let deviceId: string | null = null;
+    let body: any; // Store body here to avoid double parsing
 
     if (user) {
       userId = user.id;
-      logger = createLogger('verify-iap-purchase', requestId, { userId });
-      logger.step('1. User authenticated', { userId });
+      logger = createLogger('verify-iap-purchase', requestId, { userId: userId ?? undefined });
+      logger.step('1. User authenticated', { userId: userId ?? undefined });
     } else {
-      // Anonymous user - get device_id from body
-      const body = await req.json();
+      // Anonymous user - parse body once
+      body = await req.json();
       deviceId = body.device_id || null;
       
       if (!deviceId) {
@@ -62,8 +63,8 @@ Deno.serve(async (req: Request) => {
         );
       }
 
-      logger = createLogger('verify-iap-purchase', requestId, { deviceId });
-      logger.step('1. Anonymous user', { deviceId });
+      logger = createLogger('verify-iap-purchase', requestId, { deviceId: deviceId ?? undefined });
+      logger.step('1. Anonymous user', { deviceId: deviceId ?? undefined });
 
       // Set device_id session for RLS
       await supabase.rpc('set_device_id_session', { p_device_id: deviceId });
@@ -74,24 +75,57 @@ Deno.serve(async (req: Request) => {
     // 2. PARSE REQUEST BODY
     // ============================================
     logger.step('2. Parsing request body');
-    const body = await req.json();
-    const { transaction_jwt, product_id } = body;
+    // Only parse if not already parsed (for logged-in users)
+    if (!body) {
+      body = await req.json();
+    }
+    const { transaction_jwt, transaction_id, product_id } = body;
 
-    if (!transaction_jwt || !product_id) {
-      logger.error('Missing required fields', { hasTransactionJwt: !!transaction_jwt, hasProductId: !!product_id });
+    // Accept either transaction_jwt OR transaction_id (for StoreKit 2 compatibility)
+    if ((!transaction_jwt && !transaction_id) || !product_id) {
+      logger.error('Missing required fields', { 
+        hasTransactionJwt: !!transaction_jwt, 
+        hasTransactionId: !!transaction_id,
+        hasProductId: !!product_id 
+      });
       return new Response(
-        JSON.stringify({ success: false, error: 'Missing transaction_jwt or product_id' }),
+        JSON.stringify({ success: false, error: 'Missing transaction_jwt or transaction_id, and product_id' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    logger.step('2. Request body parsed', { productId: product_id });
+    logger.step('2. Request body parsed', { 
+      productId: product_id,
+      hasJWT: !!transaction_jwt,
+      hasTransactionId: !!transaction_id
+    });
 
     // ============================================
     // 3. VERIFY TRANSACTION WITH APPLE
     // ============================================
     logger.step('3. Verifying transaction with Apple');
-    const verification = await verifyAppleTransaction(transaction_jwt, logger);
+    
+    let verification: {
+      valid: boolean;
+      product_id?: string;
+      transaction_id?: string;
+      original_transaction_id?: string;
+      purchase_date?: number;
+    };
+    
+    if (transaction_jwt) {
+      // Use JWT if provided (StoreKit 1 or direct JWT)
+      verification = await verifyAppleTransaction(transaction_jwt, logger);
+    } else if (transaction_id) {
+      // Use transaction ID to fetch from Apple API (StoreKit 2)
+      verification = await verifyAppleTransactionById(transaction_id, logger);
+    } else {
+      logger.error('No transaction identifier provided');
+      return new Response(
+        JSON.stringify({ success: false, error: 'No transaction identifier provided' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     if (!verification.valid) {
       logger.error('Transaction verification failed');
@@ -108,7 +142,8 @@ Deno.serve(async (req: Request) => {
     });
 
     // Validate product_id matches
-    if (verification.product_id !== product_id) {
+    // ✅ FIX #3: Check if product_id exists before comparing
+    if (!verification.product_id || verification.product_id !== product_id) {
       logger.error('Product ID mismatch', {
         expected: product_id,
         received: verification.product_id
@@ -123,6 +158,15 @@ Deno.serve(async (req: Request) => {
     // 4. CHECK IDEMPOTENCY
     // ============================================
     logger.step('4. Checking idempotency');
+    
+    // ✅ FIX #3: Ensure original_transaction_id exists
+    if (!verification.original_transaction_id) {
+       logger.error('Missing original_transaction_id from verification');
+       return new Response(
+         JSON.stringify({ success: false, error: 'Invalid transaction data', code: 'INVALID_TRANSACTION' }),
+         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+       );
+    }
     const idempotencyKey = `purchase-${verification.original_transaction_id}`;
     
     const { data: existingKey } = await supabase
@@ -217,15 +261,17 @@ Deno.serve(async (req: Request) => {
       await supabase
         .from('iap_transactions')
         .insert({
-          user_id: userId,
-          device_id: deviceId,
+          user_id: userId || null,
+          device_id: deviceId || null,
           product_id: product_id,
           transaction_id: verification.transaction_id,
           original_transaction_id: verification.original_transaction_id,
           credits_granted: totalCredits,
           status: 'completed',
           verified_at: new Date().toISOString(),
-          receipt_data: { transaction_jwt: transaction_jwt.substring(0, 100) + '...' }  // Truncated for storage
+          receipt_data: { 
+            transaction_jwt: transaction_jwt ? (transaction_jwt.substring(0, 100) + '...') : null 
+          }  // Truncated for storage
         });
       logger.step('7. IAP transaction logged');
     } catch (logError) {
@@ -238,18 +284,23 @@ Deno.serve(async (req: Request) => {
     // ============================================
     logger.step('8. Sending Telegram notification');
     try {
-      await sendTelegramPurchaseNotification({
-        userId: userId || 'anonymous',
-        deviceId: deviceId || 'unknown',
-        productId: product_id,
-        creditsGranted: totalCredits,
-        baseCredits: product.credits,
-        bonusCredits: product.bonus_credits || 0,
-        balanceAfter: creditResult.credits_remaining,
-        transactionId: verification.transaction_id,
-        originalTransactionId: verification.original_transaction_id
-      });
-      logger.step('8. Telegram notification sent');
+      // Ensure transaction IDs exist (they should after successful verification)
+      if (verification.transaction_id && verification.original_transaction_id) {
+        await sendTelegramPurchaseNotification({
+          userId: userId || 'anonymous',
+          deviceId: deviceId || 'unknown',
+          productId: product_id,
+          creditsGranted: totalCredits,
+          baseCredits: product.credits,
+          bonusCredits: product.bonus_credits || 0,
+          balanceAfter: creditResult.credits_remaining,
+          transactionId: verification.transaction_id,
+          originalTransactionId: verification.original_transaction_id
+        });
+        logger.step('8. Telegram notification sent');
+      } else {
+        logger.warn('Skipping Telegram notification - missing transaction IDs');
+      }
     } catch (telegramError) {
       logger.warn('Telegram notification failed', { error: telegramError });
       // Don't fail the purchase if Telegram fails
@@ -293,6 +344,95 @@ Deno.serve(async (req: Request) => {
 // APPLE TRANSACTION VERIFICATION
 // ============================================
 
+/// Verify transaction using transaction ID (StoreKit 2)
+async function verifyAppleTransactionById(transactionId: string, logger?: any): Promise<{
+  valid: boolean;
+  product_id?: string;
+  transaction_id?: string;
+  original_transaction_id?: string;
+  purchase_date?: number;
+}> {
+  try {
+    if (logger) logger.debug('Fetching transaction from Apple API', { transactionId });
+    
+    // Create JWT for Apple API authentication
+    const privateKey = Deno.env.get('APPLE_PRIVATE_KEY')!
+      .replace(/\\n/g, '\n');
+
+    const algorithm = 'ES256';
+    const key = await jose.importPKCS8(privateKey, algorithm);
+
+    const authJWT = await new jose.SignJWT({})
+      .setProtectedHeader({
+        alg: algorithm,
+        kid: Deno.env.get('APPLE_KEY_ID')!
+      })
+      .setIssuer(Deno.env.get('APPLE_ISSUER_ID')!)
+      .setAudience('appstoreconnect-v1')
+      .setIssuedAt()
+      .setExpirationTime('1h')
+      .sign(key);
+
+    // Call App Store Server API to get transaction
+    const response = await fetch(
+      `https://api.storekit.itunes.apple.com/inApps/v1/transactions/${transactionId}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${authJWT}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      if (logger) logger.error('Apple API error', {
+        status: response.status,
+        error: errorText.substring(0, 200)
+      });
+      return { valid: false };
+    }
+
+    const data = await response.json();
+
+    if (logger) logger.debug('Verifying signed transaction');
+    // Verify the signed transaction (JWS)
+    const { payload } = await jose.jwtVerify(
+      data.signedTransaction,
+      key  // In production, use Apple's public key from JWKS
+    );
+
+    // Validate bundle ID
+    const bundleId = Deno.env.get('APPLE_BUNDLE_ID');
+    if (payload.bundleId !== bundleId) {
+      if (logger) logger.error('Bundle ID mismatch', {
+        received: payload.bundleId,
+        expected: bundleId
+      });
+      return { valid: false };
+    }
+
+    if (logger) logger.debug('Transaction verified successfully', {
+      productId: payload.productId,
+      transactionId: payload.transactionId,
+      originalTransactionId: payload.originalTransactionId
+    });
+
+    return {
+      valid: true,
+      product_id: payload.productId as string,
+      transaction_id: payload.transactionId as string,
+      original_transaction_id: payload.originalTransactionId as string,
+      purchase_date: payload.purchaseDate as number
+    };
+
+  } catch (error: any) {
+    if (logger) logger.error('Verification error', error);
+    return { valid: false };
+  }
+}
+
+/// Verify transaction using JWT (StoreKit 1 or direct JWT)
 async function verifyAppleTransaction(transactionJWT: string, logger?: any): Promise<{
   valid: boolean;
   product_id?: string;

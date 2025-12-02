@@ -54,7 +54,7 @@
          </BuildableReference>
       </BuildableProductRunnable>
       <StoreKitConfigurationFileReference
-         identifier = "../../BananaUniverse.storekit">
+         identifier = "../../storekit.storekit">
       </StoreKitConfigurationFileReference>
    </LaunchAction>
    <ProfileAction
