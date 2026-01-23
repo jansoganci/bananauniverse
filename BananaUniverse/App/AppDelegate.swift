@@ -15,6 +15,21 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         #if DEBUG
         print("🚀 App launched - setting up background credit refresh")
         #endif
+        
+        // Configure URLCache for image caching
+        let cacheSizeMemory = 50 * 1024 * 1024 // 50MB memory cache
+        let cacheSizeDisk = 200 * 1024 * 1024   // 200MB disk cache
+        let cache = URLCache(
+            memoryCapacity: cacheSizeMemory,
+            diskCapacity: cacheSizeDisk,
+            diskPath: "imageCache"
+        )
+        URLCache.shared = cache
+        
+        #if DEBUG
+        print("💾 URLCache configured: \(cacheSizeMemory / 1024 / 1024)MB memory, \(cacheSizeDisk / 1024 / 1024)MB disk")
+        #endif
+        
         return true
     }
     

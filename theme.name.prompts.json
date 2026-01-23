@@ -1,0 +1,604 @@
+[
+    {
+      "category": "artistic",
+      "name": "90s Disposable Camera",
+      "prompt": "Transform into 90s disposable camera style: bright flash on-camera lighting, slightly overexposed highlights, dated color science (warm yellows/cool shadows), casual spontaneous composition, authentic film grain, 90s fashion and styling, everyday party or hangout setting, genuine carefree smile, disposable camera aesthetic, nostalgic 90s snapshot quality, fun spontaneous energy, authentic moment captured, youthful carefree 90s vibe",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/retro_aesthetic_90s_disposable_camera.webp"
+    },
+    {
+      "category": "artistic",
+      "name": "90s Retro Anime",
+      "prompt": "Transform into 90s retro anime style: classic cel animation aesthetic, bold thick outlines, simplified shading (2-3 tone cel shading), vintage anime color palette (saturated primary colors), slight VHS grain texture, traditional hand-drawn quality, expressive large eyes with simple highlights, 90s fashion and hairstyle elements, nostalgic anime background, confident cool expression, Cowboy Bebop aesthetic, authentic 90s animation quality, retro anime charm",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/anime_styles_90s_retro_anime.webp"
+    },
+    {
+      "category": "artistic",
+      "name": "Comedy Anime",
+      "prompt": "Transform into comedy anime style: exaggerated expressive features, oversized reaction eyes with dramatic effects, dynamic facial expression lines, bold vibrant colors with high saturation, comedic speed lines and impact symbols, simple bold outlines for clarity, funny reaction pose with motion, plain or simple background for focus, hilarious exaggerated expression (shocked/excited/panicked), anime comedy reaction face aesthetic, clear readable emotion, manga panel impact, maximum comedic timing effect",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/anime_styles_comedy_anime.webp"
+    },
+    {
+      "category": "artistic",
+      "name": "Cyberpunk Anime",
+      "prompt": "Transform into cyberpunk anime style: sharp angular cybernetic features, glowing neon eyes (blue/pink/cyan), tech elements and circuit patterns, neon color palette (electric blue/hot pink/acid green) with black accents, dramatic neon lighting from multiple sources, futuristic cityscape background with holographic elements, intense focused expression, Ghost in the Shell aesthetic, detailed mechanical line art, high-tech dystopian atmosphere, gritty futuristic anime rendering",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/anime_styles_cyberpunk_anime.webp"
+    },
+    {
+      "category": "artistic",
+      "name": "Dark Anime Aesthetic",
+      "prompt": "Transform into dark anime aesthetic: sharp angular features, mysterious intense eyes with red/purple highlights, dramatic shadows with high contrast, dark color palette (black/deep purple/crimson/navy), flowing hair with wind effect, gothic fashion elements, moody atmospheric lighting from side, nighttime or stormy background, serious brooding expression, Death Note aesthetic, detailed linework with heavy inking, dramatic manga panel composition, mysterious powerful presence",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/anime_styles_dark_anime_aesthetic.webp"
+    },
+    {
+      "category": "artistic",
+      "name": "Faded Summer Memory",
+      "prompt": "Transform into faded summer memory: sun-bleached washed out colors, hazy soft focus with dream-like quality, warm golden hour lighting, slight overexposure creating ethereal glow, vintage 70s summer fashion, beach or outdoor summer setting, nostalgic carefree smile, faded photograph aesthetic, gentle film grain texture, timeless summer nostalgia mood, warm peaceful atmosphere, bittersweet memory quality, golden age summer feeling",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/retro_aesthetic_faded_summer_memory.webp"
+    },
+    {
+      "category": "artistic",
+      "name": "Fantasy Anime",
+      "prompt": "Transform into fantasy anime style: heroic noble features, mystical glowing eyes with magical effects, fantasy costume elements (armor/robes/accessories), rich vibrant fantasy colors (gold/emerald/sapphire/crimson), magical particle effects and auras, dramatic epic lighting with divine rays, fantasy landscape background (castle/forest/mystical realm), brave determined expression, Sword Art Online aesthetic, detailed ornate line art, epic heroic atmosphere, high fantasy anime rendering",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/anime_styles_fantasy_anime.webp"
+    },
+    {
+      "category": "artistic",
+      "name": "Film Noir",
+      "prompt": "Transform into film noir style: dramatic black and white with high contrast, venetian blind shadow patterns, cigarette smoke atmosphere effects, 1940s fashion and styling, dramatic side lighting creating deep shadows, rain or fog effects in background, serious mysterious expression, classic detective movie aesthetic, vintage film grain texture, cinematic noir composition, moody atmospheric lighting, timeless noir mystery mood, Hollywood golden age quality",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/retro_aesthetic_film_noir.webp"
+    },
+    {
+      "category": "artistic",
+      "name": "Lo-Fi Aesthetic",
+      "prompt": "Transform into lo-fi aesthetic: soft pastel color grading (muted pinks/blues/purples), gentle grain and noise texture, dreamy soft focus, cozy relaxed atmosphere, warm ambient lighting, simple minimalist composition, chill study vibes background elements, peaceful content expression, lo-fi hip hop aesthetic, illustrated artistic style, comfortable laid-back mood, modern nostalgia feel, relaxing chill vibe rendering, calm peaceful atmosphere",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/retro_aesthetic_lo-fi_aesthetic.webp"
+    },
+    {
+      "category": "artistic",
+      "name": "Magical Girl Anime",
+      "prompt": "Transform into magical girl anime style: large sparkling eyes with star highlights, vibrant hair colors (pink/blue/purple) with gradient effects, cute rounded facial features, magical girl outfit elements, glowing transformation effects, sparkle particles and ribbons, pastel rainbow color palette, dramatic pose with energy, cheerful confident expression, Sailor Moon aesthetic, shojo manga style with screen tone effects, dynamic action background",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/anime_styles_magical_girl_anime.webp"
+    },
+    {
+      "category": "artistic",
+      "name": "Makoto Shinkai Style",
+      "prompt": "Transform into Makoto Shinkai anime style: photorealistic background with anime character, dramatic sky with volumetric lighting, vibrant sunset colors (orange/purple/pink), detailed cloud formations, lens flare effects, cinematic composition, sharp clean anime line art, glossy hair with light reflections, emotional expression with depth, Your Name aesthetic, high contrast lighting, romantic melancholic atmosphere, 4K digital anime painting quality",
+      "is_featured": true,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/anime_styles_makoto_shinkai_style.webp"
+    },
+    {
+      "category": "artistic",
+      "name": "Polaroid Instant",
+      "prompt": "Transform into Polaroid instant photo: white border frame with bottom caption space, slightly faded vintage colors, soft focus with vignette edges, warm nostalgic color cast (yellow/orange tint), subtle chemical development imperfections, 1970s casual styling, soft natural lighting, simple everyday background, genuine candid expression, instant camera aesthetic, authentic Polaroid texture and grain, nostalgic family photo feel, timeless captured moment quality",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/retro_aesthetic_polaroid_instant.webp"
+    },
+    {
+      "category": "artistic",
+      "name": "Retro Magazine Cover",
+      "prompt": "Transform into retro magazine cover: bold graphic layout with vintage typography space, saturated vintage color palette (teal/orange/red/cream), professional studio portrait lighting, glamorous styling and makeup, 1960s-70s fashion aesthetic, clean white or colored background, confident editorial expression, vintage Vogue aesthetic, high-quality editorial photography, timeless fashion photography composition, classic magazine cover elegance, professional editorial quality",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/retro_aesthetic_retro_magazine_cover.webp"
+    },
+    {
+      "category": "artistic",
+      "name": "Romance Anime",
+      "prompt": "Transform into romance anime style: delicate beautiful features with soft lines, large emotional eyes with sparkle effects, flowing hair with gentle movement, soft romantic color palette (rose/blush/lavender/cream), dreamy bokeh background with flower petals or sparkles, gentle screen tone effects, tender emotional expression with slight blush, shoujo manga aesthetic, decorative floral frame elements, soft romantic lighting, heartwarming love story mood, elegant refined character design",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/anime_styles_romance_anime.webp"
+    },
+    {
+      "category": "artistic",
+      "name": "Sepia Vintage Portrait",
+      "prompt": "Transform into sepia vintage portrait: monochrome sepia tone (warm brown gradients), aged photograph texture with subtle cracks, soft vignette darkening edges, Victorian or early 1900s styling, formal portrait composition with centered framing, studio lighting from window, dignified formal expression, antique photograph aesthetic, paper texture and aging effects, timeless historical portrait quality, elegant vintage dignity, museum-quality historical photograph",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/retro_aesthetic_sepia_vintage_portrait.webp"
+    },
+    {
+      "category": "artistic",
+      "name": "Shonen Action Hero",
+      "prompt": "Transform into shonen anime hero style: spiky dynamic hair with sharp angles, determined intense eyes with highlight detail, angular strong facial features, action pose with energy aura, bold primary colors (red/orange/blue/yellow), speed lines and motion blur, dramatic battle lighting with rim light effects, explosive background with energy effects, fierce confident expression, Attack on Titan aesthetic, detailed line art with heavy shadows, powerful heroic presence",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/anime_styles_shonen_action_hero.webp"
+    },
+    {
+      "category": "artistic",
+      "name": "Slice of Life Anime",
+      "prompt": "Transform into slice of life anime style: soft gentle features, warm friendly eyes with natural highlights, realistic proportions with subtle anime styling, warm earthy color palette (browns/creams/soft greens), natural everyday lighting, cozy indoor or peaceful outdoor background, gentle welcoming smile, K-ON aesthetic, clean simple line art, comfortable relaxed atmosphere, heartwarming everyday life mood, approachable friendly character design",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/anime_styles_slice_of_life_anime.webp"
+    },
+    {
+      "category": "artistic",
+      "name": "Sports Anime Hero",
+      "prompt": "Transform into sports anime style: athletic determined features, fierce competitive eyes with intense highlights, dynamic sweat and motion effects, bold energetic color scheme, action pose with movement lines, dramatic lighting emphasizing muscles and determination, sports arena background with crowd blur, passionate fighting spirit expression, Haikyuu aesthetic, clean dynamic line art with speed emphasis, competitive athletic energy, inspirational sports manga composition",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/anime_styles_sports_anime_hero.webp"
+    },
+    {
+      "category": "artistic",
+      "name": "Studio Ghibli Style",
+      "prompt": "Transform into Studio Ghibli anime style: soft watercolor aesthetic, large expressive eyes with detailed highlights, gentle facial features, pastel color palette (soft blues/greens/pinks), hand-drawn line art quality, whimsical dreamy atmosphere, natural lighting with soft glow, countryside or sky background with clouds, innocent cheerful expression, Hayao Miyazaki signature style, 2D animation cell-shaded rendering, nostalgic heartwarming mood",
+      "is_featured": true,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/anime_styles_studio_ghibli_style.webp"
+    },
+    {
+      "category": "artistic",
+      "name": "VHS 80s Aesthetic",
+      "prompt": "Transform into VHS 80s aesthetic: analog video artifacts with scan lines, color bleeding and chromatic aberration, VHS tracking noise and glitches, saturated neon colors (hot pink/electric blue/bright purple), slight motion blur and ghosting, date timestamp overlay (bottom corner), retro 80s fashion and hairstyle, grainy low-fi video quality, nostalgic home video feel, vintage camcorder lighting, authentic VHS tape degradation, warm nostalgic 1980s atmosphere",
+      "is_featured": true,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/retro_aesthetic_vhs_80s_aesthetic.webp"
+    },
+    {
+      "category": "artistic",
+      "name": "Vintage Anime Portrait",
+      "prompt": "Transform into vintage 80s anime style: classic shoujo sparkle effects, soft airbrushed shading technique, romantic soft-focus edges, retro anime color palette (soft pinks/purples/pastels), decorative rose or star border elements, gentle side lighting, dreamy background with gradient, elegant gentle expression, vintage anime magazine cover aesthetic, nostalgic 80s animation quality, romantic retro charm, classic anime portrait composition, timeless elegant beauty",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/anime_styles_vintage_anime_portrait.webp"
+    },
+    {
+      "category": "artistic",
+      "name": "Vintage Film Photography",
+      "prompt": "Transform into vintage film photography: authentic film grain texture, rich warm color palette (amber/sepia/muted tones), slight light leaks and lens flares, natural vignetting on edges, soft focus with shallow depth of field, classic film stock color science, natural vintage lighting, timeless everyday setting, authentic genuine expression, 35mm analog camera aesthetic, professional film photography quality, nostalgic artistic mood, timeless photographic beauty",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/retro_aesthetic_vintage_film_photography.webp"
+    },
+    {
+      "category": "artistic",
+      "name": "Watercolor Anime",
+      "prompt": "Transform into watercolor anime style: soft blended brushstroke textures, gentle flowing colors with gradients, delicate line art with varied thickness, pastel watercolor palette with subtle color bleeding, artistic paper texture, natural organic shapes, dreamy soft-focus background with bokeh effects, peaceful serene expression, artistic illustration quality, hand-painted traditional media aesthetic, gentle flowing composition, ethereal romantic atmosphere, fine art anime rendering",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/anime_styles_watercolor_anime.webp"
+    },
+    {
+      "category": "artistic",
+      "name": "Y2K Cyber Aesthetic",
+      "prompt": "Transform into Y2K aesthetic: glossy metallic textures and chrome effects, holographic rainbow gradients, pixelated digital elements and glitch art, bright cyber colors (lime green/hot pink/silver/cyan), futuristic early-2000s fashion, geometric shapes and grid patterns, digital camera flash lighting, cyber background with tech elements, confident cool expression, early internet culture aesthetic, nostalgic millennium vibes, retro-futuristic digital rendering, playful tech-optimistic mood",
+      "is_featured": true,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/retro_aesthetic_y2k_cyber_aesthetic.webp"
+    },
+    {
+      "category": "enhancements",
+      "name": "Add Objects to Images",
+      "prompt": "Add the object realistically into the scene, blending light, shadow, and texture perfectly",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/main_tools_add_objects_to_images.webp"
+    },
+    {
+      "category": "enhancements",
+      "name": "Change Image Perspectives",
+      "prompt": "Adjust the image perspective realistically, keeping proportions and depth accurate",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/main_tools_change_image_perspectives.webp"
+    },
+    {
+      "category": "enhancements",
+      "name": "Generate Image Series",
+      "prompt": "Create a realistic variation of this image, keeping the subject consistent",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/main_tools_generate_image_series.webp"
+    },
+    {
+      "category": "enhancements",
+      "name": "Historical Photo Restore",
+      "prompt": "Restore this old photo faithfully, preserving its original look and emotional tone",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/restoration_historical_photo_restore.webp"
+    },
+    {
+      "category": "enhancements",
+      "name": "Image Upscaler (2x-4x)",
+      "prompt": "Enhance and upscale this image sharply, keeping all details and textures intact",
+      "is_featured": true,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/restoration_image_upscaler_(2x-4x).webp"
+    },
+    {
+      "category": "enhancements",
+      "name": "Put Items on Models",
+      "prompt": "Place the selected item naturally on the person, matching lighting, angle, and scale",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/main_tools_put_items_on_models.webp"
+    },
+    {
+      "category": "enhancements",
+      "name": "Remove Background",
+      "prompt": "Remove the background cleanly, keeping edges sharp and lighting natural",
+      "is_featured": true,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/main_tools_remove_background.webp"
+    },
+    {
+      "category": "enhancements",
+      "name": "Remove Object from Image",
+      "prompt": "Remove the selected object naturally, keeping the background seamless and realistic",
+      "is_featured": true,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/main_tools_remove_object_from_image.webp"
+    },
+    {
+      "category": "enhancements",
+      "name": "Style Transfers on Images",
+      "prompt": "Apply the selected artistic style to this image while preserving key details and structure",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/main_tools_style_transfers_on_images.webp"
+    },
+    {
+      "category": "pro_tools",
+      "name": "CV/Portfolio Portrait",
+      "prompt": "Create a modern portfolio portrait with professional lighting and authentic expression",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/pro_looks_cv-portfolio_portrait.webp"
+    },
+    {
+      "category": "pro_tools",
+      "name": "Designer-Style ID Photo",
+      "prompt": "Create a contemporary ID photo with clean lighting and designer aesthetic",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/pro_looks_designer-style_id_photo.webp"
+    },
+    {
+      "category": "pro_tools",
+      "name": "Gradient Headshot",
+      "prompt": "Generate a professional headshot with a soft gradient background and balanced tone",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/pro_looks_gradient_headshot.webp"
+    },
+    {
+      "category": "pro_tools",
+      "name": "LinkedIn Headshot",
+      "prompt": "Transform this photo into a professional LinkedIn headshot with clean light and natural tone",
+      "is_featured": true,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/pro_looks_linkedin_headshot.webp"
+    },
+    {
+      "category": "pro_tools",
+      "name": "Passport Photo",
+      "prompt": "Generate a passport-style photo with plain background and balanced facial lighting",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/pro_looks_passport_photo.webp"
+    },
+    {
+      "category": "pro_tools",
+      "name": "Profile Banner Generator",
+      "prompt": "Generate a stylish banner image with balanced composition and soft background focus",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/pro_looks_profile_banner_generator.webp"
+    },
+    {
+      "category": "pro_tools",
+      "name": "Resume Photo",
+      "prompt": "Create a professional resume photo with neutral lighting and confident expression",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/pro_looks_resume_photo.webp"
+    },
+    {
+      "category": "pro_tools",
+      "name": "Slide Background Maker",
+      "prompt": "Design a clean, balanced slide background with good text readability and visual harmony",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/pro_looks_slide_background_maker.webp"
+    },
+    {
+      "category": "pro_tools",
+      "name": "Thumbnail Generator",
+      "prompt": "Generate an engaging thumbnail with strong focus, clear subject, and bold visual contrast",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/pro_looks_thumbnail_generator.webp"
+    },
+    {
+      "category": "pro_tools",
+      "name": "Twitter/X Avatar",
+      "prompt": "Create a clear, vibrant avatar optimized for small-size visibility and natural color tone",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/pro_looks_twitter-x_avatar.webp"
+    },
+    {
+      "category": "seasonal",
+      "name": "Autumn Harvest Magic",
+      "prompt": "Transform into autumn harvest magic: vibrant fall foliage colors (crimson/amber/gold/burnt orange), falling leaves and harvest elements, warm golden hour lighting through trees, rich autumn color palette with natural tones, outdoor autumn landscape background, peaceful grateful expression, impressionist autumn painting style, soft painterly brushwork texture, magical autumn atmosphere, enchanting fall season quality, nostalgic autumn beauty rendering",
+      "is_featured": true,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/thanksgiving_autumn_harvest_magic.webp"
+    },
+    {
+      "category": "seasonal",
+      "name": "Christmas Card Portrait",
+      "prompt": "Transform into Christmas card portrait: professional holiday card photography style, festive but elegant composition, classic Christmas colors (deep red/forest green/gold/ivory), soft studio lighting with subtle sparkle bokeh, decorative holiday border frame, winter wonderland or festive indoor background, warm welcoming smile, timeless holiday card aesthetic, premium greeting card quality, family photo tradition style, professional holiday portrait composition, heartwarming seasonal greetings mood",
+      "is_featured": true,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/christmas_christmas_card_portrait.webp"
+    },
+    {
+      "category": "seasonal",
+      "name": "Christmas Lights Glow",
+      "prompt": "Transform into Christmas lights glow: magical bokeh background with colorful string lights (red/green/blue/gold/white), warm festive lighting creating halo effect around subject, soft dreamy atmosphere with twinkling lights, rich holiday colors with luminous quality, evening or night setting with light bokeh, peaceful happy expression, romantic holiday photography aesthetic, professional bokeh lighting technique, magical Christmas evening mood, enchanting holiday lights quality, warm festive glow atmosphere",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/christmas_christmas_lights_glow.webp"
+    },
+    {
+      "category": "seasonal",
+      "name": "Christmas Magic Sparkle",
+      "prompt": "Transform into Christmas magic sparkle: enchanted winter wonderland with magical sparkle effects, rich vibrant Christmas colors (red/green/gold/white), glowing magical particles and fairy lights, snow and festive elements, dreamy magical lighting with bokeh, cheerful delighted expression, magical holiday fantasy style, ethereal enchanting rendering, wonder-filled Christmas magic mood, fairy tale holiday quality, enchanting festive sparkle atmosphere",
+      "is_featured": true,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/christmas_christmas_magic_sparkle.webp"
+    },
+    {
+      "category": "seasonal",
+      "name": "Cozy Autumn Hearth",
+      "prompt": "Transform into cozy autumn hearth style: warm fireplace glow lighting with soft amber tones, comfortable home interior with autumn decorations (pumpkins, leaves, candles), rich cozy color palette (burgundy/rust/amber/cream), soft blanket and knit textures, intimate indoor fall setting, gentle warm expression with contentment, hygge lifestyle aesthetic, soft warm lighting with fire glow, peaceful gratitude mood, comfortable homey autumn quality, intimate family gathering warmth",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/thanksgiving_cozy_autumn_hearth.webp"
+    },
+    {
+      "category": "seasonal",
+      "name": "Frosty Winter Wonderland",
+      "prompt": "Transform into frosty winter wonderland: icy blue-white color palette with crystalline sparkles, magical frozen aesthetic with snowflake details and frost patterns, winter wonderland background with fresh pristine snow, soft diffused winter light with cool tones, frosted edges and icy textures, cheerful frosty expression, magical winter fairytale style, crisp clean winter rendering, enchanted snow day mood, pristine winter wonderland quality, magical snowman charm",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/christmas_frosty_winter_wonderland.webp"
+    },
+    {
+      "category": "seasonal",
+      "name": "Grateful Heart Portrait",
+      "prompt": "Transform into grateful heart portrait: soft warm lighting emphasizing emotion, golden autumn color grading (warm amber/honey/gold tones), gentle peaceful expression of gratitude, simple elegant autumn background, heartfelt emotional atmosphere, fine art portrait photography style, natural warm lighting with soft shadows, thankful serene mood, touching emotional quality, authentic gratitude expression, timeless thanksgiving spirit rendering",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/thanksgiving_grateful_heart_portrait.webp"
+    },
+    {
+      "category": "seasonal",
+      "name": "Pumpkin Patch Charm",
+      "prompt": "Transform into pumpkin patch charm: vibrant pumpkin orange and autumn colors (orange/green/brown/yellow), rustic farm setting with pumpkins and hay, warm afternoon autumn sunlight, outdoor harvest scene with pumpkin patch background, playful cheerful expression, country farm photography aesthetic, natural outdoor lighting with warm tones, fun autumn harvest mood, charming countryside quality, wholesome farm harvest beauty",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/thanksgiving_pumpkin_patch_charm.webp"
+    },
+    {
+      "category": "seasonal",
+      "name": "Thanksgiving Feast Portrait",
+      "prompt": "Transform into Thanksgiving feast portrait: warm candlelit ambiance with golden hour lighting, rich harvest colors (burnt orange/deep red/golden yellow/russet brown), bountiful table setting with autumn florals and seasonal elements, soft bokeh background with warm autumn tones, grateful welcoming expression, Norman Rockwell painting aesthetic, oil painting texture with warm brushstrokes, family gathering warmth, traditional Thanksgiving celebration mood, heartwarming holiday portrait quality",
+      "is_featured": true,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/thanksgiving_thanksgiving_feast_portrait.webp"
+    },
+    {
+      "category": "seasonal",
+      "name": "Vintage Christmas Nostalgia",
+      "prompt": "Transform into vintage Christmas nostalgia: retro 1950s holiday aesthetic with classic styling, muted vintage color palette (faded red/green/cream/sepia tones), antique Christmas decorations and vintage elements, soft aged photograph texture with grain, nostalgic indoor holiday setting, warm genuine smile, classic family photo aesthetic, authentic vintage photography quality, timeless Christmas memory mood, heartwarming retro holiday quality, nostalgic traditional Christmas charm",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/christmas_vintage_christmas_nostalgia.webp"
+    },
+    {
+      "category": "transformations",
+      "name": "Action Figure Hero",
+      "prompt": "Transform into action figure style: articulated joint segments visible at shoulders/elbows/knees, muscular heroic proportions (6-inch scale aesthetic), glossy painted plastic texture, bold superhero colors with panel lining, dynamic action pose, detailed sculpted costume, dramatic heroic expression, toy photography setup with action background, hard plastic material look, premium collectible quality, shelf display presentation, classic action figure aesthetic, 1/12 scale toy rendering",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/action-figure-hero.webp"
+    },
+    {
+      "category": "transformations",
+      "name": "Cartoon Truck",
+      "prompt": "3D Pixar-style animated truck: sturdy boxy design with rounded edges, determined expression through rectangular headlight eyes, working-class color scheme (blue/white or red/white), utility details (tool boxes, cargo straps), chrome grille with character, side profile view showing strength, warm practical lighting, industrial background with subtle details, hardworking determined personality, reliable trustworthy vibe, friendly cartoon proportions, professional 3D animation quality",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/cartoon-truck.webp"
+    },
+    {
+      "category": "transformations",
+      "name": "Chibi Nendoroid Style",
+      "prompt": "Transform into chibi figure style: super-deformed proportions (large head 1:1 with body), interchangeable facial expressions, articulated joints for posing, glossy ABS plastic finish, vibrant anime colors, detailed accessories and base stand, dynamic cute pose with effects, white studio background with soft shadows, adorable cheerful expression, Japanese chibi figure aesthetic, premium poseable figure quality, collector display presentation, maximum cuteness chibi rendering",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/toy_style_chibi_nendoroid_style.webp"
+    },
+    {
+      "category": "transformations",
+      "name": "Classic Roadster",
+      "prompt": "3D Pixar-style elegant roadster: refined vintage design with flowing curves, sophisticated expression through elegant headlight eyes (narrow and refined), luxury color palette (deep burgundy/royal blue/forest green), chrome details with mirror polish, wire-spoke wheels, convertible top design, side profile view emphasizing elegance, soft dramatic lighting with rim highlights, upscale environment background (cityscape or countryside), sophisticated refined personality, premium luxury aesthetic, high-end CGI rendering with material realism",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/animated_vehicles_classic_roadster.webp"
+    },
+    {
+      "category": "transformations",
+      "name": "Comic Book Hero",
+      "prompt": "Transform into comic book style: bold black ink outlines with dynamic line weight, flat vibrant colors with cel shading, Ben-Day dots halftone texture, action lines and speed effects, dramatic hero lighting, comic panel frame visible, speech bubble space, heroic powerful expression, vintage comic book aesthetic, hand-drawn ink quality, classic superhero comic rendering, dynamic graphic novel composition, pow-bam comic energy",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/meme_magic_comic_book_hero.webp"
+    },
+    {
+      "category": "transformations",
+      "name": "Cubist Portrait",
+      "prompt": "Transform into cubist portrait: geometric fragmented shapes, multiple perspectives shown simultaneously, angular faceted planes, muted earth tone palette (ochre/brown/grey/blue), abstract facial deconstruction, collage-like layered composition, flat two-dimensional space, analytical cubism aesthetic, Picasso-style rendering, modernist art movement quality, intellectual abstract composition, revolutionary geometric art style",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/meme_magic_cubist_portrait.webp"
+    },
+    {
+      "category": "transformations",
+      "name": "Designer Toy Art",
+      "prompt": "Transform into designer art toy: artistic stylized proportions with creative exaggeration, matte or glossy vinyl texture, bold graphic design patterns, limited edition colorway aesthetic, street art and graffiti influences, unique artistic pose, modern minimalist background, creative artistic expression, urban vinyl toy aesthetic, gallery art toy quality, contemporary designer collectible, limited edition art piece rendering, museum-worthy designer toy",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/toy_style_designer_toy_art.webp"
+    },
+    {
+      "category": "transformations",
+      "name": "Die-Cast Model Style",
+      "prompt": "Transform into die-cast model style: metallic painted finish with realistic reflections, detailed sculpted features and proportions, metal toy weight and quality feel, authentic paint application (multiple colors and details), precision-molded parts with seam lines, collector display pose on stand, museum display background, serious detailed expression, premium die-cast collectible aesthetic, high-end toy photography, adult collector quality, authentic scale model rendering",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/toy_style_die-cast_model_style.webp"
+    },
+    {
+      "category": "transformations",
+      "name": "Fashion Doll Style",
+      "prompt": "Transform into fashion doll style: large expressive eyes with long eyelashes, perfect smooth plastic skin texture, glossy styled hair with vibrant colors, slim fashion doll proportions, glamorous outfit details, rooted hair texture visible, articulated joints at shoulders/hips, standing in doll box display pose, pink gradient background, confident glamorous smile, fashion doll aesthetic, premium collector doll quality, boutique doll packaging presentation, iconic fashion toy style",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/toy_style_fashion_doll_style.webp"
+    },
+    {
+      "category": "transformations",
+      "name": "Friendly Bus",
+      "prompt": "3D Pixar-style animated bus: large rectangular windows forming friendly eyes (white highlights), curved smile grille, rounded corners throughout, warm color palette (yellow/orange/red), community transport design, centered frontal view, soft studio lighting with gentle shadows, sunny sky gradient background, welcoming cheerful expression, approachable friendly personality, glossy paint finish, photorealistic 3D animation, detailed surface reflections",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/animated_vehicles_friendly_bus.webp"
+    },
+    {
+      "category": "transformations",
+      "name": "Friendly Car Eyes",
+      "prompt": "3D Pixar-style animated car: oversized glossy eyes on windshield (40% of front surface, white catch-lights), curved smile bumper grille, rounded body panels, vibrant solid-color paint (red/blue/yellow options), chrome trim with mirror reflections, centered frontal view, studio lighting with soft drop shadow, white-to-blue gradient background, cheerful friendly expression, photorealistic CGI render quality, 4K detail",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/animated_vehicles_friendly_car_eyes.webp"
+    },
+    {
+      "category": "transformations",
+      "name": "Impressionist Painting",
+      "prompt": "Transform into impressionist painting: visible loose brushstrokes with texture, soft blended colors (pastels and muted tones), dappled light effects with color dabs, outdoor natural lighting, slightly blurred soft focus, garden or outdoor setting, peaceful contemplative expression, Monet-style impressionism aesthetic, authentic oil painting technique, plein air painting quality, French impressionist composition, dreamy atmospheric light rendering",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/meme_magic_impressionist_painting.webp"
+    },
+    {
+      "category": "transformations",
+      "name": "Lowbrow Pop Surrealism",
+      "prompt": "Transform into lowbrow pop surrealism: cartoon characters with slightly dark twist, big expressive eyes with surreal elements, vibrant saturated colors with high contrast, underground comic book influence, cute but slightly creepy aesthetic, detailed painted texture, quirky imaginative background, playful mysterious expression, Mark Ryden style aesthetic, contemporary surreal pop art quality, gallery exhibition rendering, modern pop surrealism movement",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/meme_magic_lowbrow_pop_surrealism.webp"
+    },
+    {
+      "category": "transformations",
+      "name": "Medieval Painting",
+      "prompt": "Transform into medieval manuscript painting: flat stylized medieval art style, gold leaf illumination effects, rich jewel-tone colors (deep blue/crimson/gold), simplified iconic features, ornate decorative border with gold patterns, parchment aged paper texture, religious icon composition, frontal symmetrical pose, medieval manuscript aesthetic, authentic medieval painting technique, illuminated manuscript quality, historical religious art style, Byzantine icon influence",
+      "is_featured": true,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/medieval-painting.webp"
+    },
+    {
+      "category": "transformations",
+      "name": "Monster Truck Toon",
+      "prompt": "3D animated monster truck: exaggerated proportions with oversized wheels (2x body height), bold primary colors (red/yellow/blue), powerful determined expression with wide eyes, raised suspension showing massive tires, chrome exhaust pipes, flame decals on sides, 3/4 angle view emphasizing scale, dramatic low-angle lighting creating heroic silhouette, dirt track background with dust clouds, powerful confident personality, comic book style 3D rendering, dynamic action pose",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/animated_vehicles_monster_truck_toon.webp"
+    },
+    {
+      "category": "transformations",
+      "name": "Off-Road Explorer",
+      "prompt": "3D animated off-road vehicle: rugged design with raised suspension, adventurous expression through round protective headlight eyes, mud-splattered paint (earth tones: brown/green/beige), all-terrain tires with deep treads, roof rack with gear, dirt and dust particles on surfaces, 3/4 angle view showing off-road capability, natural outdoor lighting with sun rays, mountain trail background with rocks and vegetation, adventurous explorer personality, ready-for-anything attitude, detailed environmental 3D rendering",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/animated_vehicles_off_road_truck.webp"
+    },
+    {
+      "category": "transformations",
+      "name": "Pixel Art Retro",
+      "prompt": "Transform into 8-bit pixel art: blocky pixelated squares visible, limited color palette (16 colors), retro video game sprite aesthetic, simplified geometric features, pixel-perfect edges and outlines, dithering pattern effects, classic game character proportions, solid background color or simple pixel background, game character expression, 1980s video game aesthetic, authentic pixel art rendering, Nintendo/arcade game quality, nostalgic retro gaming charm",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/meme_magic_pixel_art_retro.webp"
+    },
+    {
+      "category": "transformations",
+      "name": "Plush Toy Style",
+      "prompt": "Transform into plush toy style: soft fuzzy fabric texture throughout, embroidered simple facial features (button eyes, stitched smile), rounded soft proportions with no hard edges, pastel or warm colors, visible seam lines and stitching details, huggable stuffed appearance, sitting or standing plush pose, cozy home background, gentle friendly expression, stuffed animal aesthetic, soft toy material rendering, cuddly comfort toy quality, handmade plush charm",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/toy_style_plush_toy_style.webp"
+    },
+    {
+      "category": "transformations",
+      "name": "Racing Champion",
+      "prompt": "3D animated racing car: dynamic 3/4 angle view, bold racing stripes (white/red/blue), sponsor decal stickers on sides, checkered flag pattern accents, victory expression with determined eyes, aerodynamic spoiler, low-profile racing wheels, metallic paint with speed streaks, dramatic side lighting with motion blur trails, racetrack background with blurred crowd, competitive champion personality, high-speed action pose, professional CGI animation quality",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/animated_vehicles_racing_champion.webp"
+    },
+    {
+      "category": "transformations",
+      "name": "Rally Racer",
+      "prompt": "3D animated rally car: competition-ready design with rally livery, determined expression through focused headlight eyes, bold sponsor graphics (white/red/yellow/blue), mud guards and protective equipment, aggressive off-road tires, roof-mounted light bar, dynamic 3/4 angle view, dramatic action lighting with dust particles, dirt track background with splash effects, competitive determined personality, race-ready attitude, motion blur effects, professional motorsport 3D animation quality",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/animated_vehicles_rally_racer.webp"
+    },
+    {
+      "category": "transformations",
+      "name": "Retro Toy Robot",
+      "prompt": "Transform into retro robot toy: vintage 1980s robot design, angular geometric shapes with panel details, metallic painted finish (silver/red/blue), visible mechanical joints and rivets, boxy proportions with antenna details, button controls and lights on chest, standing mechanical pose, retro sci-fi background, determined robot expression, vintage toy robot aesthetic, tin toy craftsmanship quality, nostalgic 80s toy collectible, classic robot toy charm",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/toy_style_retro_toy_robot.webp"
+    },
+    {
+      "category": "transformations",
+      "name": "Sports Car Hero",
+      "prompt": "3D animated sports car: sleek aerodynamic body with low profile, confident expression through aggressive headlight design (narrow focused eyes), metallic paint (silver/red/blue) with speed lines, carbon fiber accents, large alloy wheels, side view emphasizing length and curves, dramatic side lighting with rim light, urban street background with motion blur, confident heroic personality, speed-focused attitude, premium CGI rendering quality, detailed material shaders",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/animated_vehicles_sports_car_hero.webp"
+    },
+    {
+      "category": "transformations",
+      "name": "Surreal Dream Art",
+      "prompt": "Transform into surreal dream art: unexpected juxtapositions and impossible elements, melting or distorted features, dreamlike bizarre composition, unusual color combinations (unexpected palettes), multiple perspectives merged, symbolic surreal background elements, mysterious enigmatic expression, Dali-inspired surrealism aesthetic, oil painting dreamlike quality, subconscious mind visualization, artistic surreal rendering, thought-provoking bizarre beauty",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/meme_magic_surreal_dream_art.webp"
+    },
+    {
+      "category": "transformations",
+      "name": "Vaporwave Aesthetic",
+      "prompt": "Transform into vaporwave aesthetic: pastel gradient colors (pink/cyan/purple), Greek statue or bust integration, glitch art effects and digital artifacts, Windows 95 UI elements, geometric shapes and grids, palm tree or sunset motifs, Japanese text elements, nostalgic digital collage, chill aesthetic expression, internet culture aesthetic, surreal digital art rendering, 90s internet nostalgia vibe, A E S T H E T I C mood",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/meme_magic_vaporwave_aesthetic.webp"
+    },
+    {
+      "category": "transformations",
+      "name": "Vintage Cartoon Car",
+      "prompt": "3D Pixar-style vintage car: 1950s design with rounded curves and chrome bumpers, large circular headlights as expressive eyes, toothy grille smile, two-tone paint (cream/teal or pink/white), whitewall tires, chrome hubcaps with reflections, side profile view showing classic proportions, warm studio lighting with soft shadows, pastel gradient background, cheerful nostalgic personality, retro-futuristic 3D rendering, detailed material textures",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/animated_vehicles_vintage_cartoon_car.webp"
+    },
+    {
+      "category": "transformations",
+      "name": "Wooden Toy Character",
+      "prompt": "Transform into wooden toy style: natural wood grain texture visible, simple hand-painted features with brush strokes, rounded smooth wooden shapes, warm natural wood colors with painted accents, jointed limbs connected with visible pegs, artisan craft quality, standing on wooden base, soft natural lighting, gentle friendly expression, handcrafted wooden toy aesthetic, traditional toy craftsmanship, nostalgic childhood toy quality, timeless wooden toy charm",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/toy_style_wooden_toy_character.webp"
+    },
+    {
+      "category": "transformations",
+      "name": "Yellow Animated Family",
+      "prompt": "Transform into yellow animated sitcom style: bright yellow skin tone, oversized white eyes with black dot pupils, simplified cartoon features with rounded shapes, thick black outlines throughout, bold flat colors, casual everyday clothing, simple background setting (home/couch), expressive cartoon face, American animated sitcom aesthetic, hand-drawn animation quality, family comedy show style, iconic yellow character design, classic animated series rendering",
+      "is_featured": false,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/meme_magic_yellow_animated_family.webp"
+    },
+    {
+      "category": "trending",
+      "name": "Anime Manga Style",
+      "prompt": "Transform into manga style: clean black ink linework with varied line weight, dramatic high contrast black and white, halftone screen tone patterns for shading, speed lines and action effects, large expressive anime eyes with detailed highlights, dynamic hair with motion, manga panel composition with frame, powerful emotional expression, classic Japanese manga aesthetic, hand-drawn ink quality, authentic manga illustration style, bold graphic impact",
+      "is_featured": true,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/anime-manga-style.webp"
+    },
+    {
+      "category": "trending",
+      "name": "Building Block Character",
+      "prompt": "Transform into building block minifigure: cylindrical head with simple dot eyes, C-shaped hands, rigid blocky body construction, solid primary colors (red/blue/yellow/white), plastic toy texture with slight shine, snap-together joint details visible, standing pose on baseplate, toy photography studio lighting, simple background with building blocks, cheerful smile expression, construction toy aesthetic, authentic building block proportions, playful toy character quality, iconic toy design",
+      "is_featured": true,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/building-block-character.webp"
+    },
+    {
+      "category": "trending",
+      "name": "Collectible Figure Style",
+      "prompt": "Transform into collectible vinyl figure style: oversized rectangular head (1.5x body proportion), large glossy black dot eyes with white highlights, minimal facial features, chibi proportions with small body, glossy vinyl toy texture, solid vibrant color blocks, bobblehead aesthetic, centered frontal pose on display base, studio lighting with soft shadows, white background for product display, cute simplified expression, vinyl collectible toy aesthetic, premium toy photography quality, shelf-ready collectible presentation",
+      "is_featured": true,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/collectible-figure-style.webp"
+    },
+    {
+      "category": "trending",
+      "name": "Kawaii Chibi Style",
+      "prompt": "Transform into kawaii chibi anime style: oversized head (1:2 body proportion), huge sparkling eyes (40% of face), tiny simple body features, rounded soft shapes throughout, pastel candy colors (pink/mint/lavender/peach), minimal line details, cute blush marks on cheeks, simple dot nose, cheerful happy expression, plain gradient background with decorative elements, super adorable aesthetic, sticker-style flat rendering, maximum cuteness factor",
+      "is_featured": true,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/anime_styles_kawaii_chibi_style.webp"
+    },
+    {
+      "category": "trending",
+      "name": "Pop Art Style",
+      "prompt": "Transform into pop art style: bold flat colors with high contrast, thick black outlines and contours, halftone dot pattern texture, vibrant primary colors (red/yellow/blue) with complementary accents, multiple repeated panels (2x2 or 4-panel grid), screen print texture effect, simplified graphic shapes, bold graphic composition, confident expression, 1960s pop art aesthetic, Andy Warhol style rendering, commercial art influence, iconic bold graphic impact",
+      "is_featured": true,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/meme_magic_pop_art_style.webp"
+    },
+    {
+      "category": "trending",
+      "name": "Renaissance Portrait",
+      "prompt": "Transform into Renaissance portrait painting: classical oil painting technique with visible brush strokes, rich deep colors (burgundy/emerald/gold/deep blue), dramatic chiaroscuro lighting from side, ornate period costume details (ruffled collar, velvet, jewelry), golden frame border visible, museum painting background (dark neutral), dignified noble expression, 16th century master painting aesthetic, authentic oil painting texture, historical portrait composition, old master quality rendering, timeless classical art beauty",
+      "is_featured": true,
+      "thumbnail_url": "https://jiorfutbmahpfgplkats.supabase.co/storage/v1/object/public/theme-thumbnails/meme_magic_renaissance_portrait.webp"
+    }
+  ]
