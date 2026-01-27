@@ -52,7 +52,7 @@ struct SignInView: View {
                 VStack(spacing: 12) {
                     HStack {
                         Image(systemName: "icloud.and.arrow.up")
-                            .foregroundColor(DesignTokens.Brand.primary(.light))
+                            .foregroundColor(DesignTokens.Brand.primary(themeManager.resolvedColorScheme))
                         Text("Never lose your work")
                             .font(.system(size: 16, weight: .medium))
                             .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
@@ -60,7 +60,7 @@ struct SignInView: View {
                     
                     HStack {
                         Image(systemName: "lock.shield")
-                            .foregroundColor(DesignTokens.Brand.primary(.light))
+                            .foregroundColor(DesignTokens.Brand.primary(themeManager.resolvedColorScheme))
                         Text("Secure backup of your creations")
                             .font(.system(size: 16, weight: .medium))
                             .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
@@ -102,16 +102,16 @@ struct SignInView: View {
                         HStack {
                             if isLoading {
                                 ProgressView()
-                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    .progressViewStyle(CircularProgressViewStyle(tint: DesignTokens.Text.onBrand(themeManager.resolvedColorScheme)))
                                     .scaleEffect(0.8)
                             }
                             Text(isSignUp ? "Create Account" : "Sign In")
                                 .font(.system(size: 16, weight: .bold))
                         }
-                        .foregroundColor(.white)
+                        .foregroundColor(DesignTokens.Text.onBrand(themeManager.resolvedColorScheme))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
-                        .background(isFormValid ? DesignTokens.Brand.primary(.light) : DesignTokens.Brand.primary(.light).opacity(0.6))
+                        .background(isFormValid ? DesignTokens.Brand.primary(themeManager.resolvedColorScheme) : DesignTokens.Brand.primary(themeManager.resolvedColorScheme).opacity(0.6))
                         .cornerRadius(12)
                     }
                     .disabled(!isFormValid || isLoading)

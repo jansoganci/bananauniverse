@@ -33,14 +33,14 @@ struct PaywallErrorSection: View {
                     Text("Retry")
                 }
                 .font(DesignTokens.Typography.headline)
-                .foregroundColor(.white)
+                .foregroundColor(DesignTokens.Text.onBrand(colorScheme))
                 .frame(maxWidth: .infinity)
                 .frame(height: DesignTokens.Layout.buttonHeight)
                 .background(
                     LinearGradient(
                         colors: [
-                            DesignTokens.Gradients.premiumStart(colorScheme),
-                            DesignTokens.Gradients.premiumEnd(colorScheme)
+                            DesignTokens.Gradients.primaryStart(colorScheme),
+                            DesignTokens.Gradients.primaryEnd(colorScheme)
                         ],
                         startPoint: .leading,
                         endPoint: .trailing

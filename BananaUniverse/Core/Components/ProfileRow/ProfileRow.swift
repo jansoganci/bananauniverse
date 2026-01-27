@@ -101,7 +101,7 @@ struct ProfileRow: View {
             icon: "star.fill",
             title: "Credits",
             subtitle: "10 credits available",
-            iconColor: DesignTokens.Brand.primary(.light),
+            iconColor: DesignTokens.Brand.primary(.dark),
             showChevron: true,
             action: {
                 print("Credits tapped")
@@ -142,7 +142,7 @@ struct ProfileRow: View {
             icon: "star.fill",
             title: "Credits",
             subtitle: "10 credits available",
-            iconColor: DesignTokens.Brand.primary(.dark),
+            iconColor: nil, // Will use default Brand.primary(colorScheme)
             showChevron: true,
             action: {
                 print("Credits tapped")

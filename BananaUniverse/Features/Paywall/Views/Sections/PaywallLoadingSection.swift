@@ -14,7 +14,7 @@ struct PaywallLoadingSection: View {
         VStack(spacing: DesignTokens.Spacing.md) {
             ProgressView()
                 .scaleEffect(1.5)
-                .tint(DesignTokens.Brand.accent(colorScheme))
+                .tint(DesignTokens.Brand.primary(colorScheme))
             
             Text("Loading products...")
                 .font(DesignTokens.Typography.subheadline)

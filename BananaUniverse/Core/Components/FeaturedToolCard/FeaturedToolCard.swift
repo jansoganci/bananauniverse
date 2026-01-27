@@ -90,7 +90,7 @@ struct FeaturedToolCard: View {
                             if creditManager.shouldShowQuotaWarning {
                                 Image(systemName: "exclamationmark.triangle.fill")
                                     .font(.system(size: 10, weight: .semibold))
-                                    .foregroundColor(.orange)
+                                    .foregroundColor(DesignTokens.Semantic.warning(themeManager.resolvedColorScheme))
                             }
                             
                             Image(systemName: "play.fill")

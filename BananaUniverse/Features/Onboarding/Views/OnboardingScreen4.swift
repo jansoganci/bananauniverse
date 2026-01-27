@@ -50,7 +50,7 @@ struct OnboardingScreen4: View {
                 // Warning 1: Result page close
                 HStack(alignment: .top, spacing: DesignTokens.Spacing.sm) {
                     Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundColor(.orange)
+                        .foregroundColor(DesignTokens.Semantic.warning(colorScheme))
                         .font(.system(size: 20))
                     
                     VStack(alignment: .leading, spacing: 4) {
@@ -68,7 +68,7 @@ struct OnboardingScreen4: View {
                 // Warning 2: Auto deletion
                 HStack(alignment: .top, spacing: DesignTokens.Spacing.sm) {
                     Image(systemName: "clock.fill")
-                        .foregroundColor(.blue)
+                        .foregroundColor(DesignTokens.Brand.accent(colorScheme))
                         .font(.system(size: 20))
                     
                     VStack(alignment: .leading, spacing: 4) {

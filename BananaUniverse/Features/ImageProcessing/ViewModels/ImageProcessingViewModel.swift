@@ -39,10 +39,10 @@ class ImageProcessingViewModel: ObservableObject {
     @Published var showingResult = false
     @Published var showingProcessing = false
     @Published var processingJobId: String?
-    @Published var resultJobId: String? // ✅ YENİ: Result page için job ID
+    @Published var resultJobId: String? // Result page job ID
     @Published var processingTheme: Tool?
     @Published private var processingComplete = false  // Guard against duplicate handler calls
-    @Published var isImageSaved: Bool = false // ✅ YENİ: Kaydedildi mi?
+    @Published var isImageSaved: Bool = false // Whether image has been saved
 
     // MARK: - Dependencies
     
@@ -271,12 +271,12 @@ class ImageProcessingViewModel: ObservableObject {
 
         processingComplete = true
         
-        // ✅ YENİ: Job ID'yi sakla (silme işlemi için)
+        // Store job ID for deletion operation
         if let jobId = processingJobId {
             resultJobId = jobId
         }
         
-        // ✅ YENİ: Reset saved state
+        // Reset saved state
         isImageSaved = false
 
         #if DEBUG

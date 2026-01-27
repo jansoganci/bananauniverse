@@ -18,8 +18,8 @@ struct PaywallHeroSection: View {
                     .fill(
                         LinearGradient(
                             colors: [
-                                DesignTokens.Gradients.premiumStart(colorScheme).opacity(0.3),
-                                DesignTokens.Gradients.premiumEnd(colorScheme).opacity(0.3)
+                                DesignTokens.Gradients.primaryStart(colorScheme).opacity(0.3),
+                                DesignTokens.Gradients.primaryEnd(colorScheme).opacity(0.3)
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
@@ -33,8 +33,8 @@ struct PaywallHeroSection: View {
                     .foregroundStyle(
                         LinearGradient(
                             colors: [
-                                DesignTokens.Gradients.premiumStart(colorScheme),
-                                DesignTokens.Gradients.premiumEnd(colorScheme)
+                                DesignTokens.Gradients.primaryStart(colorScheme),
+                                DesignTokens.Gradients.primaryEnd(colorScheme)
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
@@ -54,7 +54,7 @@ struct PaywallHeroSection: View {
             VStack(spacing: DesignTokens.Spacing.xs) {
                 Text("Keep creating amazing photos")
                     .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(DesignTokens.Gradients.premiumStart(colorScheme))
+                    .foregroundColor(DesignTokens.Brand.primary(colorScheme))
                 
                 Text("Instant access • No subscription")
                     .font(.system(size: 14, weight: .regular))

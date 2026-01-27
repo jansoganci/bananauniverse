@@ -11,11 +11,11 @@
 //  - Manages @Published UI state
 //  - Provides computed properties for UI consumption
 //
-//  REMOVED RESPONSIBILITIES (Now in separate services):
-//  ❌ Network calls → QuotaService
-//  ❌ Cache management → QuotaCache
-//  ❌ Error handling → QuotaError/CreditError
-//  ❌ Manual JSON decoding → QuotaService
+//  Removed responsibilities (now in separate services):
+//  - Network calls → QuotaService
+//  - Cache management → QuotaCache
+//  - Error handling → QuotaError/CreditError
+//  - Manual JSON decoding → QuotaService
 //
 
 import Foundation

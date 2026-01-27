@@ -46,7 +46,7 @@ struct ErrorView: View {
                 .foregroundColor(.white)
                 .padding(.horizontal, DesignTokens.Spacing.lg)
                 .padding(.vertical, DesignTokens.Spacing.md)
-                .background(DesignTokens.Brand.primary(.light))
+                .background(DesignTokens.Brand.primary(themeManager.resolvedColorScheme))
                 .cornerRadius(DesignTokens.CornerRadius.md)
             }
             .accessibilityLabel("Try again")

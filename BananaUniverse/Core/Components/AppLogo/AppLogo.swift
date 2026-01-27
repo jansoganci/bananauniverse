@@ -3,6 +3,7 @@ import SwiftUI
 struct AppLogo: View {
     let size: CGFloat
     let showText: Bool
+    @Environment(\.colorScheme) var colorScheme
     
     init(size: CGFloat = 40, showText: Bool = false) {
         self.size = size
@@ -10,7 +11,7 @@ struct AppLogo: View {
     }
     
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: DesignTokens.Spacing.sm) {
             Image("AppLogo")
                 .resizable()
                 .aspectRatio(contentMode: .fit)
@@ -18,9 +19,9 @@ struct AppLogo: View {
                 .clipShape(RoundedRectangle(cornerRadius: size * 0.2))
             
             if showText {
-                Text("nano.banana")
+                Text("Flario")
                     .font(.system(size: size * 0.4, weight: .bold, design: .rounded))
-                    .foregroundColor(.primary)
+                    .foregroundColor(DesignTokens.Brand.primary(colorScheme))
             }
         }
     }

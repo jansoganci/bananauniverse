@@ -133,7 +133,7 @@ struct AI_Disclosure_View: View {
                     icon: "cpu",
                     title: "Local Processing",
                     description: "Offline image optimizations",
-                    color: DesignTokens.Brand.primary(.light)
+                    color: DesignTokens.Brand.primary(themeManager.resolvedColorScheme)
                 )
             }
         }

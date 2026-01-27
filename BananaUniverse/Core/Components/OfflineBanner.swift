@@ -46,10 +46,10 @@ struct OfflineBanner: View {
                             .frame(width: 24, height: 24)
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
+                .padding(.horizontal, DesignTokens.Spacing.md)
+                .padding(.vertical, DesignTokens.Spacing.sm)
                 .background(
-                    Color.orange
+                    DesignTokens.Semantic.warning(themeManager.resolvedColorScheme)
                         .ignoresSafeArea(edges: .top)
                 )
                 .transition(.move(edge: .top).combined(with: .opacity))

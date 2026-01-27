@@ -47,23 +47,10 @@ struct BeforeAfterSlider: View {
                         .aspectRatio(contentMode: .fill)
                         .frame(width: width, height: height)
                         .clipped()
-                } else if let beforeImageURL = beforeImageURL {
-                    AsyncImage(url: URL(string: beforeImageURL)) { phase in
-                        switch phase {
-                        case .success(let image):
-                            image
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .frame(width: width, height: height)
-                                .clipped()
-                        case .empty, .failure:
-                            placeholderView(size: CGSize(width: width, height: height))
-                        @unknown default:
-                            placeholderView(size: CGSize(width: width, height: height))
-                        }
-                    }
                 } else {
-                    placeholderView(size: CGSize(width: width, height: height))
+                    CachedAsyncImage(url: beforeImageURL != nil ? URL(string: beforeImageURL!) : nil)
+                        .frame(width: width, height: height)
+                        .clipped()
                 }
                 
                 // After image (masked based on slider position)
@@ -77,27 +64,14 @@ struct BeforeAfterSlider: View {
                             Rectangle()
                                 .frame(width: maskWidth)
                         )
-                } else if let afterImageURL = afterImageURL {
-                    AsyncImage(url: URL(string: afterImageURL)) { phase in
-                        switch phase {
-                        case .success(let image):
-                            image
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .frame(width: width, height: height)
-                                .clipped()
-                                .mask(
-                                    Rectangle()
-                                        .frame(width: maskWidth)
-                                )
-                        case .empty, .failure:
-                            placeholderView(size: CGSize(width: width, height: height))
-                        @unknown default:
-                            placeholderView(size: CGSize(width: width, height: height))
-                        }
-                    }
                 } else {
-                    placeholderView(size: CGSize(width: width, height: height))
+                    CachedAsyncImage(url: afterImageURL != nil ? URL(string: afterImageURL!) : nil)
+                        .frame(width: width, height: height)
+                        .clipped()
+                        .mask(
+                            Rectangle()
+                                .frame(width: maskWidth)
+                        )
                 }
                 
                 // Slider handle
@@ -109,13 +83,13 @@ struct BeforeAfterSlider: View {
                         
                         ZStack {
                             Circle()
-                                .fill(Color.white)
+                                .fill(DesignTokens.Surface.primary(colorScheme))
                                 .frame(width: 40, height: 40)
-                                .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 2)
+                                .shadow(color: DesignTokens.ShadowColors.default(colorScheme), radius: 8, x: 0, y: 2)
                             
                             Image(systemName: "line.horizontal.3")
                                 .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(.gray)
+                                .foregroundColor(DesignTokens.Text.tertiary(colorScheme))
                         }
                         
                         Spacer()
@@ -125,12 +99,12 @@ struct BeforeAfterSlider: View {
                 
                 // Divider line
                 Rectangle()
-                    .fill(Color.white.opacity(0.8))
+                    .fill(DesignTokens.Surface.primary(colorScheme).opacity(0.8))
                     .frame(width: 2)
                     .offset(x: dividerOffset)
             }
             .cornerRadius(DesignTokens.CornerRadius.lg)
-            .shadow(color: .black.opacity(0.3), radius: 12, x: 0, y: 6)
+            .shadow(color: DesignTokens.ShadowColors.default(colorScheme).opacity(0.3), radius: 12, x: 0, y: 6)
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { value in
@@ -148,33 +122,6 @@ struct BeforeAfterSlider: View {
         }
         .frame(height: 280)
     }
-    
-    private func placeholderView(size: CGSize) -> some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.lg)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            DesignTokens.Brand.secondary(colorScheme).opacity(0.3),
-                            DesignTokens.Brand.secondary(colorScheme).opacity(0.2)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-            
-            VStack(spacing: 8) {
-                Image(systemName: "photo")
-                    .font(.system(size: 40))
-                    .foregroundColor(DesignTokens.Brand.secondary(colorScheme))
-                
-                Text("Loading...")
-                    .font(DesignTokens.Typography.caption1)
-                    .foregroundColor(DesignTokens.Text.secondary(colorScheme))
-            }
-        }
-        .frame(width: size.width, height: size.height)
-    }
 }
 
 // MARK: - Preview
@@ -185,7 +132,6 @@ struct BeforeAfterSlider: View {
         afterImageName: "OnboardingAfter"
     )
     .padding()
-    .background(Color.black)
+    .background(DesignTokens.Background.primary(.dark))
 }
 #endif
-

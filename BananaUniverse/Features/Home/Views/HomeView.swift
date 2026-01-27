@@ -11,13 +11,11 @@ struct HomeView: View {
     @State private var showPaywall = false
     @StateObject private var authService = HybridAuthService.shared
     @StateObject private var creditManager = CreditManager.shared
-    @StateObject private var viewModel = HomeViewModel() // ✅ NEW: ViewModel for dynamic data
+    @StateObject private var viewModel = HomeViewModel()
     @EnvironmentObject var themeManager: ThemeManager
     let onToolSelected: (Tool) -> Void // Callback for tool selection
-    @State private var rawSearch: String = ""
     @State private var searchQuery: String = ""
-    @State private var searchTimer: Timer?
-    @State private var hasSearchResults: Bool = true
+    @State private var isSearchPresented = false
     
     var body: some View {
         NavigationStack {
@@ -26,9 +24,32 @@ struct HomeView: View {
                 UnifiedHeaderBar(
                     title: "",
                     leftContent: .appLogo(32),
-                    rightContent: .quotaBadge(creditManager.creditsRemaining, {
-                        showPaywall = true
-                    })
+                    rightContent: .custom {
+                        AnyView(
+                            HStack(spacing: DesignTokens.Spacing.md) {
+                                // Search icon button
+                                Button {
+                                    withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                                        isSearchPresented = true
+                                    }
+                                } label: {
+                                    Image(systemName: "magnifyingglass")
+                                        .font(.system(size: 22, weight: .medium))
+                                        .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
+                                }
+                                .accessibilityLabel("Search tools")
+                                .accessibilityHint("Double tap to open search")
+                                
+                                // Credits badge
+                                QuotaDisplayView(
+                                    style: .compact,
+                                    action: {
+                                        showPaywall = true
+                                    }
+                                )
+                            }
+                        )
+                    }
                 )
                 
                 
@@ -38,71 +59,19 @@ struct HomeView: View {
                         .padding(.horizontal, DesignTokens.Spacing.md)
                         .padding(.top, DesignTokens.Spacing.sm)
                 }
-                
-                // Search Bar
-                HStack(spacing: DesignTokens.Spacing.sm) {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
-                        .font(.system(size: 16, weight: .medium))
-
-                    TextField("Search tools…", text: $rawSearch)
-                        .textInputAutocapitalization(.never)
-                        .disableAutocorrection(true)
-                        .font(.system(size: 16))
-                        .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
-                        .onChange(of: rawSearch) { newValue in
-                            searchTimer?.invalidate()
-                            searchTimer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: false) { _ in
-                                self.searchQuery = sanitizeSearch(newValue)
-                                // Optional console analytics:
-                                // print("📊 ANALYTICS", ["event":"search_performed","query": self.searchQuery])
-                            }
-                        }
-                        .accessibilityLabel("Search tools")
-                        .accessibilityHint("Type to filter available tools")
-
-                    if !rawSearch.isEmpty {
-                        Button {
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                rawSearch = ""
-                                searchQuery = ""
-                            }
-                        } label: {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
-                                .font(.system(size: 16))
-                        }
-                        .accessibilityLabel("Clear search")
-                        .transition(.scale.combined(with: .opacity))
-                    }
-                }
-                .padding(.horizontal, DesignTokens.Spacing.md)
-                .padding(.vertical, 12)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(DesignTokens.Background.secondary(themeManager.resolvedColorScheme))
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(DesignTokens.Text.secondary(themeManager.resolvedColorScheme).opacity(0.1), lineWidth: 1)
-                )
-                .padding(.horizontal, DesignTokens.Spacing.md)
-                .padding(.top, DesignTokens.Spacing.md)
-                .padding(.bottom, DesignTokens.Spacing.sm)
 
                 // Content Area
                 ScrollView {
                     VStack(spacing: DesignTokens.Spacing.md) {
                         // Loading State
                         if viewModel.isLoading && !viewModel.hasData {
-                            ProgressView()
-                                .padding(.top, 60)
+                            HomeSkeletonView()
                         }
 
-                        // Featured Carousel (only show when not searching)
-                        if searchQuery.isEmpty && !viewModel.carouselThemes.isEmpty {
+                        // Featured Carousel
+                        if !viewModel.carouselThemes.isEmpty {
                             FeaturedCarouselView(
-                                tools: viewModel.carouselThemes, // ✅ CHANGED: Use ViewModel data
+                                tools: viewModel.carouselThemes,
                                 onToolTap: handleToolTap
                             )
                             .padding(.horizontal, DesignTokens.Spacing.md)
@@ -112,36 +81,14 @@ struct HomeView: View {
                             ))
                         }
 
-                        // Empty State (when searching with no results)
-                        if !searchQuery.isEmpty && !hasSearchResults {
-                            VStack(spacing: DesignTokens.Spacing.md) {
-                                Image(systemName: "magnifyingglass")
-                                    .font(.system(size: 48, weight: .light))
-                                    .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
-                                    .padding(.top, 60)
-
-                                Text("No tools found")
-                                    .font(.system(size: 20, weight: .semibold))
-                                    .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
-
-                                Text("Try a different search term")
-                                    .font(.system(size: 14))
-                                    .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.top, 40)
-                            .transition(.opacity)
-                        }
-
                         // Category Rows (Horizontal Scroll - Amazon Style)
-                        // ✅ CHANGED: Use dynamic categories from database
                         ForEach(viewModel.categories, id: \.id) { category in
                             CategoryRow(
                                 title: category.name,
                                 tools: viewModel.remainingThemes(for: category.id),
                                 onToolTap: handleToolTap,
                                 onSeeAllTap: nil, // Placeholder for future "See All" functionality
-                                searchQuery: searchQuery.isEmpty ? nil : searchQuery
+                                searchQuery: nil // No inline filtering anymore
                             )
                         }
                     }
@@ -153,22 +100,11 @@ struct HomeView: View {
             .navigationTitle("")
             .toolbar(.hidden, for: .navigationBar)
             .onAppear {
-                // ✅ NEW: Load themes from database on appear
                 if !viewModel.hasData {
                     viewModel.loadData()
                 }
             }
-            .onDisappear {
-                // Fix timer memory leak
-                searchTimer?.invalidate()
-                searchTimer = nil
-            }
-            .onChange(of: searchQuery) { _ in
-                // Update search results state
-                updateSearchResults()
-            }
             .refreshable {
-                // ✅ NEW: Pull to refresh support
                 viewModel.refresh()
             }
             .alert("Error Loading Themes", isPresented: $viewModel.showingErrorAlert) {
@@ -180,14 +116,24 @@ struct HomeView: View {
                 Text(viewModel.errorMessage ?? "An error occurred")
             }
         }
+        .fullScreenCover(isPresented: $isSearchPresented) {
+            FullScreenSearchView(
+                searchQuery: $searchQuery,
+                tools: viewModel.allThemes,
+                onToolSelected: { tool in
+                    isSearchPresented = false
+                    handleToolTap(tool)
+                },
+                onDismiss: {
+                    isSearchPresented = false
+                }
+            )
+            .environmentObject(themeManager)
+        }
         .sheet(isPresented: $showPaywall) {
             PaywallPreview()
         }
     }
-    
-    // MARK: - Computed Properties
-    // ✅ REMOVED: Hardcoded categories - now using viewModel.categories (database-driven)
-    
     
     // MARK: - Helper Methods
 
@@ -199,26 +145,6 @@ struct HomeView: View {
         onToolSelected(tool)
     }
 
-    private func sanitizeSearch(_ input: String) -> String {
-        let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
-        let capped = String(trimmed.prefix(100))
-        // allow alphanumeric, space, dot, dash, underscore
-        return capped.filter { $0.isLetter || $0.isNumber || " .-_".contains($0) }
-    }
-
-    private func updateSearchResults() {
-        guard !searchQuery.isEmpty else {
-            hasSearchResults = true
-            return
-        }
-
-        // ✅ CHANGED: Use ViewModel search instead of static arrays
-        let matchingTools = viewModel.searchThemes(query: searchQuery)
-
-        withAnimation(.easeInOut(duration: 0.2)) {
-            hasSearchResults = !matchingTools.isEmpty
-        }
-    }
 }
 
 
@@ -250,11 +176,11 @@ struct QuotaWarningBanner: View {
                 showPaywall = true
             }
             .font(.system(size: 12, weight: .semibold))
-            .foregroundColor(.white)
+            .foregroundColor(DesignTokens.Text.onBrand(themeManager.resolvedColorScheme))
             .padding(.horizontal, DesignTokens.Spacing.sm)
             .padding(.vertical, DesignTokens.Spacing.xs)
-            .background(DesignTokens.Brand.primary(.light))
-            .cornerRadius(8)
+            .background(DesignTokens.Brand.primary(themeManager.resolvedColorScheme))
+            .cornerRadius(DesignTokens.CornerRadius.sm)
         }
         .padding(.horizontal, DesignTokens.Spacing.md)
         .padding(.vertical, DesignTokens.Spacing.sm)
@@ -269,6 +195,50 @@ struct QuotaWarningBanner: View {
         .sheet(isPresented: $showPaywall) {
             PaywallPreview()
         }
+    }
+}
+
+
+// MARK: - Home Skeleton View
+struct HomeSkeletonView: View {
+    @EnvironmentObject var themeManager: ThemeManager
+    
+    var body: some View {
+        VStack(spacing: DesignTokens.Spacing.lg) {
+            // Carousel Skeleton
+            SkeletonView()
+                .frame(width: 350, height: 220)
+                .cornerRadius(DesignTokens.CornerRadius.lg)
+                .padding(.horizontal, DesignTokens.Spacing.md)
+            
+            // Category Rows Skeleton
+            ForEach(0..<2) { _ in
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+                    SkeletonView()
+                        .frame(width: 120, height: 20)
+                        .cornerRadius(4)
+                        .padding(.horizontal, DesignTokens.Spacing.md)
+                    
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: DesignTokens.Spacing.md) {
+                            ForEach(0..<3) { _ in
+                                VStack(alignment: .center, spacing: DesignTokens.Spacing.sm) {
+                                    SkeletonView()
+                                        .frame(width: 120, height: 120)
+                                        .cornerRadius(DesignTokens.CornerRadius.sm)
+                                    
+                                    SkeletonView()
+                                        .frame(width: 80, height: 16)
+                                        .cornerRadius(4)
+                                }
+                            }
+                        }
+                        .padding(.horizontal, DesignTokens.Spacing.md)
+                    }
+                }
+            }
+        }
+        .padding(.top, DesignTokens.Spacing.sm)
     }
 }
 

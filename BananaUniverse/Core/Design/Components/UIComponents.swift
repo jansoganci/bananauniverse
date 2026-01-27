@@ -8,7 +8,7 @@
 
 import SwiftUI
 
-// MARK: - 🎯 PRIMARY BUTTON COMPONENT
+// MARK: - Primary Button Component
 
 /// **Steve Jobs Philosophy**: "Every button should feel like it wants to be pressed"
 struct PrimaryButton: View {
@@ -93,7 +93,7 @@ struct PrimaryButton: View {
     }
 }
 
-// MARK: - 🎯 SECONDARY BUTTON COMPONENT
+// MARK: - Secondary Button Component
 
 struct SecondaryButton: View {
     let title: String
@@ -183,7 +183,7 @@ struct SecondaryButton: View {
     }
 }
 
-// MARK: - 🎯 CARD COMPONENT
+// MARK: - Card Component
 
 /// **Steve Jobs Rule**: "Cards should feel like they're floating"
 struct AppCard<Content: View>: View {
@@ -242,7 +242,7 @@ struct AppCard<Content: View>: View {
     }
 }
 
-// MARK: - 🎯 INPUT FIELD COMPONENT
+// MARK: - Input Field Component
 
 /// **Steve Jobs Philosophy**: "Input should feel natural and responsive"
 struct AppTextField: View {
@@ -313,7 +313,7 @@ struct AppTextField: View {
     }
 }
 
-// MARK: - 🎯 LOADING INDICATOR COMPONENT
+// MARK: - Loading Indicator Component
 
 struct AppLoadingIndicator: View {
     let message: String
@@ -351,7 +351,7 @@ struct AppLoadingIndicator: View {
     }
 }
 
-// MARK: - 🎯 QUOTA BADGE COMPONENT
+// MARK: - Quota Badge Component
 
 struct QuotaBadge: View {
     let remaining: Int
@@ -372,18 +372,18 @@ struct QuotaBadge: View {
                     .font(DesignTokens.Typography.caption1)
                     .fontWeight(.semibold)
             }
-            .foregroundColor(.white)
+            .foregroundColor(isPro ? DesignTokens.Text.onBrand(colorScheme) : DesignTokens.Text.inverse)
             .padding(.horizontal, DesignTokens.Spacing.sm)
             .padding(.vertical, DesignTokens.Spacing.xs)
             .background(
                 Capsule()
-                    .fill(isPro ? DesignTokens.Brand.accent(.light) : DesignTokens.Brand.secondary(colorScheme))
+                    .fill(isPro ? DesignTokens.Brand.primary(colorScheme) : DesignTokens.Brand.secondary(colorScheme))
             )
             .overlay(
                 Capsule()
                     .stroke(
                         colorScheme == .dark
-                            ? Color.white.opacity(0.15)
+                            ? DesignTokens.Special.borderDefault(colorScheme)
                             : Color.clear,
                         lineWidth: 0.5
                     )
@@ -393,7 +393,7 @@ struct QuotaBadge: View {
     }
 }
 
-// MARK: - 🎯 TOAST NOTIFICATION COMPONENT
+// MARK: - Toast Notification Component
 
 struct ToastNotification: View {
     let message: String
@@ -458,7 +458,7 @@ struct ToastNotification: View {
     }
 }
 
-// MARK: - 🎯 PREVIEW HELPERS
+// MARK: - Preview Helpers
 
 #Preview("Buttons") {
     VStack(spacing: DesignTokens.Spacing.lg) {

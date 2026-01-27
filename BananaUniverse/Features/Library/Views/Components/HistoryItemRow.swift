@@ -28,35 +28,11 @@ struct HistoryItemRow: View {
         }) {
             HStack(spacing: DesignTokens.Spacing.sm) {
                 // Thumbnail
-                AsyncImage(url: item.thumbnailURL) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .transition(.opacity.animation(.easeInOut(duration: 0.25)))
-                    case .failure(_):
-                        VStack(spacing: 8) {
-                            Image(systemName: "photo")
-                                .font(.system(size: 24))
-                                .foregroundColor(DesignTokens.Text.tertiary(themeManager.resolvedColorScheme))
-                            
-                            Text("Image failed to load")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(DesignTokens.Surface.primary(themeManager.resolvedColorScheme))
-                    case .empty:
-                        SkeletonView()
-                    @unknown default:
-                        EmptyView()
-                    }
-                }
-                .frame(width: 80, height: 80)
-                .clipShape(RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.sm))
-                .accessibilityHidden(true)
-                .id(item.thumbnailURL?.absoluteString ?? item.id)
+                CachedAsyncImage(url: item.thumbnailURL)
+                    .frame(width: 80, height: 80)
+                    .clipShape(RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.sm))
+                    .accessibilityHidden(true)
+                    .id(item.thumbnailURL?.absoluteString ?? item.id)
                 
                 // Info Section
                 VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
@@ -120,35 +96,5 @@ struct HistoryItemRow: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(item.effectTitle), \(item.status.displayText), \(item.relativeDate)")
         .accessibilityHint("Double tap to view details")
-    }
-}
-
-// MARK: - Skeleton View
-struct SkeletonView: View {
-    @State private var isAnimating = false
-    @EnvironmentObject var themeManager: ThemeManager
-    
-    var body: some View {
-        Rectangle()
-            .fill(
-                LinearGradient(
-                    colors: [
-                        DesignTokens.Surface.secondary(themeManager.resolvedColorScheme),
-                        DesignTokens.Surface.elevated(themeManager.resolvedColorScheme),
-                        DesignTokens.Surface.secondary(themeManager.resolvedColorScheme)
-                    ],
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
-            )
-            .opacity(isAnimating ? 0.3 : 0.6)
-            .animation(
-                .easeInOut(duration: 1.0)
-                .repeatForever(autoreverses: true),
-                value: isAnimating
-            )
-            .onAppear {
-                isAnimating = true
-            }
     }
 }

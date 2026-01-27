@@ -22,8 +22,8 @@ struct BenefitCard: View {
                     .fill(
                         LinearGradient(
                             colors: [
-                                DesignTokens.Gradients.premiumStart(colorScheme).opacity(0.2),
-                                DesignTokens.Gradients.premiumEnd(colorScheme).opacity(0.2)
+                                DesignTokens.Gradients.primaryStart(colorScheme).opacity(0.2),
+                                DesignTokens.Gradients.primaryEnd(colorScheme).opacity(0.2)
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
@@ -36,8 +36,8 @@ struct BenefitCard: View {
                     .foregroundStyle(
                         LinearGradient(
                             colors: [
-                                DesignTokens.Gradients.premiumStart(colorScheme),
-                                DesignTokens.Gradients.premiumEnd(colorScheme)
+                                DesignTokens.Gradients.primaryStart(colorScheme),
+                                DesignTokens.Gradients.primaryEnd(colorScheme)
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
@@ -68,7 +68,7 @@ struct BenefitCard: View {
                         .stroke(
                             LinearGradient(
                                 colors: [
-                                    DesignTokens.Gradients.premiumStart(colorScheme).opacity(0.2),
+                                    DesignTokens.Gradients.primaryStart(colorScheme).opacity(0.2),
                                     Color.clear
                                 ],
                                 startPoint: .leading,

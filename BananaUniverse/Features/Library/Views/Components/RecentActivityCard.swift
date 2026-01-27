@@ -24,57 +24,11 @@ struct RecentActivityCard: View {
             onTap()
         }) {
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
-                // Thumbnail (real image or fallback)
-                Group {
-                    if let thumbnailURL = item.thumbnailURL {
-                        AsyncImage(url: thumbnailURL) { phase in
-                            switch phase {
-                            case .success(let image):
-                                image
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fill)
-                            case .failure(_), .empty:
-                                // Fallback to gradient with icon
-                                RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.md)
-                                    .fill(
-                                        LinearGradient(
-                                            colors: [
-                                                DesignTokens.Brand.primary(colorScheme).opacity(0.6),
-                                                DesignTokens.Brand.secondary(colorScheme).opacity(0.4)
-                                            ],
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        )
-                                    )
-                                    .overlay(
-                                        Image(systemName: iconForEffect(item.effectId))
-                                            .font(.system(size: 32, weight: .medium))
-                                            .foregroundColor(.white.opacity(0.9))
-                                    )
-                            @unknown default:
-                                EmptyView()
-                            }
-                        }
-                    } else {
-                        // No thumbnail: show gradient placeholder
-                        RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.md)
-                            .fill(
-                                LinearGradient(
-                                    colors: [
-                                        DesignTokens.Brand.primary(colorScheme).opacity(0.6),
-                                        DesignTokens.Brand.secondary(colorScheme).opacity(0.4)
-                                    ],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                            .overlay(
-                                Image(systemName: iconForEffect(item.effectId))
-                                    .font(.system(size: 32, weight: .medium))
-                                    .foregroundColor(.white.opacity(0.9))
-                            )
-                    }
-                }
+                // Thumbnail
+                CachedAsyncImage(
+                    url: item.thumbnailURL,
+                    placeholderIcon: iconForEffect(item.effectId)
+                )
                 .frame(width: 120, height: 120)
                 .clipShape(RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.md))
                 .designShadow(DesignTokens.Shadow.md)

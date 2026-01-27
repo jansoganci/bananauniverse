@@ -1,15 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "banana.universe.icon.png",
+      "filename" : "flario-logo@1x.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
+      "filename" : "flario-logo@2x.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
+      "filename" : "flario-logo@3x.png",
       "idiom" : "universal",
       "scale" : "3x"
     }

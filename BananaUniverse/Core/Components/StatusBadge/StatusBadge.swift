@@ -1,9 +1,9 @@
 //
 //  StatusBadge.swift
-//  noname_banana
+//  BananaUniverse
 //
 //  Created by AI Assistant on 16.10.2025.
-//  Status badge component for Library screen
+//  Status badge component - moved to Core for reusability
 //
 
 import SwiftUI
@@ -19,18 +19,11 @@ struct StatusBadge: View {
     
     private var badgeTextColor: Color {
         if status == .completed {
-            // Adaptive text color for "Completed" badge readability
-            // DesignTokens.Text.onSuccess not available, using fallback
-            if themeManager.resolvedColorScheme == .dark {
-                // Bright cyan background in dark mode → use black text for contrast
-                return Color.black
-            } else {
-                // Dark teal background in light mode → use black text
-                return Color.black
-            }
+            // Use DesignTokens.Text.onBrand for better contrast
+            return DesignTokens.Text.onBrand(themeManager.resolvedColorScheme)
         } else {
             // Other statuses maintain white text for consistency
-            return .white
+            return DesignTokens.Text.inverse
         }
     }
     

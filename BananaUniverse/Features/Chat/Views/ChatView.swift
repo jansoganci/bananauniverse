@@ -9,7 +9,7 @@
 import SwiftUI
 import PhotosUI
 
-// MARK: - 🎯 MAIN CHAT CONTAINER VIEW
+// MARK: - Main Chat Container View
 
 struct ChatView: View {
     @ObservedObject var viewModel: ChatViewModel
@@ -43,7 +43,7 @@ struct ChatView: View {
     }
 }
 
-// MARK: - 📦 CHAT CONTAINER VIEW (Root Layout)
+// MARK: - Chat Container View (Root Layout)
 
 struct ChatContainerView: View {
     @ObservedObject var viewModel: ChatViewModel
@@ -294,14 +294,14 @@ struct ChatInputView: View {
             Button(action: onImageTap) {
                 Image(systemName: hasImageSelected ? "photo.fill" : "photo")
                     .font(.system(size: 22, weight: .medium))
-                    .foregroundColor(hasImageSelected ? DesignTokens.Brand.primary(.light) : DesignTokens.Text.tertiary(themeManager.resolvedColorScheme))
+                    .foregroundColor(hasImageSelected ? DesignTokens.Brand.primary(themeManager.resolvedColorScheme) : DesignTokens.Text.tertiary(themeManager.resolvedColorScheme))
                     .frame(width: 36, height: 36)
                     .background(
                         Circle()
                             .fill(DesignTokens.Surface.input(themeManager.resolvedColorScheme))
                             .shadow(
                                 color: themeManager.resolvedColorScheme == .dark
-                                    ? Color(hex: "9D7FD6").opacity(0.15)
+                                    ? DesignTokens.ShadowColors.primary(themeManager.resolvedColorScheme)
                                     : Color.clear,
                                 radius: 8,
                                 x: 0,
@@ -325,7 +325,7 @@ struct ChatInputView: View {
                         .fill(DesignTokens.Surface.input(themeManager.resolvedColorScheme))
                         .shadow(
                             color: themeManager.resolvedColorScheme == .dark
-                                ? Color(hex: "9D7FD6").opacity(0.15)
+                                ? DesignTokens.ShadowColors.primary(themeManager.resolvedColorScheme).opacity(0.15)
                                 : Color.clear,
                             radius: 8,
                             x: 0,
@@ -338,7 +338,7 @@ struct ChatInputView: View {
             Button(action: onSendTap) {
                 Image(systemName: "arrow.up.circle.fill")
                     .font(.system(size: 32, weight: .semibold))
-                    .foregroundColor(canSend ? DesignTokens.Brand.primary(.light) : DesignTokens.Text.quaternary(themeManager.resolvedColorScheme))
+                    .foregroundColor(canSend ? DesignTokens.Brand.primary(themeManager.resolvedColorScheme) : DesignTokens.Text.quaternary(themeManager.resolvedColorScheme))
             }
             .buttonStyle(PlainButtonStyle())
             .disabled(!canSend || isProcessing)
@@ -356,7 +356,7 @@ struct ChatInputView: View {
                     .fill(.ultraThinMaterial)
             }
             .shadow(
-                color: .black.opacity(themeManager.resolvedColorScheme == .dark ? 0.3 : 0.05),
+                color: DesignTokens.ShadowColors.default(themeManager.resolvedColorScheme).opacity(themeManager.resolvedColorScheme == .dark ? 0.3 : 0.05),
                 radius: 8,
                 x: 0,
                 y: -2
@@ -365,7 +365,7 @@ struct ChatInputView: View {
     }
 }
 
-// MARK: - 💭 MESSAGE BUBBLE VIEW
+// MARK: - Message Bubble View
 
 // MARK: - Visual Enhancements from ChatPreview (Gradient, Blur, Shadow, FontWeight)
 
@@ -390,7 +390,7 @@ struct MessageBubbleView: View {
                     // Text content
                     Text(message.content)
                         .font(.system(size: 17, weight: .medium))
-                        .foregroundColor(isFromUser ? .white : DesignTokens.Text.primary(themeManager.resolvedColorScheme))
+                        .foregroundColor(isFromUser ? DesignTokens.Text.inverse : DesignTokens.Text.primary(themeManager.resolvedColorScheme))
                         .padding(.horizontal, 14)
                         .padding(.vertical, 10)
                         .background(
@@ -399,8 +399,8 @@ struct MessageBubbleView: View {
                                     // User bubble with gradient
                                     LinearGradient(
                                         gradient: Gradient(colors: [
-                                            DesignTokens.Gradients.premiumStart(themeManager.resolvedColorScheme),
-                                            DesignTokens.Gradients.premiumEnd(themeManager.resolvedColorScheme)
+                                            DesignTokens.Gradients.primaryStart(themeManager.resolvedColorScheme),
+                                            DesignTokens.Gradients.primaryEnd(themeManager.resolvedColorScheme)
                                         ]),
                                         startPoint: .topLeading,
                                         endPoint: .bottomTrailing
@@ -412,7 +412,7 @@ struct MessageBubbleView: View {
                             }
                             .clipShape(ChatBubbleShape(isFromUser: isFromUser))
                             .shadow(
-                                color: .black.opacity(themeManager.resolvedColorScheme == .dark ? 0.3 : 0.1),
+                                color: DesignTokens.ShadowColors.default(themeManager.resolvedColorScheme).opacity(themeManager.resolvedColorScheme == .dark ? 0.3 : 0.1),
                                 radius: 4,
                                 x: 0,
                                 y: 2
@@ -428,7 +428,7 @@ struct MessageBubbleView: View {
                             .cornerRadius(DesignTokens.CornerRadius.md)
                             .overlay(
                                 RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.md)
-                                    .stroke(Color.black.opacity(0.1), lineWidth: 1)
+                                    .stroke(DesignTokens.Special.borderDefault(themeManager.resolvedColorScheme), lineWidth: 1)
                             )
                             .onTapGesture {
                                 DesignTokens.Haptics.impact(.light)
@@ -468,7 +468,7 @@ struct MessageBubbleView: View {
     private var bubbleColor: Color {
         switch message.type {
         case .user:
-            return DesignTokens.Brand.primary(.light)
+            return DesignTokens.Brand.primary(themeManager.resolvedColorScheme)
         case .assistant:
             return DesignTokens.Surface.chatBubbleIncoming(themeManager.resolvedColorScheme)
         case .error:
@@ -483,7 +483,7 @@ struct MessageBubbleView: View {
     }
 }
 
-// MARK: - 🎨 CHAT BUBBLE SHAPE (WhatsApp-style)
+// MARK: - Chat Bubble Shape (WhatsApp-style)
 
 struct ChatBubbleShape: Shape {
     let isFromUser: Bool
@@ -558,7 +558,7 @@ struct ChatBubbleShape: Shape {
     }
 }
 
-// MARK: - 🎬 MESSAGE ACTION BUTTONS
+// MARK: - Message Action Buttons
 
 struct MessageActionButtons: View {
     let messageId: UUID
@@ -593,12 +593,12 @@ struct MessageActionButtons: View {
                         .font(DesignTokens.Typography.caption1)
                         .fontWeight(.medium)
                 }
-                .foregroundColor(.white)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 7)
+                .foregroundColor(DesignTokens.Text.inverse)
+                .padding(.horizontal, DesignTokens.Spacing.md)
+                .padding(.vertical, DesignTokens.Spacing.xs)
                 .background(
                     Capsule()
-                        .fill(isSaving ? DesignTokens.Brand.secondary(themeManager.resolvedColorScheme) : DesignTokens.Brand.primary(.light))
+                        .fill(isSaving ? DesignTokens.Brand.secondary(themeManager.resolvedColorScheme) : DesignTokens.Brand.primary(themeManager.resolvedColorScheme))
                 )
             }
             .buttonStyle(PlainButtonStyle())
@@ -616,12 +616,12 @@ struct MessageActionButtons: View {
                         .font(DesignTokens.Typography.caption1)
                         .fontWeight(.medium)
                 }
-                .foregroundColor(DesignTokens.Brand.primary(.light))
-                .padding(.horizontal, 12)
-                .padding(.vertical, 7)
+                .foregroundColor(DesignTokens.Brand.primary(themeManager.resolvedColorScheme))
+                .padding(.horizontal, DesignTokens.Spacing.md)
+                .padding(.vertical, DesignTokens.Spacing.xs)
                 .background(
                     Capsule()
-                        .stroke(DesignTokens.Brand.primary(.light), lineWidth: 1.5)
+                        .stroke(DesignTokens.Brand.primary(themeManager.resolvedColorScheme), lineWidth: 1.5)
                         .background(Capsule().fill(DesignTokens.Surface.primary(themeManager.resolvedColorScheme)))
                 )
             }
@@ -641,7 +641,7 @@ struct ProcessingBubbleView: View {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 10) {
                     ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: DesignTokens.Brand.primary(.light)))
+                        .progressViewStyle(CircularProgressViewStyle(tint: DesignTokens.Brand.primary(themeManager.resolvedColorScheme)))
                         .scaleEffect(0.9)
                     
                     Text("Processing your image...")
@@ -651,7 +651,7 @@ struct ProcessingBubbleView: View {
                 
                 if progress > 0 {
                     ProgressView(value: progress)
-                        .progressViewStyle(LinearProgressViewStyle(tint: DesignTokens.Brand.primary(.light)))
+                        .progressViewStyle(LinearProgressViewStyle(tint: DesignTokens.Brand.primary(themeManager.resolvedColorScheme)))
                         .frame(height: 4)
                 }
             }
@@ -689,7 +689,7 @@ struct EmptyStateView: View {
                         .cornerRadius(DesignTokens.CornerRadius.lg)
                         .overlay(
                             RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.lg)
-                                .stroke(Color.black.opacity(0.1), lineWidth: 1)
+                                .stroke(DesignTokens.Special.borderDefault(themeManager.resolvedColorScheme), lineWidth: 1)
                         )
                         .opacity(isProcessing ? 0.6 : 1.0)
                 } else {
@@ -697,12 +697,12 @@ struct EmptyStateView: View {
                     VStack(spacing: DesignTokens.Spacing.md) {
                         ZStack {
                             Circle()
-                                .fill(DesignTokens.Brand.primary(.light).opacity(0.1))
+                                .fill(DesignTokens.Brand.primary(themeManager.resolvedColorScheme).opacity(0.1))
                                 .frame(width: 80, height: 80)
                             
                             Image(systemName: "photo.badge.plus")
                                 .font(.system(size: 36, weight: .medium))
-                                .foregroundColor(DesignTokens.Brand.primary(.light))
+                                .foregroundColor(DesignTokens.Brand.primary(themeManager.resolvedColorScheme))
                         }
                         
                         VStack(spacing: 8) {
@@ -721,7 +721,7 @@ struct EmptyStateView: View {
                 if isProcessing {
                     VStack(spacing: 12) {
                         ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: DesignTokens.Brand.primary(.light)))
+                            .progressViewStyle(CircularProgressViewStyle(tint: DesignTokens.Brand.primary(themeManager.resolvedColorScheme)))
                             .scaleEffect(1.2)
                         
                         Text("Uploading...")
@@ -738,11 +738,11 @@ struct EmptyStateView: View {
     }
 }
 
-// MARK: - 🎨 CHAT DESIGN SYSTEM
+// MARK: - Chat Design System
 
 // ChatDesignSystem has been consolidated into DesignTokens.swift for app-wide consistency
 
-// MARK: - 🎯 TOAST VIEW
+// MARK: - Toast View
 
 enum ToastType {
     case success, error, info
@@ -759,7 +759,7 @@ enum ToastType {
         switch self {
         case .success: return DesignTokens.Brand.secondary(colorScheme)
         case .error: return DesignTokens.Semantic.error(colorScheme)
-        case .info: return DesignTokens.Brand.primary(.light)
+        case .info: return DesignTokens.Brand.primary(colorScheme)
         }
     }
 }
@@ -784,7 +784,7 @@ struct ToastView: View {
         .background(
             Capsule()
                 .fill(DesignTokens.Surface.primary(themeManager.resolvedColorScheme))
-                .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 4)
+                .shadow(color: DesignTokens.ShadowColors.default(themeManager.resolvedColorScheme).opacity(0.15), radius: 8, x: 0, y: 4)
         )
         .padding(.horizontal, DesignTokens.Spacing.md)
     }
@@ -797,6 +797,7 @@ struct ToastView: View {
 struct FullScreenImageViewer: View {
     let image: UIImage
     @Binding var isPresented: Bool
+    @EnvironmentObject var themeManager: ThemeManager
     @State private var scale: CGFloat = 1.0
     @State private var lastScale: CGFloat = 1.0
     @State private var offset: CGSize = .zero
@@ -806,7 +807,7 @@ struct FullScreenImageViewer: View {
     var body: some View {
         ZStack {
             // Background
-            Color.black
+            DesignTokens.Surface.overlay(themeManager.resolvedColorScheme)
                 .ignoresSafeArea()
                 .onTapGesture {
                     DesignTokens.Haptics.impact(.light)
@@ -865,7 +866,7 @@ struct FullScreenImageViewer: View {
                     }) {
                         Image(systemName: "xmark.circle.fill")
                             .font(.system(size: 32))
-                            .foregroundColor(.white.opacity(0.8))
+                            .foregroundColor(DesignTokens.Text.inverse.opacity(0.8))
                             .padding()
                     }
                 }
@@ -875,7 +876,7 @@ struct FullScreenImageViewer: View {
     }
 }
 
-// MARK: - 🎨 PREVIEW
+// MARK: - Preview
 
 #Preview {
     ChatView(viewModel: ChatViewModel())

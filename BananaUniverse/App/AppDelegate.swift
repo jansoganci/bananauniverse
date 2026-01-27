@@ -8,6 +8,7 @@
 
 import UIKit
 import SwiftUI
+import Kingfisher
 
 class AppDelegate: NSObject, UIApplicationDelegate {
     
@@ -16,21 +17,37 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         print("🚀 App launched - setting up background credit refresh")
         #endif
         
-        // Configure URLCache for image caching
-        let cacheSizeMemory = 50 * 1024 * 1024 // 50MB memory cache
-        let cacheSizeDisk = 200 * 1024 * 1024   // 200MB disk cache
-        let cache = URLCache(
-            memoryCapacity: cacheSizeMemory,
-            diskCapacity: cacheSizeDisk,
-            diskPath: "imageCache"
-        )
-        URLCache.shared = cache
-        
-        #if DEBUG
-        print("💾 URLCache configured: \(cacheSizeMemory / 1024 / 1024)MB memory, \(cacheSizeDisk / 1024 / 1024)MB disk")
-        #endif
+        // Phase 2: Configure Kingfisher Global Cache
+        configureKingfisher()
         
         return true
+    }
+    
+    // MARK: - Kingfisher Configuration
+    
+    private func configureKingfisher() {
+        let cache = ImageCache.default
+        
+        // Memory Cache: 100MB
+        cache.memoryStorage.config.totalCostLimit = 100 * 1024 * 1024
+        
+        // Disk Cache: 500MB
+        cache.diskStorage.config.sizeLimit = 500 * 1024 * 1024
+        
+        // Expiration: 7 Days
+        cache.diskStorage.config.expiration = .days(7)
+        
+        // Default Options
+        KingfisherManager.shared.defaultOptions = [
+            .scaleFactor(UIScreen.main.scale),
+            .transition(.fade(0.25)),
+            .cacheSerializer(FormatIndicatedCacheSerializer.png),
+            .diskCacheExpiration(.days(7))
+        ]
+        
+        #if DEBUG
+        print("🖼️ Kingfisher configured: 100MB RAM, 500MB Disk, 7 days expiration")
+        #endif
     }
     
     func applicationDidBecomeActive(_ application: UIApplication) {

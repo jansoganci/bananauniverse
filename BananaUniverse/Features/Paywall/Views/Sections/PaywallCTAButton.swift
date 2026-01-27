@@ -30,7 +30,7 @@ struct PaywallCTAButton: View {
                 if isLoading {
                     ProgressView()
                         .scaleEffect(0.9)
-                        .tint(.white)
+                        .tint(DesignTokens.Text.onBrand(colorScheme))
                 } else {
                     Image(systemName: "sparkles")
                         .font(.system(size: 18, weight: .semibold))
@@ -39,7 +39,7 @@ struct PaywallCTAButton: View {
                 Text(buttonText)
                     .font(.system(size: 18, weight: .bold))
             }
-            .foregroundColor(.white)
+            .foregroundColor(DesignTokens.Text.onBrand(colorScheme))
             .frame(maxWidth: .infinity)
             .frame(height: 56)
             .background(
@@ -47,8 +47,8 @@ struct PaywallCTAButton: View {
                     if selectedProduct != nil && !isLoading {
                         LinearGradient(
                             colors: [
-                                DesignTokens.Gradients.premiumStart(colorScheme),
-                                DesignTokens.Gradients.premiumEnd(colorScheme)
+                                DesignTokens.Gradients.primaryStart(colorScheme),
+                                DesignTokens.Gradients.primaryEnd(colorScheme)
                             ],
                             startPoint: .leading,
                             endPoint: .trailing
@@ -56,8 +56,8 @@ struct PaywallCTAButton: View {
                     } else {
                         LinearGradient(
                             colors: [
-                                DesignTokens.Gradients.premiumStart(colorScheme).opacity(0.5),
-                                DesignTokens.Gradients.premiumEnd(colorScheme).opacity(0.5)
+                                DesignTokens.Gradients.primaryStart(colorScheme).opacity(0.5),
+                                DesignTokens.Gradients.primaryEnd(colorScheme).opacity(0.5)
                             ],
                             startPoint: .leading,
                             endPoint: .trailing
@@ -67,7 +67,7 @@ struct PaywallCTAButton: View {
             )
             .cornerRadius(DesignTokens.CornerRadius.lg)
             .shadow(
-                color: selectedProduct != nil ? DesignTokens.Gradients.premiumStart(colorScheme).opacity(0.4) : Color.clear,
+                color: selectedProduct != nil ? DesignTokens.ShadowColors.primary(colorScheme) : Color.clear,
                 radius: selectedProduct != nil ? 16 : 0,
                 x: 0,
                 y: 8

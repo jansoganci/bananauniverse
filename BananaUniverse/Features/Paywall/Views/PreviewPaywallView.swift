@@ -170,8 +170,8 @@ struct PreviewPaywallView: View {
         .padding(.horizontal, 20)
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color.white.opacity(0.8))
-                .shadow(color: .black.opacity(0.05), radius: 10, x: 0, y: 4)
+                .fill(DesignTokens.Surface.primary(themeManager.resolvedColorScheme).opacity(0.8))
+                .shadow(color: DesignTokens.ShadowColors.default(themeManager.resolvedColorScheme), radius: 10, x: 0, y: 4)
         )
     }
     
@@ -181,7 +181,7 @@ struct PreviewPaywallView: View {
         VStack(spacing: DesignTokens.Spacing.md) {
             ProgressView()
                 .scaleEffect(1.5)
-                .tint(DesignTokens.Brand.accent(themeManager.resolvedColorScheme))
+                .tint(DesignTokens.Brand.primary(themeManager.resolvedColorScheme))
             
             Text("Loading products...")
                 .font(.subheadline)
@@ -216,7 +216,7 @@ struct PreviewPaywallView: View {
         VStack(spacing: 16) {
             Image(systemName: "exclamationmark.triangle")
                 .font(.system(size: 48))
-                .foregroundColor(.orange)
+                .foregroundColor(DesignTokens.Semantic.warning(themeManager.resolvedColorScheme))
             
             Text("Unable to Load Products")
                 .font(.headline)
@@ -274,18 +274,21 @@ struct PreviewPaywallView: View {
                         .font(.system(size: 16, weight: .semibold))
                 }
             }
-            .foregroundColor(.white)
+            .foregroundColor(DesignTokens.Text.onBrand(themeManager.resolvedColorScheme))
             .frame(maxWidth: .infinity)
             .frame(height: 56)
             .background(
                 LinearGradient(
-                    colors: [DesignTokens.Brand.accent(themeManager.resolvedColorScheme), DesignTokens.Brand.accent(themeManager.resolvedColorScheme).opacity(0.8)],
+                    colors: [
+                        DesignTokens.Gradients.primaryStart(themeManager.resolvedColorScheme),
+                        DesignTokens.Gradients.primaryEnd(themeManager.resolvedColorScheme)
+                    ],
                     startPoint: .leading,
                     endPoint: .trailing
                 )
             )
-            .cornerRadius(16)
-            .shadow(color: DesignTokens.Brand.accent(themeManager.resolvedColorScheme).opacity(0.3), radius: 12, x: 0, y: 6)
+            .cornerRadius(DesignTokens.CornerRadius.lg)
+            .shadow(color: DesignTokens.ShadowColors.primary(themeManager.resolvedColorScheme), radius: 12, x: 0, y: 6)
         }
         .disabled(selectedProduct == nil || storeKitService.isLoading)
         .opacity((selectedProduct != nil && !storeKitService.isLoading) ? 1.0 : 0.6)
@@ -374,22 +377,22 @@ struct PreviewPaywallBenefitRow: View {
             // Icon
             Image(systemName: icon)
                 .font(.system(size: 24, weight: .medium))
-                .foregroundColor(DesignTokens.Brand.accent(themeManager.resolvedColorScheme))
+                .foregroundColor(DesignTokens.Brand.primary(themeManager.resolvedColorScheme))
                 .frame(width: 40, height: 40)
                 .background(
                     Circle()
-                        .fill(DesignTokens.Brand.accent(themeManager.resolvedColorScheme).opacity(0.1))
+                        .fill(DesignTokens.Brand.primary(themeManager.resolvedColorScheme).opacity(0.1))
                 )
             
             // Text content
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
                 Text(title)
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(Color(hex: "1A202C"))
+                    .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
                 
                 Text(description)
                     .font(.system(size: 14, weight: .regular))
-                    .foregroundColor(Color(hex: "2D3748"))
+                    .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
                     .lineLimit(2)
             }
             
@@ -416,19 +419,19 @@ struct PreviewPaywallProductCard: View {
                 if shouldShowTrialBadge {
                     Text("3-Day Free Trial")
                         .font(.system(size: 11, weight: .bold))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color.green)
-                        .foregroundColor(.white)
-                        .cornerRadius(6)
+                        .padding(.horizontal, DesignTokens.Spacing.sm)
+                        .padding(.vertical, DesignTokens.Spacing.xs)
+                        .background(DesignTokens.Semantic.success(themeManager.resolvedColorScheme))
+                        .foregroundColor(DesignTokens.Text.inverse)
+                        .cornerRadius(DesignTokens.CornerRadius.xs)
                 }
                 
                 // Header with title
                 HStack {
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
                         Text(product.localizedTitle)
                             .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(Color(hex: "1A202C"))
+                            .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
                         
                         Text(product.localizedDescription)
                             .font(.system(size: 13, weight: .medium))
@@ -441,15 +444,15 @@ struct PreviewPaywallProductCard: View {
                 
                 // Price and savings
                 HStack {
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
                         Text(product.localizedPrice)
                             .font(.system(size: 20, weight: .bold))
-                            .foregroundColor(Color(hex: "1A202C"))
+                            .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
                         
                         if let savings = product.savings {
                             Text(savings)
                                 .font(.system(size: 14, weight: .bold))
-                                .foregroundColor(Color.red)
+                                .foregroundColor(DesignTokens.Semantic.error(themeManager.resolvedColorScheme))
                         }
                     }
                     
@@ -459,25 +462,25 @@ struct PreviewPaywallProductCard: View {
                     if isSelected {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 20))
-                            .foregroundColor(DesignTokens.Brand.accent(themeManager.resolvedColorScheme))
+                            .foregroundColor(DesignTokens.Brand.primary(themeManager.resolvedColorScheme))
                     }
                 }
             }
             .padding(20)
             .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.white)
+                RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.lg)
+                    .fill(DesignTokens.Surface.primary(themeManager.resolvedColorScheme))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 16)
+                        RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.lg)
                             .stroke(
-                                isSelected ? DesignTokens.Brand.accent(themeManager.resolvedColorScheme) : (shouldHighlight ? Color.green : Color.clear),
+                                isSelected ? DesignTokens.Brand.primary(themeManager.resolvedColorScheme) : (shouldHighlight ? DesignTokens.Semantic.success(themeManager.resolvedColorScheme) : Color.clear),
                                 lineWidth: isSelected ? 2 : (shouldHighlight ? 1 : 0)
                             )
                     )
             )
             .scaleEffect(shouldHighlight ? 1.02 : 1.0)
             .shadow(
-                color: .black.opacity(0.08),
+                color: DesignTokens.ShadowColors.default(themeManager.resolvedColorScheme),
                 radius: 8,
                 x: 0,
                 y: 4
@@ -506,19 +509,19 @@ struct StoreKitProductCard: View {
                 if shouldShowTrialBadge {
                     Text("3-Day Free Trial")
                         .font(.system(size: 11, weight: .bold))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color.green)
-                        .foregroundColor(.white)
-                        .cornerRadius(6)
+                        .padding(.horizontal, DesignTokens.Spacing.sm)
+                        .padding(.vertical, DesignTokens.Spacing.xs)
+                        .background(DesignTokens.Semantic.success(themeManager.resolvedColorScheme))
+                        .foregroundColor(DesignTokens.Text.inverse)
+                        .cornerRadius(DesignTokens.CornerRadius.xs)
                 }
                 
                 // Header with title
                 HStack {
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
                         Text(product.displayName)
                             .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(Color(hex: "1A202C"))
+                            .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
                         
                         Text(product.description)
                             .font(.system(size: 13, weight: .medium))
@@ -531,15 +534,15 @@ struct StoreKitProductCard: View {
                 
                 // Price and savings
                 HStack {
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
                         Text(product.displayPrice)
                             .font(.system(size: 20, weight: .bold))
-                            .foregroundColor(Color(hex: "1A202C"))
+                            .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
                         
                         if product.id.contains("yearly") {
                             Text("Save 70%")
                                 .font(.system(size: 14, weight: .bold))
-                                .foregroundColor(Color.red)
+                                .foregroundColor(DesignTokens.Semantic.error(themeManager.resolvedColorScheme))
                         }
                     }
                     
@@ -549,25 +552,25 @@ struct StoreKitProductCard: View {
                     if isSelected {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 20))
-                            .foregroundColor(DesignTokens.Brand.accent(themeManager.resolvedColorScheme))
+                            .foregroundColor(DesignTokens.Brand.primary(themeManager.resolvedColorScheme))
                     }
                 }
             }
             .padding(20)
             .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.white)
+                RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.lg)
+                    .fill(DesignTokens.Surface.primary(themeManager.resolvedColorScheme))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 16)
+                        RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.lg)
                             .stroke(
-                                isSelected ? DesignTokens.Brand.accent(themeManager.resolvedColorScheme) : (shouldHighlight ? Color.green : Color.clear),
+                                isSelected ? DesignTokens.Brand.primary(themeManager.resolvedColorScheme) : (shouldHighlight ? DesignTokens.Semantic.success(themeManager.resolvedColorScheme) : Color.clear),
                                 lineWidth: isSelected ? 2 : (shouldHighlight ? 1 : 0)
                             )
                     )
             )
             .scaleEffect(shouldHighlight ? 1.02 : 1.0)
             .shadow(
-                color: .black.opacity(0.08),
+                color: DesignTokens.ShadowColors.default(themeManager.resolvedColorScheme),
                 radius: 8,
                 x: 0,
                 y: 4

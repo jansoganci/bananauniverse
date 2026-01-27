@@ -1,270 +1,269 @@
 //
 //  DesignTokens.swift
-//  BananaUniverse
+//  Flario
 //
-//  Refactored with Perplexity Research Palette
-//  Date: 2025-11-02
-//  Theme: Premium Gold with Modern iOS Design
+//  Flario Brand Palette - Electric Lime + Charcoal
+//  Date: 2026-01-27
+//  Theme: Fun, Energetic, Approachable
 //
 
 import SwiftUI
 
-// MARK: - 🎨 DESIGN TOKENS - Perplexity Research Palette
+// MARK: - FLARIO DESIGN TOKENS
 
-/// **Design Philosophy**: Professional AI Image Processing Suite
-/// - Premium gold for brand identity and VIP features
-/// - Clean iOS-native design following Apple HIG
-/// - OLED-optimized true blacks for battery efficiency
-/// - WCAG AAA accessibility compliance
+/// **Design Philosophy**: Fun AI Photo Editor for Everyone
+/// - Electric Lime for energy and action
+/// - Clean modern iOS design following Apple HIG
+/// - OLED-optimized deep charcoal for battery efficiency
+/// - WCAG AA accessibility compliance (AAA where possible)
 struct DesignTokens {
 
-    // MARK: - 🌈 Color Palette (OLED Optimized + Theme Aware)
+    // MARK: - Color Palette
 
-    /// **Background Colors** - Rich charcoal for premium dark mode (Canva-inspired)
+    /// **Background Colors** - Deep charcoal for modern dark mode
     struct Background {
         static func primary(_ colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color(hex: "1A1A1D") : Color(hex: "FFFFFF")
+            colorScheme == .dark ? Color(hex: "121417") : Color(hex: "FFFFFF")
         }
 
         static func secondary(_ colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color(hex: "27272A") : Color(hex: "F5F5F5")
+            colorScheme == .dark ? Color(hex: "1E2228") : Color(hex: "F8F9FA")
         }
 
         static func tertiary(_ colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color(hex: "3A3A3F") : Color(hex: "EBEBEB")
+            colorScheme == .dark ? Color(hex: "282D36") : Color(hex: "F1F3F5")
         }
 
         static func elevated(_ colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color(hex: "52525B") : Color(hex: "FFFFFF")
+            colorScheme == .dark ? Color(hex: "252A33") : Color(hex: "FFFFFF")
         }
     }
 
-    /// **Surface Colors** - Apple system grays for native iOS feel
+    /// **Surface Colors** - Card and container backgrounds
     struct Surface {
         static func primary(_ colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color(hex: "1C1C1E") : Color(hex: "FFFFFF")
+            colorScheme == .dark ? Color(hex: "1A1E24") : Color(hex: "F8F9FA")
         }
 
         static func secondary(_ colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color(hex: "2C2C2E") : Color(hex: "F2F2F7")
+            colorScheme == .dark ? Color(hex: "22272F") : Color(hex: "F8F9FA")
         }
 
         static func elevated(_ colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color(hex: "3A3A3C") : Color(hex: "FFFFFF")
+            colorScheme == .dark ? Color(hex: "2A303A") : Color(hex: "FFFFFF")
         }
 
         static func overlay(_ colorScheme: ColorScheme) -> Color {
-            Color.black.opacity(colorScheme == .dark ? 0.75 : 0.4)
+            Color.black.opacity(colorScheme == .dark ? 0.7 : 0.4)
         }
 
         static func input(_ colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color(hex: "1C1C1E") : Color(hex: "F2F2F7")
+            colorScheme == .dark ? Color(hex: "1A1E24") : Color(hex: "F1F3F5")
         }
 
         // Chat-specific surfaces
         static func chatBubbleIncoming(_ colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color(hex: "2C2C2E") : Color(hex: "E9E9EB")
+            colorScheme == .dark ? Color(hex: "22272F") : Color(hex: "F1F3F5")
         }
 
         static func chatBubbleOutgoing(_ colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color(hex: "0A7AFF") : Color(hex: "007AFF")
+            colorScheme == .dark ? Color(hex: "A4FC3C").opacity(0.2) : Color(hex: "A4FC3C").opacity(0.15)
         }
 
         // Dividers
         static func dividerSubtle(_ colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color(hex: "38383A") : Color(hex: "C6C6C8")
+            colorScheme == .dark ? Color(hex: "2A303A") : Color(hex: "E5E7EB")
         }
 
         static func dividerStrong(_ colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color(hex: "48484A") : Color(hex: "8E8E93")
+            colorScheme == .dark ? Color(hex: "3A424D") : Color(hex: "9CA3AF")
         }
     }
 
-    /// **Brand Colors** - Refined purple for balanced dark mode
+    /// **Brand Colors** - Electric Lime + Ice Blue
     struct Brand {
-        // Primary brand color - Creative Purple (AI Magic) - Desaturated for harmony
+        // Primary brand color - Electric Lime (Action, Energy)
         static func primary(_ colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color(hex: "9D7FD6") : Color(hex: "6B21C0")
+            Color(hex: "A4FC3C") // Same in both modes for consistency
         }
 
-        // Secondary brand color - Electric Cyan (Digital accent)
-        static func secondary(_ colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color(hex: "00E5FF") : Color(hex: "007580")
-        }
-
-        // Accent color - Warm Amber (Canva-inspired)
-        static func accent(_ colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color(hex: "FFC93E") : Color(hex: "B36200")
-        }
-
-        // Premium/VIP Badge - Creative Purple (gradient anchor)
-        static func premiumVIP(_ colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color(hex: "9D7FD6") : Color(hex: "6B21C0")
-        }
-
-        // Interactive states (Purple-based) - Recalculated for softer base
+        // Primary pressed state
         static func primaryPressed(_ colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color(hex: "7D5FB0") : Color(hex: "52189C")
+            colorScheme == .dark ? Color(hex: "8AE025") : Color(hex: "7DD321")
         }
 
+        // Primary hover/dark variant
         static func primaryHover(_ colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color(hex: "B8A5E8") : Color(hex: "8338E6")
+            colorScheme == .dark ? Color(hex: "C8FD6D") : Color(hex: "7DD321")
         }
 
+        // Primary disabled
         static func primaryDisabled(_ colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color(hex: "9D7FD6").opacity(0.4) : Color(hex: "6B21C0").opacity(0.4)
+            Color(hex: "A4FC3C").opacity(0.4)
         }
 
-        // Legacy support
-        static let gold = Color(hex: "F4B731")
-        static let teal = Color(hex: "33C3A4")
-        static let purple = Color(hex: "8B5CF6")
-        static let lightBlue = Color(hex: "60A5FA")
-        static let crownIcon = Color(hex: "EFBF04")
-        static let vipBadge = Color(hex: "F4B731")
-        static let goldShimmer = Color(hex: "FFFFFF")
+        // Secondary - Charcoal/Light Gray
+        static func secondary(_ colorScheme: ColorScheme) -> Color {
+            colorScheme == .dark ? Color(hex: "E5E7EB") : Color(hex: "2E3440")
+        }
+
+        // Accent - Ice Blue (highlights, badges)
+        static func accent(_ colorScheme: ColorScheme) -> Color {
+            colorScheme == .dark ? Color(hex: "7DD3FC") : Color(hex: "5FB3D3")
+        }
+
+        // Premium/VIP Badge - use accent for premium features
+        static func premiumVIP(_ colorScheme: ColorScheme) -> Color {
+            colorScheme == .dark ? Color(hex: "A4FC3C") : Color(hex: "7DD321")
+        }
+
+        // Legacy support (for gradual migration)
+        static let lime = Color(hex: "A4FC3C")
+        static let limeLight = Color(hex: "C8FD6D")
+        static let limeDark = Color(hex: "7DD321")
+        static let iceBlue = Color(hex: "5FB3D3")
+        static let iceBlueDark = Color(hex: "7DD3FC")
     }
 
-    /// **Text Colors** - iOS system text with perfect contrast
+    /// **Text Colors** - High contrast for readability
     struct Text {
         static func primary(_ colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color.white : Color.black
+            colorScheme == .dark ? Color(hex: "F9FAFB") : Color(hex: "1A1D23")
         }
 
         static func secondary(_ colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark
-                ? Color(hex: "EBEBF5").opacity(0.6)
-                : Color(hex: "3C3C43")  // No opacity for better contrast
+            colorScheme == .dark ? Color(hex: "9CA3AF") : Color(hex: "6B7280")
         }
 
         static func tertiary(_ colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark
-                ? Color(hex: "EBEBF5").opacity(0.3)
-                : Color(hex: "636366")  // Solid color for better contrast
+            colorScheme == .dark ? Color(hex: "6B7280") : Color(hex: "9CA3AF")
         }
 
         static func quaternary(_ colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark
-                ? Color(hex: "EBEBF5").opacity(0.18)
-                : Color(hex: "8E8E93")  // Solid color for better contrast
+            colorScheme == .dark ? Color(hex: "4B5563") : Color(hex: "D1D5DB")
         }
 
         static func accent(_ colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color(hex: "9D7FD6") : Color(hex: "6B21C0")
+            colorScheme == .dark ? Color(hex: "A4FC3C") : Color(hex: "059669")
         }
 
         static func link(_ colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color(hex: "9D7FD6") : Color(hex: "6B21C0")
+            colorScheme == .dark ? Color(hex: "7DD3FC") : Color(hex: "5FB3D3")
         }
 
-        static let inverse = Color.white  // For dark backgrounds
+        static let inverse = Color.white
 
         static func onColor(_ colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color.white : Color.black
+            Color(hex: "1A1D23") // Dark text on colored backgrounds
         }
 
         static func onBrand(_ colorScheme: ColorScheme) -> Color {
-            Color.black  // Dark text on gold buttons
+            Color(hex: "1A1D23") // Dark text on lime buttons
         }
     }
 
-    /// **Semantic Colors** - Context-aware with light/dark variants
+    /// **Semantic Colors** - Consistent across modes
     struct Semantic {
         static func success(_ colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color(hex: "34C759") : Color(hex: "28A745")
+            Color(hex: "10B981") // Emerald
         }
 
         static func error(_ colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color(hex: "FF453A") : Color(hex: "DC3545")
+            Color(hex: "EF4444") // Red
         }
 
         static func warning(_ colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color(hex: "FFD60A") : Color(hex: "FFC107")
+            Color(hex: "F59E0B") // Amber
         }
 
         static func info(_ colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color(hex: "64D2FF") : Color(hex: "17A2B8")
+            Color(hex: "3B82F6") // Blue
         }
     }
 
-    /// **Gradient Colors** - For premium features and paywall
+    /// **Gradient Colors** - Energetic and fun
     struct Gradients {
-        // Premium Gradient (Purple → Cyan) - Desaturated purple in dark mode
-        static func premiumStart(_ colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color(hex: "9D7FD6") : Color(hex: "6B21C0")
+        // Primary Gradient (Lime → Lime Dark)
+        static func primaryStart(_ colorScheme: ColorScheme) -> Color {
+            Color(hex: "A4FC3C")
         }
 
-        static func premiumEnd(_ colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color(hex: "00E5FF") : Color(hex: "007580")
+        static func primaryEnd(_ colorScheme: ColorScheme) -> Color {
+            Color(hex: "7DD321")
         }
 
-        // Energetic Gradient (Amber → Cyan)
+        // Energetic Gradient (Lime → Ice Blue)
         static func energeticStart(_ colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color(hex: "FFC93E") : Color(hex: "B36200")
+            Color(hex: "A4FC3C")
         }
 
         static func energeticEnd(_ colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color(hex: "00E5FF") : Color(hex: "007580")
+            colorScheme == .dark ? Color(hex: "7DD3FC") : Color(hex: "5FB3D3")
         }
 
-        // Legacy: Gold Shimmer Effect (deprecated - use energetic gradient)
-        static func goldShimmerStart(_ colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color(hex: "FFC93E") : Color(hex: "B36200")
+        // Shimmer Effect (for premium badges)
+        static func shimmerStart(_ colorScheme: ColorScheme) -> Color {
+            Color(hex: "A4FC3C")
         }
 
-        static func goldShimmerMid(_ colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color(hex: "FFD85C") : Color(hex: "D67F00")
+        static func shimmerMid(_ colorScheme: ColorScheme) -> Color {
+            Color(hex: "C8FD6D")
         }
 
-        static func goldShimmerEnd(_ colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color(hex: "FFC93E") : Color(hex: "B36200")
+        static func shimmerEnd(_ colorScheme: ColorScheme) -> Color {
+            Color(hex: "A4FC3C")
         }
 
-        // Success Gradient (Green → Teal)
+        // Success Gradient
         static func successStart(_ colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color(hex: "34C759") : Color(hex: "28A745")
+            Color(hex: "10B981")
         }
 
         static func successEnd(_ colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color(hex: "2DD4BF") : Color(hex: "14B8A6")
+            Color(hex: "059669")
         }
     }
 
-    /// **Special Colors** - Loading, progress, borders, focus
+    /// **Special Colors** - Loading, progress, borders
     struct Special {
         static func loadingIndicator(_ colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color(hex: "D4AF37") : Color(hex: "C19B2F")
+            Color(hex: "A4FC3C")
         }
 
         static func progressBarFill(_ colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color(hex: "D4AF37") : Color(hex: "007AFF")
+            Color(hex: "A4FC3C")
         }
 
         static func progressBarTrack(_ colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color(hex: "3A3A3C") : Color(hex: "E5E5EA")
+            colorScheme == .dark ? Color(hex: "2A303A") : Color(hex: "E5E7EB")
         }
 
         static func borderDefault(_ colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color(hex: "38383A") : Color(hex: "C6C6C8")
+            colorScheme == .dark ? Color(hex: "2A303A") : Color(hex: "E5E7EB")
         }
 
         static func borderStrong(_ colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color(hex: "48484A") : Color(hex: "8E8E93")
+            colorScheme == .dark ? Color(hex: "3A424D") : Color(hex: "9CA3AF")
         }
 
         static func focusRing(_ colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color(hex: "0A84FF") : Color(hex: "007AFF")
+            Color(hex: "A4FC3C")
         }
     }
 
-    /// **Shadow Colors** - Depth and elevation
+    /// **Shadow Colors**
     struct ShadowColors {
         static func `default`(_ colorScheme: ColorScheme) -> Color {
-            Color.black.opacity(colorScheme == .dark ? 0.3 : 0.1)
+            Color.black.opacity(colorScheme == .dark ? 0.4 : 0.1)
         }
 
         static func elevated(_ colorScheme: ColorScheme) -> Color {
-            Color.black.opacity(colorScheme == .dark ? 0.5 : 0.15)
+            Color.black.opacity(colorScheme == .dark ? 0.6 : 0.15)
+        }
+
+        // Lime glow for CTA buttons
+        static func primary(_ colorScheme: ColorScheme) -> Color {
+            Color(hex: "A4FC3C").opacity(colorScheme == .dark ? 0.3 : 0.2)
         }
     }
 
@@ -300,7 +299,7 @@ struct DesignTokens {
         static let caption2 = Font.system(size: 11, weight: .regular, design: .default)
     }
 
-    // MARK: - 🎭 Corner Radius System
+    // MARK: - Corner Radius System
 
     struct CornerRadius {
         static let xs: CGFloat = 4      // Small elements
@@ -311,7 +310,7 @@ struct DesignTokens {
         static let round: CGFloat = 50  // Pills, circles
     }
 
-    // MARK: - 🌟 Shadow System
+    // MARK: - Shadow System
 
     struct Shadow {
         static let none = Shadow(color: .clear, radius: 0, x: 0, y: 0)
@@ -320,13 +319,16 @@ struct DesignTokens {
         static let lg = Shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
         static let xl = Shadow(color: .black.opacity(0.25), radius: 16, x: 0, y: 8)
 
+        // Lime glow shadow for CTA
+        static let glow = Shadow(color: Color(hex: "A4FC3C").opacity(0.3), radius: 12, x: 0, y: 4)
+
         let color: Color
         let radius: CGFloat
         let x: CGFloat
         let y: CGFloat
     }
 
-    // MARK: - ⚡ Animation System
+    // MARK: - Animation System
 
     /// **Steve Jobs Rule**: "Animation should feel alive, not mechanical"
     struct Animation {
@@ -338,7 +340,7 @@ struct DesignTokens {
         static let bouncy = SwiftUI.Animation.spring(response: 0.4, dampingFraction: 0.6)
     }
 
-    // MARK: - 📳 Haptic System
+    // MARK: - Haptic System
 
     struct Haptics {
         private static let lightImpact = UIImpactFeedbackGenerator(style: .light)
@@ -388,7 +390,7 @@ struct DesignTokens {
         }
     }
 
-    // MARK: - 📱 Layout Constants
+    // MARK: - Layout Constants
 
     struct Layout {
         static let headerHeight: CGFloat = 56
@@ -400,7 +402,7 @@ struct DesignTokens {
     }
 }
 
-// MARK: - 🌟 View Modifiers for Consistent Styling
+// MARK: - View Modifiers for Consistent Styling
 
 extension View {
     /// Apply shadow with design tokens

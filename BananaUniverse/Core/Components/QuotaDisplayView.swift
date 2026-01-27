@@ -47,14 +47,14 @@ struct QuotaDisplayView: View {
             .padding(.horizontal, DesignTokens.Spacing.md)
             .padding(.vertical, DesignTokens.Spacing.sm)
             .background(
-                RoundedRectangle(cornerRadius: 14)
+                RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.md)
                     .fill(DesignTokens.Surface.primary(themeManager.resolvedColorScheme))
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 14)
+                RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.md)
                     .stroke(
                         themeManager.resolvedColorScheme == .dark
-                            ? Color.white.opacity(0.15)
+                            ? DesignTokens.Special.borderDefault(themeManager.resolvedColorScheme)
                             : Color.clear,
                         lineWidth: 0.5
                     )
@@ -93,8 +93,8 @@ struct QuotaDisplayView: View {
             .padding(.horizontal, DesignTokens.Spacing.sm)
             .padding(.vertical, DesignTokens.Spacing.xs)
             .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(DesignTokens.Brand.primary(.light).opacity(0.1))
+                RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.sm)
+                    .fill(DesignTokens.Brand.primary(themeManager.resolvedColorScheme).opacity(0.1))
             )
         }
         .buttonStyle(.plain)
@@ -104,7 +104,7 @@ struct QuotaDisplayView: View {
     private var iconView: some View {
         Image(systemName: "star.fill")
             .font(.system(size: style == .compact ? 13 : 20))
-            .foregroundColor(DesignTokens.Brand.primary(.light))
+            .foregroundColor(DesignTokens.Brand.primary(themeManager.resolvedColorScheme))
     }
     
     private var titleView: some View {
@@ -148,13 +148,13 @@ struct QuotaDisplayView: View {
                 if creditManager.shouldShowQuotaWarning {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(.orange)
+                        .foregroundColor(DesignTokens.Semantic.warning(themeManager.resolvedColorScheme))
                 }
 
                 Text("\(creditManager.creditsRemaining) credits")
                     .font(.system(size: 13, weight: .medium))
                     .lineLimit(1)
-                    .foregroundColor(creditManager.shouldShowQuotaWarning ? .orange : DesignTokens.Text.primary(themeManager.resolvedColorScheme))
+                    .foregroundColor(creditManager.shouldShowQuotaWarning ? DesignTokens.Semantic.warning(themeManager.resolvedColorScheme) : DesignTokens.Text.primary(themeManager.resolvedColorScheme))
             }
         }
     }

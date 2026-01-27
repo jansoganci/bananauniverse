@@ -28,9 +28,9 @@ struct PaywallBackground: View {
             // Accent gradient overlay
             LinearGradient(
                 colors: [
-                    DesignTokens.Gradients.premiumStart(colorScheme).opacity(0.1),
-                    DesignTokens.Gradients.premiumEnd(colorScheme).opacity(0.05),
-                    DesignTokens.Gradients.premiumStart(colorScheme).opacity(0.1)
+                    DesignTokens.Gradients.primaryStart(colorScheme).opacity(0.1),
+                    DesignTokens.Gradients.primaryEnd(colorScheme).opacity(0.05),
+                    DesignTokens.Gradients.primaryStart(colorScheme).opacity(0.1)
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing

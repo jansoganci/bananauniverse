@@ -104,33 +104,17 @@ struct ContentView: View {
         appearance.configureWithOpaqueBackground()
         
         // Use DesignTokens for theme-aware colors
-        if colorScheme == .dark {
-            // Dark theme colors using DesignTokens
-            appearance.backgroundColor = UIColor(swiftUIColor: DesignTokens.Background.secondary(.dark))
-            
-            // Inactive tabs
-            let inactiveColor = UIColor(swiftUIColor: DesignTokens.Text.secondary(.dark))
-            appearance.stackedLayoutAppearance.normal.iconColor = inactiveColor
-            appearance.stackedLayoutAppearance.normal.titleTextAttributes = [.foregroundColor: inactiveColor]
-            
-            // Active tab (using golden accent for dark mode)
-            let activeColor = UIColor(swiftUIColor: DesignTokens.Brand.primary(.dark))
-            appearance.stackedLayoutAppearance.selected.iconColor = activeColor
-            appearance.stackedLayoutAppearance.selected.titleTextAttributes = [.foregroundColor: activeColor]
-        } else {
-            // Light theme colors using DesignTokens
-            appearance.backgroundColor = UIColor(swiftUIColor: DesignTokens.Background.secondary(.light))
-            
-            // Inactive tabs
-            let inactiveColor = UIColor(swiftUIColor: DesignTokens.Text.tertiary(.light))
-            appearance.stackedLayoutAppearance.normal.iconColor = inactiveColor
-            appearance.stackedLayoutAppearance.normal.titleTextAttributes = [.foregroundColor: inactiveColor]
-            
-            // Active tab (using golden primary for light mode)
-            let activeColor = UIColor(swiftUIColor: DesignTokens.Brand.primary(.light))
-            appearance.stackedLayoutAppearance.selected.iconColor = activeColor
-            appearance.stackedLayoutAppearance.selected.titleTextAttributes = [.foregroundColor: activeColor]
-        }
+        appearance.backgroundColor = UIColor(swiftUIColor: DesignTokens.Background.secondary(colorScheme))
+        
+        // Inactive tabs
+        let inactiveColor = UIColor(swiftUIColor: DesignTokens.Text.tertiary(colorScheme))
+        appearance.stackedLayoutAppearance.normal.iconColor = inactiveColor
+        appearance.stackedLayoutAppearance.normal.titleTextAttributes = [.foregroundColor: inactiveColor]
+        
+        // Active tab (using brand primary color)
+        let activeColor = UIColor(swiftUIColor: DesignTokens.Brand.primary(colorScheme))
+        appearance.stackedLayoutAppearance.selected.iconColor = activeColor
+        appearance.stackedLayoutAppearance.selected.titleTextAttributes = [.foregroundColor: activeColor]
         
         // Apply appearance to all tab bars
         UITabBar.appearance().standardAppearance = appearance

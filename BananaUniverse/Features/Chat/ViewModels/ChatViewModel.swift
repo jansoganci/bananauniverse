@@ -170,7 +170,7 @@ class ChatViewModel: ObservableObject {
             return
         }
         
-        // ⚡ CRITICAL FIX: Refresh credits from backend before checking
+        // Refresh credits from backend before checking
         // This ensures frontend and backend are in sync
         await creditManager.loadQuota()
         
@@ -275,7 +275,7 @@ class ChatViewModel: ObservableObject {
                 throw ChatError.processingFailed
             }
 
-            // ⚡ UPDATE CREDITS FROM BACKEND RESPONSE ⚡
+            // Update credits from backend response
             // Backend deducts credits and returns updated balance
             if let creditInfo = submitResponse.creditInfo {
                 await creditManager.updateFromBackendResponse(
@@ -370,12 +370,12 @@ class ChatViewModel: ObservableObject {
             if let lastMessage = messages.last, lastMessage.type == .assistant, lastMessage.image == nil {
                 messages[messages.count - 1] = ChatMessage(
                     type: .error,
-                    content: "❌ Processing failed: \(error.localizedDescription)",
+                    content: "Processing failed: \(error.localizedDescription)",
                     image: nil,
                     timestamp: Date()
                 )
             } else {
-                addErrorMessage(content: "❌ Processing failed: \(error.localizedDescription)")
+                addErrorMessage(content: "Processing failed: \(error.localizedDescription)")
             }
         }
 

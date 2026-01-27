@@ -11,6 +11,7 @@ import PhotosUI
 struct ImageDetailView: View {
     let imageURL: URL
     @Environment(\.dismiss) var dismiss
+    @EnvironmentObject var themeManager: ThemeManager
     @State private var scale: CGFloat = 1.0
     @State private var lastScale: CGFloat = 1.0
     @State private var offset: CGSize = .zero
@@ -22,7 +23,7 @@ struct ImageDetailView: View {
     var body: some View {
         ZStack {
             // Background
-            Color.black
+            DesignTokens.Surface.overlay(themeManager.resolvedColorScheme)
                 .ignoresSafeArea()
             
             // Main content
@@ -36,9 +37,9 @@ struct ImageDetailView: View {
                     }) {
                         Image(systemName: "xmark")
                             .font(.system(size: 18, weight: .medium))
-                            .foregroundColor(.white)
+                            .foregroundColor(DesignTokens.Text.inverse)
                             .frame(width: 44, height: 44)
-                            .background(Color.black.opacity(0.5))
+                            .background(DesignTokens.Surface.overlay(themeManager.resolvedColorScheme))
                             .clipShape(Circle())
                     }
                     
@@ -59,14 +60,14 @@ struct ImageDetailView: View {
                                         .scaleEffect(0.8)
                                 } else if downloadSuccess {
                                     Image(systemName: "checkmark")
-                                        .foregroundColor(.green)
+                                        .foregroundColor(DesignTokens.Semantic.success(themeManager.resolvedColorScheme))
                                 } else {
                                     Image(systemName: "arrow.down.circle")
-                                        .foregroundColor(.white)
+                                        .foregroundColor(DesignTokens.Text.inverse)
                                 }
                             }
                             .frame(width: 44, height: 44)
-                            .background(Color.black.opacity(0.5))
+                            .background(DesignTokens.Surface.overlay(themeManager.resolvedColorScheme))
                             .clipShape(Circle())
                         }
                         .disabled(isDownloading)
@@ -75,12 +76,12 @@ struct ImageDetailView: View {
                         Button(action: {
                             showingShareSheet = true
                         }) {
-                            Image(systemName: "square.and.arrow.up")
-                                .font(.system(size: 18, weight: .medium))
-                                .foregroundColor(.white)
-                                .frame(width: 44, height: 44)
-                                .background(Color.black.opacity(0.5))
-                                .clipShape(Circle())
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.system(size: 18, weight: .medium))
+                            .foregroundColor(DesignTokens.Text.inverse)
+                            .frame(width: 44, height: 44)
+                            .background(DesignTokens.Surface.overlay(themeManager.resolvedColorScheme))
+                            .clipShape(Circle())
                         }
                     }
                 }
@@ -89,97 +90,64 @@ struct ImageDetailView: View {
                 
                 // Image content
                 GeometryReader { geometry in
-                    AsyncImage(url: imageURL) { phase in
-                        switch phase {
-                        case .success(let image):
-                            image
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .scaleEffect(scale)
-                                .offset(offset)
-                                .transition(.opacity.animation(.easeInOut(duration: 0.3)))
-                                .gesture(
-                                    SimultaneousGesture(
-                                        // Magnification gesture for zoom
-                                        MagnificationGesture()
-                                            .onChanged { value in
-                                                let delta = value / lastScale
-                                                lastScale = value
-                                                withAnimation(.interactiveSpring(response: 0.3, dampingFraction: 0.8)) {
-                                                    scale = min(max(scale * delta, 1.0), 5.0)
-                                                }
-                                            }
-                                            .onEnded { _ in
-                                                lastScale = 1.0
-                                                withAnimation(.easeInOut(duration: 0.2)) {
-                                                    if scale < 1.0 {
-                                                        scale = 1.0
-                                                        offset = .zero
-                                                    } else if scale > 5.0 {
-                                                        scale = 5.0
-                                                    }
-                                                }
-                                            },
-                                        
-                                        // Drag gesture for pan
-                                        DragGesture()
-                                            .onChanged { value in
-                                                let newOffset = CGSize(
-                                                    width: lastOffset.width + value.translation.width,
-                                                    height: lastOffset.height + value.translation.height
-                                                )
-                                                
-                                                // Limit pan based on zoom level
-                                                let maxOffsetX = max(0, (geometry.size.width * (scale - 1)) / 2)
-                                                let maxOffsetY = max(0, (geometry.size.height * (scale - 1)) / 2)
-                                                
-                                                offset = CGSize(
-                                                    width: min(max(newOffset.width, -maxOffsetX), maxOffsetX),
-                                                    height: min(max(newOffset.height, -maxOffsetY), maxOffsetY)
-                                                )
-                                            }
-                                            .onEnded { _ in
-                                                lastOffset = offset
-                                            }
-                                    )
-                                )
-                                .onTapGesture(count: 2) {
-                                    // Double tap to reset zoom
-                                    withAnimation(.easeInOut(duration: 0.3)) {
-                                        scale = 1.0
-                                        offset = .zero
-                                        lastScale = 1.0
-                                        lastOffset = .zero
+                    CachedAsyncImage(
+                        url: imageURL,
+                        contentMode: .fit
+                    )
+                    .scaleEffect(scale)
+                    .offset(offset)
+                    .gesture(
+                        SimultaneousGesture(
+                            // Magnification gesture for zoom
+                            MagnificationGesture()
+                                .onChanged { value in
+                                    let delta = value / lastScale
+                                    lastScale = value
+                                    withAnimation(.interactiveSpring(response: 0.3, dampingFraction: 0.8)) {
+                                        scale = min(max(scale * delta, 1.0), 5.0)
                                     }
                                 }
-                                
-                        case .failure(_):
-                            VStack(spacing: 16) {
-                                Image(systemName: "photo")
-                                    .font(.system(size: 48))
-                                    .foregroundColor(.white.opacity(0.6))
-                                
-                                Text("Image failed to load")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                    .foregroundColor(.white.opacity(0.8))
-                            }
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .onEnded { _ in
+                                    lastScale = 1.0
+                                    withAnimation(.easeInOut(duration: 0.2)) {
+                                        if scale < 1.0 {
+                                            scale = 1.0
+                                            offset = .zero
+                                        } else if scale > 5.0 {
+                                            scale = 5.0
+                                        }
+                                    }
+                                },
                             
-                        case .empty:
-                            VStack(spacing: 16) {
-                                ProgressView()
-                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                    .scaleEffect(1.2)
-                                
-                                Text("Loading image...")
-                                    .foregroundColor(.white)
-                                    .font(.system(size: 16, weight: .medium))
-                            }
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            
-                        @unknown default:
-                            EmptyView()
+                            // Drag gesture for pan
+                            DragGesture()
+                                .onChanged { value in
+                                    let newOffset = CGSize(
+                                        width: lastOffset.width + value.translation.width,
+                                        height: lastOffset.height + value.translation.height
+                                    )
+                                    
+                                    // Limit pan based on zoom level
+                                    let maxOffsetX = max(0, (geometry.size.width * (scale - 1)) / 2)
+                                    let maxOffsetY = max(0, (geometry.size.height * (scale - 1)) / 2)
+                                    
+                                    offset = CGSize(
+                                        width: min(max(newOffset.width, -maxOffsetX), maxOffsetX),
+                                        height: min(max(newOffset.height, -maxOffsetY), maxOffsetY)
+                                    )
+                                }
+                                .onEnded { _ in
+                                    lastOffset = offset
+                                }
+                        )
+                    )
+                    .onTapGesture(count: 2) {
+                        // Double tap to reset zoom
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            scale = 1.0
+                            offset = .zero
+                            lastScale = 1.0
+                            lastOffset = .zero
                         }
                     }
                     .onAppear {

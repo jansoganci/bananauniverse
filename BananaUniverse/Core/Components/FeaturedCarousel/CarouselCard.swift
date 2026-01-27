@@ -15,20 +15,10 @@ struct CarouselCard: View {
     var body: some View {
         ZStack {
             // Background image
-            AsyncImage(url: tool.thumbnailURL) { phase in
-                switch phase {
-                case .success(let image):
-                    image
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                case .empty:
-                    placeholderView
-                case .failure:
-                    placeholderView
-                @unknown default:
-                    placeholderView
-                }
-            }
+            CachedAsyncImage(
+                url: tool.thumbnailURL,
+                placeholderIcon: tool.placeholderIcon
+            )
             .frame(width: 350, height: 220)
             .clipped()
 
@@ -38,19 +28,19 @@ struct CarouselCard: View {
                     Spacer()
                     Text(getCategoryName(tool.category))
                         .font(DesignTokens.Typography.caption2.bold())
-                        .foregroundColor(.white.opacity(0.95))
+                        .foregroundColor(DesignTokens.Text.inverse.opacity(0.95))
                         .textCase(.uppercase)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 4)
+                        .padding(.horizontal, DesignTokens.Spacing.xs)
+                        .padding(.vertical, DesignTokens.Spacing.xs)
                         .background(
                             Capsule()
-                                .fill(Color.black.opacity(0.6))
+                                .fill(DesignTokens.Surface.overlay(colorScheme))
                         )
                         .background(.ultraThinMaterial)
                         .clipShape(Capsule())
-                        .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 2)
-                        .padding(.top, 8)
-                        .padding(.trailing, 8)
+                        .shadow(color: DesignTokens.Surface.overlay(colorScheme), radius: 4, x: 0, y: 2)
+                        .padding(.top, DesignTokens.Spacing.sm)
+                        .padding(.trailing, DesignTokens.Spacing.sm)
                 }
                 Spacer()
             }
@@ -60,41 +50,60 @@ struct CarouselCard: View {
                 Spacer()
                 HStack(alignment: .center, spacing: 8) {
                     // Tool name
-                    Text(tool.name)
-                        .font(DesignTokens.Typography.headline.bold())
-                        .foregroundColor(.white)
-                        .lineLimit(1)
-                        .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
+                    if tool.name.isEmpty {
+                        SkeletonView()
+                            .frame(width: 120, height: 20)
+                            .cornerRadius(4)
+                    } else {
+                        Text(tool.name)
+                            .font(DesignTokens.Typography.headline.bold())
+                            .foregroundColor(DesignTokens.Text.inverse)
+                            .lineLimit(1)
+                            .shadow(color: DesignTokens.Surface.overlay(colorScheme), radius: 2, x: 0, y: 1)
+                    }
                     
                     Spacer()
                     
-                    // CTA button
-                    HStack(spacing: 4) {
+                    // CTA button with Electric Lime gradient
+                    HStack(spacing: DesignTokens.Spacing.xs) {
                         Text("Try Now")
-                            .font(.system(size: 15, weight: .semibold, design: .default))
+                            .font(DesignTokens.Typography.callout)
+                            .fontWeight(.semibold)
                         Image(systemName: "arrow.right")
                             .font(.system(size: 12, weight: .semibold))
                     }
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 6)
+                    .foregroundColor(DesignTokens.Text.onBrand(colorScheme))
+                    .padding(.horizontal, DesignTokens.Spacing.sm)
+                    .padding(.vertical, DesignTokens.Spacing.xs)
+                    .background(
+                        LinearGradient(
+                            colors: [
+                                DesignTokens.Gradients.primaryStart(colorScheme),
+                                DesignTokens.Gradients.primaryEnd(colorScheme)
+                            ],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .cornerRadius(DesignTokens.CornerRadius.sm)
+                    .shadow(color: DesignTokens.ShadowColors.primary(colorScheme), radius: 4, x: 0, y: 2)
                 }
-                .padding(.horizontal, 12)
-                .padding(.top, 10)
-                .padding(.bottom, 10)
+                .padding(.horizontal, DesignTokens.Spacing.md)
+                .padding(.top, DesignTokens.Spacing.sm)
+                .padding(.bottom, DesignTokens.Spacing.sm)
                 .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color.black.opacity(0.6))
+                    RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.md)
+                        .fill(DesignTokens.Surface.overlay(colorScheme))
                 )
                 .background(.ultraThinMaterial)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .clipShape(RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.md))
                 .frame(maxWidth: .infinity)
                 .background(
                     LinearGradient(
                         colors: [
-                            .black.opacity(0.0),     // Start at 75% from top
-                            .black.opacity(0.3),     // Mid at 87.5%
-                            .black.opacity(0.7)      // End at bottom
+                            DesignTokens.Surface.overlay(colorScheme).opacity(0.0),
+                            DesignTokens.Surface.overlay(colorScheme).opacity(0.5),
+                            DesignTokens.Surface.overlay(colorScheme).opacity(1.0)
                         ],
                         startPoint: UnitPoint(x: 0.5, y: 0.75),
                         endPoint: UnitPoint(x: 0.5, y: 1.0)
@@ -105,22 +114,11 @@ struct CarouselCard: View {
         .frame(width: 350, height: 220)
         .cornerRadius(DesignTokens.CornerRadius.lg)
         .shadow(
-            color: .black.opacity(0.2),
+            color: DesignTokens.ShadowColors.default(colorScheme),
             radius: 8,
             x: 0,
             y: 4
         )
-    }
-
-    // MARK: - Placeholder View
-
-    private var placeholderView: some View {
-        ZStack {
-            Color.gray.opacity(0.2)
-            Image(systemName: tool.placeholderIcon)
-                .font(.system(size: 40))
-                .foregroundColor(.gray.opacity(0.5))
-        }
     }
 
     // MARK: - Helper Functions
@@ -170,7 +168,7 @@ struct CarouselCard_Previews: PreviewProvider {
         )
         .previewLayout(.sizeThatFits)
         .padding()
-        .background(Color.black)
+        .background(DesignTokens.Background.primary(.dark))
     }
 }
 #endif

@@ -84,6 +84,7 @@ struct CategoryRow: View {
                         }
                     }
                     .padding(.horizontal, DesignTokens.Spacing.md)
+                    .padding(.bottom, DesignTokens.Spacing.md)
                 }
             }
         }

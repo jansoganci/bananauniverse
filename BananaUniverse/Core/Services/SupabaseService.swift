@@ -658,7 +658,7 @@ struct JobSubmissionResponse: Codable {
     let usage: UsageInfo?
     let userType: String?
     
-    // ✅ REMOVED CodingKeys - using convertFromSnakeCase instead
+    // Using convertFromSnakeCase instead of CodingKeys
     // This eliminates the conflict between automatic and manual key mapping
 }
 
@@ -686,7 +686,7 @@ struct JobStatusResponse: Codable {
     let updatedAt: String
     let completedAt: String?
     
-    // ✅ REMOVED CodingKeys - using convertFromSnakeCase instead
+    // Using convertFromSnakeCase instead of CodingKeys
     // This eliminates the conflict between automatic and manual key mapping
 }
 

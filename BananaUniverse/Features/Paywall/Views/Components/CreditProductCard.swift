@@ -30,14 +30,14 @@ struct CreditProductCard: View {
                         Text("BEST VALUE")
                             .font(.system(size: 11, weight: .bold))
                     }
-                    .foregroundColor(.white)
+                    .foregroundColor(DesignTokens.Text.inverse)
                     .padding(.horizontal, DesignTokens.Spacing.md)
                     .padding(.vertical, DesignTokens.Spacing.xs)
                     .background(
                         LinearGradient(
                             colors: [
-                                DesignTokens.Gradients.premiumStart(colorScheme),
-                                DesignTokens.Gradients.premiumEnd(colorScheme)
+                                DesignTokens.Gradients.primaryStart(colorScheme),
+                                DesignTokens.Gradients.primaryEnd(colorScheme)
                             ],
                             startPoint: .leading,
                             endPoint: .trailing
@@ -51,14 +51,14 @@ struct CreditProductCard: View {
                         Text("MOST POPULAR")
                             .font(.system(size: 11, weight: .bold))
                     }
-                    .foregroundColor(.white)
+                    .foregroundColor(DesignTokens.Text.inverse)
                     .padding(.horizontal, DesignTokens.Spacing.md)
                     .padding(.vertical, DesignTokens.Spacing.xs)
                     .background(
                         LinearGradient(
                             colors: [
-                                Color(red: 0.4, green: 0.5, blue: 1.0),
-                                Color(red: 0.5, green: 0.3, blue: 1.0)
+                                DesignTokens.Brand.accent(colorScheme),
+                                DesignTokens.Brand.accent(colorScheme).opacity(0.8)
                             ],
                             startPoint: .leading,
                             endPoint: .trailing
@@ -95,10 +95,10 @@ struct CreditProductCard: View {
                         HStack {
                             Image(systemName: "checkmark.circle.fill")
                                 .font(.system(size: 20))
-                                .foregroundColor(DesignTokens.Gradients.premiumStart(colorScheme))
+                                .foregroundColor(DesignTokens.Brand.primary(colorScheme))
                             Text("Selected")
                                 .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(DesignTokens.Gradients.premiumStart(colorScheme))
+                                .foregroundColor(DesignTokens.Brand.primary(colorScheme))
                         }
                         .padding(.bottom, DesignTokens.Spacing.md)
                     }
@@ -111,7 +111,7 @@ struct CreditProductCard: View {
                         RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.lg)
                             .stroke(
                                 isSelected
-                                    ? DesignTokens.Gradients.premiumStart(colorScheme)
+                                    ? DesignTokens.Brand.primary(colorScheme)
                                     : Color.clear,
                                 lineWidth: 2
                             )

@@ -115,11 +115,20 @@ struct ProfileView: View {
                         Text("Sign In or Create Account")
                             .font(.system(size: 16, weight: .semibold))
                     }
-                    .foregroundColor(.white)
+                    .foregroundColor(DesignTokens.Text.onBrand(colorScheme))
                     .frame(maxWidth: .infinity)
-                    .frame(height: 50)
-                    .background(DesignTokens.Brand.primary(colorScheme))
-                    .cornerRadius(12)
+                    .frame(height: DesignTokens.Layout.buttonHeight)
+                    .background(
+                        LinearGradient(
+                            colors: [
+                                DesignTokens.Gradients.primaryStart(colorScheme),
+                                DesignTokens.Gradients.primaryEnd(colorScheme)
+                            ],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .cornerRadius(DesignTokens.CornerRadius.md)
                 }
                 .padding(.horizontal, DesignTokens.Spacing.md)
             }

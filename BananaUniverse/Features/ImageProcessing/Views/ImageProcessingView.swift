@@ -42,19 +42,23 @@ struct ImageProcessingView: View {
             ScrollView {
                 VStack(spacing: DesignTokens.Spacing.lg) {
                     // Image Selection Section
-                    ImageSelectionSection(viewModel: viewModel)
-
-                    // Prompt Input (Editable)
-                    PromptSection(viewModel: viewModel)
-
-                    // Collapsible Settings Section
-                    SettingsSection(viewModel: viewModel)
-
-                    // Credit Cost Display
-                    CreditCostCard(viewModel: viewModel)
-
-                    // Generate Button
-                    GenerateButton(viewModel: viewModel)
+                    if viewModel.isProcessing {
+                        CreateSkeletonView()
+                    } else {
+                        ImageSelectionSection(viewModel: viewModel)
+                        
+                        // Prompt Input (Editable)
+                        PromptSection(viewModel: viewModel)
+                        
+                        // Collapsible Settings Section
+                        SettingsSection(viewModel: viewModel)
+                        
+                        // Credit Cost Display
+                        CreditCostCard(viewModel: viewModel)
+                        
+                        // Generate Button
+                        GenerateButton(viewModel: viewModel)
+                    }
                 }
                 .padding(DesignTokens.Spacing.md)
             }
@@ -136,6 +140,64 @@ struct ImageProcessingView: View {
             defaultSettings: nil,
             createdAt: Date()
         )
+    }
+}
+
+// MARK: - Create Skeleton View
+struct CreateSkeletonView: View {
+    @EnvironmentObject var themeManager: ThemeManager
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
+            // Image Slots Skeleton
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
+                SkeletonView()
+                    .frame(width: 120, height: 20)
+                    .cornerRadius(4)
+                
+                HStack(spacing: DesignTokens.Spacing.md) {
+                    SkeletonView()
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 160)
+                        .cornerRadius(12)
+                    
+                    SkeletonView()
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 160)
+                        .cornerRadius(12)
+                }
+            }
+            
+            // Prompt Skeleton
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
+                SkeletonView()
+                    .frame(width: 80, height: 20)
+                    .cornerRadius(4)
+                
+                SkeletonView()
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 100)
+                    .cornerRadius(12)
+            }
+            
+            // Settings Skeleton
+            SkeletonView()
+                .frame(maxWidth: .infinity)
+                .frame(height: 50)
+                .cornerRadius(12)
+            
+            // Cost Card Skeleton
+            SkeletonView()
+                .frame(maxWidth: .infinity)
+                .frame(height: 70)
+                .cornerRadius(12)
+            
+            // Button Skeleton
+            SkeletonView()
+                .frame(maxWidth: .infinity)
+                .frame(height: 50)
+                .cornerRadius(12)
+        }
     }
 }
 
@@ -322,7 +384,7 @@ struct ResultLoadingView: View {
         VStack(spacing: DesignTokens.Spacing.lg) {
             ProgressView()
                 .scaleEffect(1.5)
-                .progressViewStyle(CircularProgressViewStyle(tint: DesignTokens.Brand.accent(themeManager.resolvedColorScheme)))
+                .progressViewStyle(CircularProgressViewStyle(tint: DesignTokens.Brand.primary(themeManager.resolvedColorScheme)))
 
             Text("Loading your masterpiece...")
                 .font(.headline)
@@ -344,7 +406,7 @@ struct ResultErrorView: View {
         VStack(spacing: DesignTokens.Spacing.lg) {
             Image(systemName: "exclamationmark.triangle")
                 .font(.system(size: 60))
-                .foregroundColor(.red)
+                .foregroundColor(DesignTokens.Semantic.error(themeManager.resolvedColorScheme))
 
             Text("Error")
                 .font(.title)
@@ -359,13 +421,13 @@ struct ResultErrorView: View {
 
             Button(action: onDismiss) {
                 Text("Close")
-                    .font(.headline)
-                    .foregroundColor(.white)
+                    .font(DesignTokens.Typography.headline)
+                    .foregroundColor(DesignTokens.Text.onBrand(themeManager.resolvedColorScheme))
                     .frame(maxWidth: .infinity)
                     .padding(DesignTokens.Spacing.md)
                     .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(DesignTokens.Brand.accent(themeManager.resolvedColorScheme))
+                        RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.md)
+                            .fill(DesignTokens.Brand.primary(themeManager.resolvedColorScheme))
                     )
             }
             .padding(.horizontal, DesignTokens.Spacing.lg)
@@ -443,8 +505,8 @@ struct ImageSlot: View {
                     Button(action: onRemove) {
                         Image(systemName: "xmark.circle.fill")
                             .font(.title2)
-                            .foregroundColor(.white)
-                            .background(Circle().fill(Color.black.opacity(0.6)))
+                            .foregroundColor(DesignTokens.Text.inverse)
+                            .background(Circle().fill(DesignTokens.Surface.overlay(themeManager.resolvedColorScheme)))
                     }
                     .padding(8)
                 } else {
@@ -514,7 +576,7 @@ struct SettingsSection: View {
             Button(action: { viewModel.toggleSettings() }) {
                 HStack {
                     Image(systemName: "slider.horizontal.3")
-                        .foregroundColor(DesignTokens.Brand.accent(themeManager.resolvedColorScheme))
+                        .foregroundColor(DesignTokens.Brand.primary(themeManager.resolvedColorScheme))
 
                     Text("Settings")
                         .font(.headline)
@@ -707,7 +769,7 @@ struct CreditCostCard: View {
                     Text("credits")
                         .font(.subheadline)
                 }
-                .foregroundColor(DesignTokens.Brand.accent(themeManager.resolvedColorScheme))
+                .foregroundColor(DesignTokens.Brand.primary(themeManager.resolvedColorScheme))
             }
 
             Spacer()
@@ -715,13 +777,13 @@ struct CreditCostCard: View {
             if !viewModel.hasEnoughCredits {
                 Text("Insufficient credits")
                     .font(.caption)
-                    .foregroundColor(.red)
+                    .foregroundColor(DesignTokens.Semantic.error(themeManager.resolvedColorScheme))
             }
         }
         .padding(DesignTokens.Spacing.md)
         .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(DesignTokens.Brand.accent(themeManager.resolvedColorScheme).opacity(0.1))
+            RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.md)
+                .fill(DesignTokens.Brand.primary(themeManager.resolvedColorScheme).opacity(0.1))
         )
     }
 }
@@ -741,21 +803,43 @@ struct GenerateButton: View {
             HStack(spacing: DesignTokens.Spacing.sm) {
                 if viewModel.isProcessing {
                     ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        .progressViewStyle(CircularProgressViewStyle(tint: DesignTokens.Text.onBrand(themeManager.resolvedColorScheme)))
                     Text("Generating...")
                 } else {
                     Image(systemName: "wand.and.stars")
                     Text("Generate")
                 }
             }
-            .font(.headline)
-            .foregroundColor(.white)
+            .font(DesignTokens.Typography.headline)
+            .fontWeight(.semibold)
+            .foregroundColor(DesignTokens.Text.onBrand(themeManager.resolvedColorScheme))
             .frame(maxWidth: .infinity)
             .padding(DesignTokens.Spacing.md)
             .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(viewModel.canGenerate ? DesignTokens.Brand.accent(themeManager.resolvedColorScheme) : Color.gray)
+                Group {
+                    if viewModel.canGenerate {
+                        LinearGradient(
+                            colors: [
+                                DesignTokens.Gradients.primaryStart(themeManager.resolvedColorScheme),
+                                DesignTokens.Gradients.primaryEnd(themeManager.resolvedColorScheme)
+                            ],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    } else {
+                        LinearGradient(
+                            colors: [
+                                DesignTokens.Text.quaternary(themeManager.resolvedColorScheme),
+                                DesignTokens.Text.quaternary(themeManager.resolvedColorScheme)
+                            ],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    }
+                }
+                .clipShape(RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.md))
             )
+            .shadow(color: viewModel.canGenerate ? DesignTokens.ShadowColors.primary(themeManager.resolvedColorScheme) : Color.clear, radius: 8, x: 0, y: 4)
         }
         .disabled(!viewModel.canGenerate)
     }

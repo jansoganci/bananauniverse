@@ -26,7 +26,7 @@ struct UnifiedHeaderBar: View {
     }
     
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: DesignTokens.Spacing.sm) {
             // Left Content
             if let left = leftContent {
                 headerContentView(left)
@@ -57,13 +57,12 @@ struct UnifiedHeaderBar: View {
     private func headerContentView(_ content: HeaderContent) -> some View {
         switch content {
         case .brandLogo(let brandName):
-            HStack(spacing: 6) {
-                Text("🍌")
-                    .font(.system(size: 18))
-                
+            HStack(spacing: DesignTokens.Spacing.xs) {
+                // Flario logo - using Electric Lime for brand color
                 Text(brandName)
                     .font(DesignTokens.Typography.headline)
-                    .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
+                    .fontWeight(.bold)
+                    .foregroundColor(DesignTokens.Brand.primary(themeManager.resolvedColorScheme))
             }
             
         case .appLogo(let size):
@@ -85,6 +84,9 @@ struct UnifiedHeaderBar: View {
         case .quotaBadge(_, let action):
             QuotaDisplayView(style: .compact, action: action)
             
+        case .custom(let viewBuilder):
+            viewBuilder()
+            
         case .empty:
             EmptyView()
         }
@@ -97,6 +99,7 @@ enum HeaderContent {
     case appLogo(CGFloat)
     case appLogoWithTagline(CGFloat, String) // size, tagline
     case quotaBadge(Int, () -> Void) // credits, action
+    case custom(() -> AnyView) // Custom view builder for flexible content
     case empty
 }
 
@@ -104,15 +107,15 @@ enum HeaderContent {
     VStack(spacing: 0) {
         // Home style
         UnifiedHeaderBar(
-            title: "Banana Universe",
-            leftContent: .brandLogo("Banana Universe"),
+            title: "Flario",
+            leftContent: .brandLogo("Flario"),
             rightContent: .quotaBadge(10, {})
         )
         
         // Chat style - Free user
         UnifiedHeaderBar(
-            title: "Banana Universe",
-            leftContent: .brandLogo("Banana Universe"),
+            title: "Flario",
+            leftContent: .brandLogo("Flario"),
             rightContent: .quotaBadge(5, {})
         )
         

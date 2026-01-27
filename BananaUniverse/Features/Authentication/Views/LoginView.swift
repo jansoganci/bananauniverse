@@ -55,8 +55,8 @@ struct LoginView: View {
                 }
                 .frame(maxWidth: .infinity)
                 .frame(height: 50)
-                .background(isFormValid ? DesignTokens.Brand.primary(.light) : DesignTokens.Brand.primary(.light).opacity(0.6))
-                .foregroundColor(.white)
+                .background(isFormValid ? DesignTokens.Brand.primary(themeManager.resolvedColorScheme) : DesignTokens.Brand.primary(themeManager.resolvedColorScheme).opacity(0.6))
+                .foregroundColor(DesignTokens.Text.onBrand(themeManager.resolvedColorScheme))
                 .cornerRadius(10)
             }
             .disabled(!isFormValid || authService.isLoading)
@@ -65,7 +65,7 @@ struct LoginView: View {
                 isSignUpMode.toggle()
                 clearForm()
             }
-            .foregroundColor(DesignTokens.Brand.primary(.light))
+            .foregroundColor(DesignTokens.Brand.primary(themeManager.resolvedColorScheme))
             
             Spacer()
         }

@@ -140,7 +140,7 @@ struct DownloadButton: View {
             HStack(spacing: DesignTokens.Spacing.sm) {
                 if isSaving {
                     ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: DesignTokens.Brand.accent(themeManager.resolvedColorScheme)))
+                        .progressViewStyle(CircularProgressViewStyle(tint: DesignTokens.Brand.primary(themeManager.resolvedColorScheme)))
                     Text("Saving...")
                 } else {
                     if viewModel.isImageSaved {
@@ -153,12 +153,12 @@ struct DownloadButton: View {
                 }
             }
             .font(.headline)
-            .foregroundColor(viewModel.isImageSaved ? .green : DesignTokens.Brand.accent(themeManager.resolvedColorScheme))
+            .foregroundColor(viewModel.isImageSaved ? DesignTokens.Semantic.success(themeManager.resolvedColorScheme) : DesignTokens.Brand.primary(themeManager.resolvedColorScheme))
             .frame(maxWidth: .infinity)
             .padding(DesignTokens.Spacing.md)
             .background(
                 RoundedRectangle(cornerRadius: 12)
-                    .stroke(viewModel.isImageSaved ? Color.green : DesignTokens.Brand.accent(themeManager.resolvedColorScheme), lineWidth: 2)
+                    .stroke(viewModel.isImageSaved ? DesignTokens.Semantic.success(themeManager.resolvedColorScheme) : DesignTokens.Brand.primary(themeManager.resolvedColorScheme), lineWidth: 2)
             )
         }
         .disabled(isSaving || viewModel.isImageSaved)
@@ -265,7 +265,7 @@ struct ProcessingInfoCard: View {
                     .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
                 HStack(spacing: 4) {
                     Image(systemName: "bolt.fill")
-                        .foregroundColor(DesignTokens.Brand.accent(themeManager.resolvedColorScheme))
+                        .foregroundColor(DesignTokens.Brand.primary(themeManager.resolvedColorScheme))
                     Text("\(creditCost)")
                         .font(.headline)
                         .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))

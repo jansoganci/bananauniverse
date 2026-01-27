@@ -46,7 +46,7 @@ struct QuickAuthView: View {
                     VStack(spacing: 8) {
                         Image(systemName: "icloud.and.arrow.up")
                             .font(.system(size: 50))
-                            .foregroundColor(DesignTokens.Brand.primary(.light))
+                            .foregroundColor(DesignTokens.Brand.primary(themeManager.resolvedColorScheme))
                         
                         Text("Sync Your Progress")
                             .font(.title)
@@ -85,7 +85,7 @@ struct QuickAuthView: View {
                                 handleAppleSignIn(result)
                             }
                         )
-                        .signInWithAppleButtonStyle(.black)
+                        .signInWithAppleButtonStyle(themeManager.resolvedColorScheme == .dark ? .white : .black)
                         .frame(height: 50)
                         .cornerRadius(10)
                     }
@@ -95,13 +95,13 @@ struct QuickAuthView: View {
                     HStack {
                         Rectangle()
                             .frame(height: 1)
-                            .foregroundColor(.gray.opacity(0.3))
+                            .foregroundColor(DesignTokens.Text.tertiary(themeManager.resolvedColorScheme))
                         Text("or")
-                            .foregroundColor(.secondary)
+                            .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
                             .padding(.horizontal, 8)
                         Rectangle()
                             .frame(height: 1)
-                            .foregroundColor(.gray.opacity(0.3))
+                            .foregroundColor(DesignTokens.Text.tertiary(themeManager.resolvedColorScheme))
                     }
                     .padding(.horizontal)
                     
@@ -120,7 +120,7 @@ struct QuickAuthView: View {
                         Button(action: handleEmailAuth) {
                             if authService.isLoading {
                                 ProgressView()
-                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    .progressViewStyle(CircularProgressViewStyle(tint: DesignTokens.Text.onBrand(themeManager.resolvedColorScheme)))
                             } else {
                                 Text(isSignUp ? "Create Account" : "Sign In")
                                     .bold()
@@ -128,15 +128,15 @@ struct QuickAuthView: View {
                         }
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
-                        .background(isFormValid ? DesignTokens.Brand.primary(.light) : DesignTokens.Brand.primary(.light).opacity(0.6))
-                        .foregroundColor(.white)
+                        .background(isFormValid ? DesignTokens.Brand.primary(themeManager.resolvedColorScheme) : DesignTokens.Brand.primary(themeManager.resolvedColorScheme).opacity(0.6))
+                        .foregroundColor(DesignTokens.Text.onBrand(themeManager.resolvedColorScheme))
                         .cornerRadius(10)
                         .disabled(!isFormValid || authService.isLoading)
                         
                         Button(action: { isSignUp.toggle() }) {
                             Text(isSignUp ? "Already have an account? Sign In" : "New here? Create Account")
                                 .font(.subheadline)
-                                .foregroundColor(.blue)
+                                .foregroundColor(DesignTokens.Text.link(themeManager.resolvedColorScheme))
                         }
                     }
                     .padding(.horizontal)
@@ -255,7 +255,7 @@ struct BenefitRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: icon)
-                .foregroundColor(DesignTokens.Brand.primary(.light))
+                .foregroundColor(DesignTokens.Brand.primary(themeManager.resolvedColorScheme))
                 .font(.system(size: 20))
                 .frame(width: 24)
             

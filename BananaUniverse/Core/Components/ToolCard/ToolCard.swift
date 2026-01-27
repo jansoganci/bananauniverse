@@ -18,51 +18,30 @@ struct ToolCard: View {
     var body: some View {
         AppCard(onTap: onTap) {
             VStack(alignment: .center, spacing: DesignTokens.Spacing.sm) {
-                // Thumbnail Image - use AsyncImage if thumbnailURL exists, otherwise SF Symbol
-                if let thumbnailURL = tool.thumbnailURL {
-                    AsyncImage(url: thumbnailURL) { phase in
-                        switch phase {
-                        case .success(let image):
-                            image
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .frame(width: 120, height: 120)
-                                .clipShape(RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.sm))
-                        case .failure:
-                            // Fallback to SF Symbol if image fails to load
-                            Image(systemName: tool.placeholderIcon)
-                                .font(.system(size: 56, weight: .medium))
-                                .foregroundColor(DesignTokens.Brand.primary(themeManager.resolvedColorScheme))
-                                .frame(height: 120)
-                        case .empty:
-                            // Loading state - show placeholder
-                            ProgressView()
-                                .frame(width: 120, height: 120)
-                        @unknown default:
-                            Image(systemName: tool.placeholderIcon)
-                                .font(.system(size: 56, weight: .medium))
-                                .foregroundColor(DesignTokens.Brand.primary(themeManager.resolvedColorScheme))
-                                .frame(height: 120)
-                        }
-                    }
-                    .frame(height: 120)
-                } else {
-                    // No thumbnail URL - use SF Symbol
-                    Image(systemName: tool.placeholderIcon)
-                        .font(.system(size: 56, weight: .medium))
-                        .foregroundColor(DesignTokens.Brand.primary(themeManager.resolvedColorScheme))
-                        .frame(height: 120)
-                }
+                // Thumbnail Image
+                CachedAsyncImage(
+                    url: tool.thumbnailURL,
+                    placeholderIcon: tool.placeholderIcon
+                )
+                .frame(width: 120, height: 120)
+                .clipShape(RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.sm))
+                .frame(height: 120)
                 
                 // Title
-                Text(tool.name)
-                    .font(DesignTokens.Typography.headline)
-                    .fontWeight(.medium)
-                    .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.8)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: .infinity)
+                if tool.name.isEmpty {
+                    SkeletonView()
+                        .frame(width: 80, height: 16)
+                        .cornerRadius(4)
+                } else {
+                    Text(tool.name)
+                        .font(DesignTokens.Typography.headline)
+                        .fontWeight(.medium)
+                        .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.8)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity)
+                }
             }
             .frame(height: 180)
         }

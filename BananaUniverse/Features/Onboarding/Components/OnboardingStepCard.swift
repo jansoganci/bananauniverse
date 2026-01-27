@@ -45,7 +45,7 @@ struct OnboardingStepCard: View {
                     .scaledToFit()
                     .frame(height: 120)
                     .cornerRadius(DesignTokens.CornerRadius.sm)
-                    .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
+                    .shadow(color: DesignTokens.ShadowColors.default(colorScheme).opacity(0.2), radius: 4, x: 0, y: 2)
             }
             
             HStack(alignment: .top, spacing: DesignTokens.Spacing.md) {
@@ -94,7 +94,7 @@ struct OnboardingStepCard: View {
         .background(
             RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.md)
                 .fill(DesignTokens.Background.secondary(colorScheme))
-                .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                .shadow(color: DesignTokens.ShadowColors.default(colorScheme).opacity(0.1), radius: 4, x: 0, y: 2)
         )
     }
 }
@@ -108,7 +108,7 @@ struct OnboardingStepCard: View {
             iconName: "paintpalette.fill",
             title: "Choose your style",
             description: "Browse 19+ AI themes: toys, art, pro photos",
-            iconColor: .orange,
+            iconColor: DesignTokens.Semantic.warning(.dark),
             screenshotImageName: nil
         )
 
@@ -117,7 +117,7 @@ struct OnboardingStepCard: View {
             iconName: "camera.fill",
             title: "Upload your photo",
             description: "Take a picture or choose from your photo library",
-            iconColor: .blue,
+            iconColor: DesignTokens.Brand.accent(.dark),
             screenshotImageName: nil
         )
 
@@ -126,11 +126,11 @@ struct OnboardingStepCard: View {
             iconName: "sparkles",
             title: "Generate & share",
             description: "Customize settings, hit generate, and share!",
-            iconColor: .purple,
+            iconColor: DesignTokens.Brand.primary(.dark),
             screenshotImageName: nil
         )
     }
     .padding()
-    .background(Color.black)
+    .background(DesignTokens.Background.primary(.dark))
 }
 #endif
