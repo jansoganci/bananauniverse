@@ -3,189 +3,136 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Privacy Policy - BananaUniverse</title>
+    <title>Privacy Policy - Flario</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 40px; line-height: 1.6; color: #333; }
-        h1, h2, h3 { color: #111; }
-        a { color: #007AFF; text-decoration: none; }
+        :root {
+            --primary: #A4FC3C;
+            --background: #121417;
+            --surface: #1C1F23;
+            --text-primary: #FFFFFF;
+            --text-secondary: #A0A0A0;
+            --accent: #A4FC3C;
+        }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            background-color: var(--background);
+            color: var(--text-primary);
+            line-height: 1.6; 
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            max-width: 800px;
+            width: 100%;
+            padding: 40px 20px;
+            box-sizing: border-box;
+        }
+        header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 40px;
+        }
+        .logo {
+            width: 32px;
+            height: 32px;
+            background: var(--surface);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .logo svg {
+            width: 20px;
+            height: 20px;
+            fill: var(--primary);
+        }
+        .wordmark {
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+        h1, h2, h3 { 
+            color: var(--text-primary); 
+            margin-top: 32px;
+        }
+        p, ul { color: var(--text-secondary); }
+        a { 
+            color: var(--accent); 
+            text-decoration: none; 
+        }
         a:hover { text-decoration: underline; }
+        hr {
+            border: 0;
+            border-top: 1px solid #2C2F33;
+            margin: 40px 0;
+        }
+        footer {
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+        }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            margin-bottom: 24px;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
-    <h1>Privacy Policy</h1>
+    <div class="container">
+        <a href="./index.html" class="back-link">← Home</a>
+        <header>
+            <div class="logo">
+                <svg viewBox="0 0 1024 1024">
+                    <path d="M 362 256 L 682 256 Q 702 256 702 276 L 702 344 Q 702 364 682 364 L 462 364 L 462 448 L 642 448 Q 662 448 662 468 L 662 536 Q 662 556 642 556 L 462 556 L 462 748 Q 462 768 442 768 L 362 768 Q 342 768 342 748 L 342 276 Q 342 256 362 256 Z" />
+                </svg>
+            </div>
+            <div class="wordmark">Flario</div>
+        </header>
 
-    <p><strong>Last Updated:</strong> November 21, 2025</p>
+        <h1>Privacy Policy</h1>
+        <p><strong>Last Updated:</strong> January 27, 2026</p>
 
-    <h2>Data We Collect</h2>
+        <h2>Data We Collect</h2>
+        <p>We collect minimal data necessary for app functionality:</p>
+        <ul>
+            <li><strong>Email Address:</strong> For account creation and authentication.</li>
+            <li><strong>User ID:</strong> For account management.</li>
+            <li><strong>Photos:</strong> For AI processing and enhancement.</li>
+            <li><strong>Purchase History:</strong> For subscription management.</li>
+        </ul>
 
-    <p>We collect minimal data necessary for app functionality:</p>
+        <h2>AI Image Processing</h2>
+        <p><strong>IMPORTANT:</strong> Flario uses third-party AI services (including fal.ai) to process your images. When you use AI features, your photos are transmitted securely to external services for processing.</p>
+        <ul>
+            <li><strong>Data Transmitted:</strong> Uploaded photos are sent to AI servers.</li>
+            <li><strong>Retention:</strong> Photos are stored temporarily (typically 24-48 hours) for processing purposes.</li>
+            <li><strong>Privacy:</strong> We respect your privacy and do not sell or share your data with unauthorized third parties.</li>
+        </ul>
 
-    <ul>
-    <li><strong>Email Address:</strong> For account creation and authentication</li>
-    <li><strong>User ID/Identifier:</strong> For account management and service access</li>
-    <li><strong>Photos:</strong> For AI processing and enhancement</li>
-    <li><strong>Purchase History:</strong> For subscription management</li>
-    </ul>
+        <h2>Data Retention</h2>
+        <ul>
+            <li><strong>Uploaded images:</strong> Deleted after temporary processing.</li>
+            <li><strong>Processed results:</strong> Stored for 30 days to allow user download.</li>
+            <li><strong>Account data:</strong> Retained until you delete your account.</li>
+        </ul>
 
-    <h2>How We Use Your Data</h2>
+        <h2>Your Rights</h2>
+        <p>You have the right to view, export, or delete your data at any time. Account deletion can be performed directly within the Flario app settings.</p>
 
-    <p>All data is used solely for app functionality:</p>
-    <ul>
-    <li>Photos are processed by AI and stored temporarily (24 hours) or up to 30 days</li>
-    <li>Email and User ID are used for authentication and account management only</li>
-    <li>No data is sold or shared with third parties except our service providers</li>
-    </ul>
+        <h2>Contact</h2>
+        <p>Email: <a href="mailto:umursoganci@gmail.com">umursoganci@gmail.com</a></p>
 
-    <h2>AI Services and Third-Party Processing</h2>
-
-    <p><strong>IMPORTANT: AI Image Processing Disclosure</strong></p>
-
-    <p>BananaUniverse uses third-party AI services to process your images. When you use AI features in the app, your photos are transmitted to external services for processing:</p>
-
-    <ul>
-    <li><strong>AI Provider:</strong> fal.ai (Fal Technologies, Inc.)</li>
-    <li><strong>Purpose:</strong> AI-powered image processing (background removal, object removal, style transfer, upscaling, and other AI enhancements)</li>
-    <li><strong>Data Transmitted:</strong> Your uploaded photos are sent to fal.ai servers for processing</li>
-    <li><strong>Processing Location:</strong> fal.ai may process images on servers located outside your country</li>
-    <li><strong>Retention:</strong> fal.ai retains processed images according to their privacy policy (typically 24-48 hours)</li>
-    <li><strong>Third-Party Policy:</strong> fal.ai's use of your data is governed by their privacy policy available at <a href="https://fal.ai/privacy" target="_blank">https://fal.ai/privacy</a></li>
-    </ul>
-
-    <p><strong>User Control:</strong></p>
-    <ul>
-    <li>You can choose which images to process with AI features</li>
-    <li>Avoid uploading sensitive, private, or confidential images</li>
-    <li>By using AI features, you consent to your images being processed by fal.ai</li>
-    <li>You may contact us at umursoganci@gmail.com with concerns about AI processing</li>
-    </ul>
-
-    <p><strong>AI Limitations:</strong></p>
-    <ul>
-    <li>AI results are generated automatically and may vary in quality</li>
-    <li>Results may contain unexpected artifacts or errors</li>
-    <li>Not suitable for legal, medical, or identification purposes</li>
-    <li>Always review AI-enhanced photos before use</li>
-    </ul>
-
-    <h2>Service Providers</h2>
-
-    <p>We work with trusted third-party services:</p>
-
-    <ul>
-    <li><strong>Supabase:</strong> Authentication and database</li>
-    <li><strong>Supabase Storage:</strong> Image storage (encrypted)</li>
-    <li><strong>Adapty:</strong> Subscription management</li>
-    <li><strong>fal.ai:</strong> AI processing</li>
-    <li><strong>Apple:</strong> App Store transactions and subscription management</li>
-    </ul>
-
-    <h2>Data Retention</h2>
-
-    <ul>
-    <li><strong>Uploaded images:</strong> 24 hours (temporary processing)</li>
-    <li><strong>Processed results:</strong> 30 days (all users)</li>
-    <li><strong>Account data:</strong> Until you delete your account</li>
-    <li><strong>Server logs:</strong> 90 days (automatically deleted, unless required for security investigation or legal compliance)</li>
-    </ul>
-
-    <h2>Data Security</h2>
-
-    <p>We implement industry-standard security measures:</p>
-
-    <ul>
-    <li><strong>Encryption:</strong> All data transmitted using HTTPS/TLS</li>
-    <li><strong>Storage Security:</strong> Images stored with encryption at rest</li>
-    <li><strong>Access Controls:</strong> Limited access to authorized personnel only</li>
-    <li><strong>Regular Audits:</strong> Security practices reviewed regularly</li>
-    </ul>
-
-    <h2>What We Do NOT Collect</h2>
-
-    <p>We do not collect:</p>
-    <ul>
-    <li>Device identifiers or hardware information</li>
-    <li>Location data</li>
-    <li>Usage analytics or tracking data</li>
-    <li>Diagnostic information</li>
-    <li>Personal information beyond what is required for account creation and image processing</li>
-    </ul>
-
-    <h2>Your Rights</h2>
-
-    <p>You have the right to:</p>
-
-    <ul>
-    <li><strong>View your data:</strong> Contact us to see what data we have</li>
-    <li><strong>Delete your account:</strong> Use the delete function in Profile screen</li>
-    <li><strong>Export your data:</strong> Contact support for data export</li>
-    <li><strong>Withdraw consent:</strong> Stop using the app and delete your account</li>
-    </ul>
-
-    <p><strong>GDPR Rights (where applicable):</strong></p>
-    <ul>
-    <li>Right to rectification of inaccurate data</li>
-    <li>Right to erasure ("right to be forgotten")</li>
-    <li>Right to restrict processing</li>
-    <li>Right to data portability</li>
-    <li>Right to object to processing</li>
-    </ul>
-
-    <h2>International Data Transfers</h2>
-
-    <p>Some of our service providers may process data outside your country. We ensure appropriate safeguards are in place for any international transfers.</p>
-
-    <p><strong>Where applicable (EU users):</strong> Data transfers are conducted under appropriate legal frameworks including Standard Contractual Clauses.</p>
-
-    <h2>Children's Privacy</h2>
-
-    <p>BananaUniverse is not intended for children under 13. We do not knowingly collect personal information from children under 13. If you believe we have collected information from a child under 13, please contact us immediately.</p>
-
-    <h2>Third-Party Links</h2>
-
-    <p>Our app may contain links to third-party websites or services. We are not responsible for the privacy practices of these third parties. Please review their privacy policies before providing any personal information.</p>
-
-    <h2>Subscription and Payment Data</h2>
-
-    <ul>
-    <li><strong>Payment Processing:</strong> All payments processed by Apple through the App Store</li>
-    <li><strong>Subscription Management:</strong> Handled by Adapty and Apple</li>
-    <li><strong>Refunds:</strong> Managed entirely by Apple's refund policy</li>
-    <li><strong>Payment Data:</strong> We do not store or have access to your payment information</li>
-    </ul>
-
-    <h2>Changes to This Policy</h2>
-
-    <p>We may update this privacy policy to reflect changes in our practices or legal requirements. We will notify users of significant changes through:</p>
-
-    <ul>
-    <li>In-app notifications</li>
-    <li>Email notifications (for registered users)</li>
-    <li>Updated privacy policy on our website</li>
-    </ul>
-
-    <p>Continued use of the app after changes constitutes acceptance of the updated policy.</p>
-
-    <h2>Contact</h2>
-
-    <p>For privacy-related questions or requests:</p>
-
-    <p><strong>Email:</strong> <a href="mailto:umursoganci@gmail.com">umursoganci@gmail.com</a></p>
-
-    <p><strong>Response Time:</strong> We aim to respond to privacy requests within 30 days.</p>
-
-    <h2>Compliance</h2>
-
-    <p>This privacy policy is designed to comply with:</p>
-    <ul>
-    <li>Apple App Store Review Guidelines</li>
-    <li>General privacy best practices</li>
-    <li>GDPR requirements (where applicable)</li>
-    <li>CCPA requirements (where applicable)</li>
-    <li>Other applicable privacy laws</li>
-    </ul>
-
-    <hr>
-
-    <p><strong>Last Updated:</strong> November 21, 2025</p>
+        <hr>
+        <footer>
+            <p>© 2026 Flario. All rights reserved.</p>
+        </footer>
+    </div>
 </body>
 </html>
