@@ -138,3 +138,13 @@ tests/
 # Supabase Backend Specialists (optional - gitignore if you don't want to commit)
 # docs/backend-architecture/
 # templates/supabase-backend/
+
+# StoreKit Configuration (contains Team ID)
+*.storekit
+
+# Documentation Archives
+docs/archive/
+
+# Additional macOS files
+.Spotlight-V100
+.Trashes

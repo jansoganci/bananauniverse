@@ -8,6 +8,7 @@
 import SwiftUI
 import StableID
 import StoreKit
+import RevenueCat
 
 @main
 struct BananaUniverseApp: App {
@@ -25,6 +26,10 @@ struct BananaUniverseApp: App {
         // Services (CreditManager, HybridAuthService) may access StableID.id immediately
         // Async configuration would cause fatalError("StableID not configured") crash
         configureStableIDSynchronously()
+        
+        // Initialize RevenueCat
+        Purchases.logLevel = .debug
+        Purchases.configure(withAPIKey: Config.revenueCatAPIKey, appUserID: StableID.id)
     }
 
     /// Synchronous StableID configuration to prevent race condition crashes

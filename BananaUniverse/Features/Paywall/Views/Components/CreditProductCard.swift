@@ -6,10 +6,10 @@
 //
 
 import SwiftUI
-import StoreKit
+import RevenueCat
 
 struct CreditProductCard: View {
-    let product: Product
+    let package: Package
     let isSelected: Bool
     let isBestValue: Bool
     let isMostPopular: Bool
@@ -71,11 +71,11 @@ struct CreditProductCard: View {
                     // Product info
                     HStack {
                         VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
-                            Text(product.displayName)
+                            Text(package.storeProduct.localizedTitle)
                                 .font(.system(size: 20, weight: .bold))
                                 .foregroundColor(DesignTokens.Text.primary(colorScheme))
                             
-                            Text(product.description)
+                            Text(package.storeProduct.localizedDescription)
                                 .font(.system(size: 13, weight: .regular))
                                 .foregroundColor(DesignTokens.Text.secondary(colorScheme))
                                 .lineLimit(2)
@@ -84,7 +84,7 @@ struct CreditProductCard: View {
                         Spacer()
                         
                         // Price
-                        Text(product.displayPrice)
+                        Text(package.storeProduct.localizedPriceString)
                             .font(.system(size: 22, weight: .bold))
                             .foregroundColor(DesignTokens.Text.primary(colorScheme))
                     }

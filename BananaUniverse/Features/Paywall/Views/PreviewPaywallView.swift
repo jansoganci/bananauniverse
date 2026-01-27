@@ -7,14 +7,14 @@
 //
 
 import SwiftUI
-import StoreKit
+import RevenueCat
 
 struct PreviewPaywallView: View {
-    @StateObject private var storeKitService = StoreKitService.shared
+    @StateObject private var revenueCatService = RevenueCatService.shared
     @EnvironmentObject var themeManager: ThemeManager
     @Environment(\.dismiss) var dismiss
     
-    @State private var selectedProduct: Product?
+    @State private var selectedPackage: Package?
     @State private var showAlert = false
     @State private var alertTitle = ""
     @State private var alertMessage = ""
@@ -37,10 +37,10 @@ struct PreviewPaywallView: View {
                         benefitsSection
                         
                         // Products section
-                        if storeKitService.isLoading {
+                        if revenueCatService.isLoading {
                             loadingSection
-                        } else if storeKitService.hasCreditProducts {
-                            productsSection
+                        } else if let currentOffering = revenueCatService.currentOffering, !currentOffering.availablePackages.isEmpty {
+                            productsSection(offering: currentOffering)
                         } else {
                             errorSection
                         }
@@ -71,13 +71,13 @@ struct PreviewPaywallView: View {
             } message: {
                 Text(alertMessage)
             }
-            .alert("Success!", isPresented: $storeKitService.shouldShowSuccessAlert) {
+            .alert("Success!", isPresented: $revenueCatService.shouldShowSuccessAlert) {
                 Button("OK", role: .cancel) {
-                    storeKitService.dismissSuccessAlert()
+                    revenueCatService.dismissSuccessAlert()
                     // REMOVED AUTO-DISMISS - Let user manually close paywall
                 }
             } message: {
-                Text(storeKitService.successAlertMessage)
+                Text(revenueCatService.successAlertMessage)
             }
             .alert("Retry Action", isPresented: $showRetryAlert) {
                 Button("Cancel", role: .cancel) {
@@ -92,7 +92,7 @@ struct PreviewPaywallView: View {
             }
             .onAppear {
                 Task {
-                    await storeKitService.loadProducts()
+                    await revenueCatService.fetchOfferings()
                 }
             }
             .sheet(isPresented: $showAI_Disclosure) {
@@ -140,7 +140,7 @@ struct PreviewPaywallView: View {
     private var benefitsSection: some View {
         VStack(spacing: 20) {
             // Benefit 1
-                            PreviewPaywallBenefitRow(
+            PreviewPaywallBenefitRow(
                 icon: "wand.and.stars",
                 title: "🎭 Boring → Viral",
                 description: "One tap away"
@@ -149,7 +149,7 @@ struct PreviewPaywallView: View {
             .accessibilityHint("Feature benefit")
 
             // Benefit 2
-                            PreviewPaywallBenefitRow(
+            PreviewPaywallBenefitRow(
                 icon: "camera.fill",
                 title: "📸 Your best look",
                 description: "Every single time"
@@ -158,7 +158,7 @@ struct PreviewPaywallView: View {
             .accessibilityHint("Feature benefit")
 
             // Benefit 3
-                            PreviewPaywallBenefitRow(
+            PreviewPaywallBenefitRow(
                 icon: "bolt.fill",
                 title: "⚡ Instant magic",
                 description: "Zero effort"
@@ -192,19 +192,19 @@ struct PreviewPaywallView: View {
     
     // MARK: - Products Section
     
-    private var productsSection: some View {
+    private func productsSection(offering: Offering) -> some View {
         VStack(spacing: 16) {
             // Credit Products
-            ForEach(Array(storeKitService.creditProducts.enumerated()), id: \.element.id) { index, product in
-                let isBestValue = product.id == "credits_100"
-                let isMostPopular = product.id == "credits_25"
+            ForEach(offering.availablePackages) { package in
+                let isBestValue = package.storeProduct.productIdentifier.contains("100")
+                let isMostPopular = package.storeProduct.productIdentifier.contains("25")
                 CreditProductCard(
-                    product: product,
-                    isSelected: selectedProduct?.id == product.id,
+                    package: package,
+                    isSelected: selectedPackage?.identifier == package.identifier,
                     isBestValue: isBestValue,
                     isMostPopular: isMostPopular
                 ) {
-                    selectedProduct = product
+                    selectedPackage = package
                 }
             }
         }
@@ -222,14 +222,14 @@ struct PreviewPaywallView: View {
                 .font(.headline)
                 .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
             
-            Text(storeKitService.errorMessage ?? "Please check your internet connection and try again.")
+            Text(revenueCatService.errorMessage ?? "Please check your internet connection and try again.")
                 .font(.subheadline)
                 .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
                 .multilineTextAlignment(.center)
             
             Button("Retry") {
                 Task {
-                    await storeKitService.loadProducts()
+                    await revenueCatService.fetchOfferings()
                 }
             }
             .buttonStyle(.borderedProminent)
@@ -242,16 +242,14 @@ struct PreviewPaywallView: View {
     private var ctaButton: some View {
         Button(action: {
             Task {
-                guard let selectedProduct = selectedProduct else {
+                guard let selectedPackage = selectedPackage else {
                     showAlert(title: "No Product Selected", message: "Please select a credit package to continue.")
                     return
                 }
                 
                 do {
-                    // Purchase will be handled by StoreKitService with proper transaction verification
-                    // Success alert will be shown by StoreKitService only after verified transaction
-                    _ = try await storeKitService.purchase(selectedProduct)
-                    // No immediate success alert - wait for transaction listener
+                    // Purchase will be handled by RevenueCatService
+                    _ = try await revenueCatService.purchase(selectedPackage)
                 } catch {
                     DispatchQueue.main.async {
                         self.handlePurchaseError(error)
@@ -260,7 +258,7 @@ struct PreviewPaywallView: View {
             }
         }) {
             HStack(spacing: 12) {
-                if storeKitService.isLoading {
+                if revenueCatService.isLoading {
                     ProgressView()
                         .scaleEffect(0.8)
                         .tint(.white)
@@ -269,7 +267,7 @@ struct PreviewPaywallView: View {
                 Text("Continue Creating")
                     .font(.system(size: 18, weight: .bold))
 
-                if !storeKitService.isLoading {
+                if !revenueCatService.isLoading {
                     Image(systemName: "arrow.right")
                         .font(.system(size: 16, weight: .semibold))
                 }
@@ -290,8 +288,8 @@ struct PreviewPaywallView: View {
             .cornerRadius(DesignTokens.CornerRadius.lg)
             .shadow(color: DesignTokens.ShadowColors.primary(themeManager.resolvedColorScheme), radius: 12, x: 0, y: 6)
         }
-        .disabled(selectedProduct == nil || storeKitService.isLoading)
-        .opacity((selectedProduct != nil && !storeKitService.isLoading) ? 1.0 : 0.6)
+        .disabled(selectedPackage == nil || revenueCatService.isLoading)
+        .opacity((selectedPackage != nil && !revenueCatService.isLoading) ? 1.0 : 0.6)
         .accessibilityLabel("Buy Credits")
         .accessibilityHint("Tap to purchase selected product")
     }
@@ -304,7 +302,7 @@ struct PreviewPaywallView: View {
             Button(action: {
                 Task {
                     do {
-                        try await storeKitService.restorePurchases()
+                        _ = try await revenueCatService.restorePurchases()
                         DispatchQueue.main.async {
                             self.showAlert(title: "Success!", message: "Purchases restored successfully!")
                         }
@@ -316,7 +314,7 @@ struct PreviewPaywallView: View {
                 }
             }) {
                 HStack(spacing: 8) {
-                    if storeKitService.isLoading {
+                    if revenueCatService.isLoading {
                         ProgressView()
                             .scaleEffect(0.7)
                     } else {
@@ -328,7 +326,7 @@ struct PreviewPaywallView: View {
                 }
                 .foregroundColor(DesignTokens.Text.link(themeManager.resolvedColorScheme))
             }
-            .disabled(storeKitService.isLoading)
+            .disabled(revenueCatService.isLoading)
             .accessibilityLabel("Restore Purchases")
             .accessibilityHint("Tap to restore previous purchases")
             
@@ -402,186 +400,6 @@ struct PreviewPaywallBenefitRow: View {
     }
 }
 
-// MARK: - Product Card Component
-
-struct PreviewPaywallProductCard: View {
-    let product: MockProduct
-    let isSelected: Bool
-    let shouldHighlight: Bool
-    let shouldShowTrialBadge: Bool
-    let onTap: () -> Void
-    @EnvironmentObject var themeManager: ThemeManager
-    
-    var body: some View {
-        Button(action: onTap) {
-            VStack(spacing: 12) {
-                // Trial badge at top center
-                if shouldShowTrialBadge {
-                    Text("3-Day Free Trial")
-                        .font(.system(size: 11, weight: .bold))
-                        .padding(.horizontal, DesignTokens.Spacing.sm)
-                        .padding(.vertical, DesignTokens.Spacing.xs)
-                        .background(DesignTokens.Semantic.success(themeManager.resolvedColorScheme))
-                        .foregroundColor(DesignTokens.Text.inverse)
-                        .cornerRadius(DesignTokens.CornerRadius.xs)
-                }
-                
-                // Header with title
-                HStack {
-                    VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
-                        Text(product.localizedTitle)
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
-                        
-                        Text(product.localizedDescription)
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
-                            .lineLimit(2)
-                    }
-                    
-                    Spacer()
-                }
-                
-                // Price and savings
-                HStack {
-                    VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
-                        Text(product.localizedPrice)
-                            .font(.system(size: 20, weight: .bold))
-                            .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
-                        
-                        if let savings = product.savings {
-                            Text(savings)
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundColor(DesignTokens.Semantic.error(themeManager.resolvedColorScheme))
-                        }
-                    }
-                    
-                    Spacer()
-                    
-                    // Selection indicator
-                    if isSelected {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 20))
-                            .foregroundColor(DesignTokens.Brand.primary(themeManager.resolvedColorScheme))
-                    }
-                }
-            }
-            .padding(20)
-            .background(
-                RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.lg)
-                    .fill(DesignTokens.Surface.primary(themeManager.resolvedColorScheme))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.lg)
-                            .stroke(
-                                isSelected ? DesignTokens.Brand.primary(themeManager.resolvedColorScheme) : (shouldHighlight ? DesignTokens.Semantic.success(themeManager.resolvedColorScheme) : Color.clear),
-                                lineWidth: isSelected ? 2 : (shouldHighlight ? 1 : 0)
-                            )
-                    )
-            )
-            .scaleEffect(shouldHighlight ? 1.02 : 1.0)
-            .shadow(
-                color: DesignTokens.ShadowColors.default(themeManager.resolvedColorScheme),
-                radius: 8,
-                x: 0,
-                y: 4
-            )
-        }
-        .buttonStyle(.plain)
-        .animation(.easeInOut(duration: 0.2), value: isSelected)
-        .animation(.easeInOut(duration: 0.2), value: shouldHighlight)
-    }
-}
-
-// MARK: - StoreKit Product Card Component
-
-struct StoreKitProductCard: View {
-    let product: Product
-    let isSelected: Bool
-    let shouldHighlight: Bool
-    let shouldShowTrialBadge: Bool
-    let onTap: () -> Void
-    @EnvironmentObject var themeManager: ThemeManager
-    
-    var body: some View {
-        Button(action: onTap) {
-            VStack(spacing: 12) {
-                // Trial badge at top center
-                if shouldShowTrialBadge {
-                    Text("3-Day Free Trial")
-                        .font(.system(size: 11, weight: .bold))
-                        .padding(.horizontal, DesignTokens.Spacing.sm)
-                        .padding(.vertical, DesignTokens.Spacing.xs)
-                        .background(DesignTokens.Semantic.success(themeManager.resolvedColorScheme))
-                        .foregroundColor(DesignTokens.Text.inverse)
-                        .cornerRadius(DesignTokens.CornerRadius.xs)
-                }
-                
-                // Header with title
-                HStack {
-                    VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
-                        Text(product.displayName)
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
-                        
-                        Text(product.description)
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
-                            .lineLimit(2)
-                    }
-                    
-                    Spacer()
-                }
-                
-                // Price and savings
-                HStack {
-                    VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
-                        Text(product.displayPrice)
-                            .font(.system(size: 20, weight: .bold))
-                            .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
-                        
-                        if product.id.contains("yearly") {
-                            Text("Save 70%")
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundColor(DesignTokens.Semantic.error(themeManager.resolvedColorScheme))
-                        }
-                    }
-                    
-                    Spacer()
-                    
-                    // Selection indicator
-                    if isSelected {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 20))
-                            .foregroundColor(DesignTokens.Brand.primary(themeManager.resolvedColorScheme))
-                    }
-                }
-            }
-            .padding(20)
-            .background(
-                RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.lg)
-                    .fill(DesignTokens.Surface.primary(themeManager.resolvedColorScheme))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.lg)
-                            .stroke(
-                                isSelected ? DesignTokens.Brand.primary(themeManager.resolvedColorScheme) : (shouldHighlight ? DesignTokens.Semantic.success(themeManager.resolvedColorScheme) : Color.clear),
-                                lineWidth: isSelected ? 2 : (shouldHighlight ? 1 : 0)
-                            )
-                    )
-            )
-            .scaleEffect(shouldHighlight ? 1.02 : 1.0)
-            .shadow(
-                color: DesignTokens.ShadowColors.default(themeManager.resolvedColorScheme),
-                radius: 8,
-                x: 0,
-                y: 4
-            )
-        }
-        .buttonStyle(.plain)
-        .animation(.easeInOut(duration: 0.2), value: isSelected)
-        .animation(.easeInOut(duration: 0.2), value: shouldHighlight)
-    }
-}
-
 // MARK: - Helper Methods
 
 extension PreviewPaywallView {
@@ -612,12 +430,10 @@ extension PreviewPaywallView {
         // Set up retry action
         retryAction = {
             Task {
-                guard let selectedProduct = self.selectedProduct else { return }
+                guard let selectedPackage = self.selectedPackage else { return }
                 do {
-                    // Purchase will be handled by StoreKitService with proper transaction verification
-                    // Success alert will be shown by StoreKitService only after verified transaction
-                    _ = try await self.storeKitService.purchase(selectedProduct)
-                    // No immediate success alert - wait for transaction listener
+                    // Purchase will be handled by RevenueCatService
+                    _ = try await self.revenueCatService.purchase(selectedPackage)
                 } catch {
                     DispatchQueue.main.async {
                         self.handlePurchaseError(error)
@@ -642,7 +458,7 @@ extension PreviewPaywallView {
         retryAction = {
             Task {
                 do {
-                    try await self.storeKitService.restorePurchases()
+                    try await self.revenueCatService.restorePurchases()
                     DispatchQueue.main.async {
                         self.showAlert(title: "Success!", message: "Purchases restored successfully!")
                     }

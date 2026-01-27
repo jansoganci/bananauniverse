@@ -521,13 +521,13 @@ class SupabaseService: ObservableObject {
         // Backend accepts transaction_id (StoreKit 2) or transaction_jwt (StoreKit 1)
         var body: [String: Any] = [
             "transaction_id": transactionId,
-            "product_id": productId
+            "product_id": productId,
+            "device_id": userState.identifier
         ]
         
-        // Add device_id for anonymous users (required by backend)
-        if !userState.isAuthenticated {
-            body["device_id"] = userState.identifier
-        }
+        #if DEBUG
+        body["is_development"] = true
+        #endif
         
         let jsonData = try JSONSerialization.data(withJSONObject: body)
         

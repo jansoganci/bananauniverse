@@ -7,22 +7,22 @@
 //
 
 import SwiftUI
-import StoreKit
+import RevenueCat
 
 struct PaywallPreview: View {
-    @StateObject private var storeKitService = StoreKitService.shared
+    @StateObject private var revenueCatService = RevenueCatService.shared
     @EnvironmentObject var themeManager: ThemeManager
     @Environment(\.dismiss) var dismiss
     @Environment(\.colorScheme) var colorScheme
     
-    @State private var selectedProduct: Product?
+    @State private var selectedPackage: Package?
     @State private var showAlert = false
     @State private var alertTitle = ""
     @State private var alertMessage = ""
     @State private var showRetryAlert = false
     @State private var retryAction: (() -> Void)?
     @State private var animateGradient = false
-    @State private var selectedProductId: String?
+    @State private var selectedPackageId: String?
     
     var body: some View {
         NavigationView {
@@ -36,12 +36,12 @@ struct PaywallPreview: View {
                 } message: {
                     Text(alertMessage)
                 }
-                .alert("Success!", isPresented: $storeKitService.shouldShowSuccessAlert) {
+                .alert("Success!", isPresented: $revenueCatService.shouldShowSuccessAlert) {
                     Button("OK", role: .cancel) {
-                        storeKitService.dismissSuccessAlert()
+                        revenueCatService.dismissSuccessAlert()
                     }
                 } message: {
-                    Text(storeKitService.successAlertMessage)
+                    Text(revenueCatService.successAlertMessage)
                 }
                 .alert("Retry Action", isPresented: $showRetryAlert) {
                     Button("Cancel", role: .cancel) { dismissRetryAlert() }
@@ -76,14 +76,14 @@ struct PaywallPreview: View {
                 productsContent
                 
                 PaywallCTAButton(
-                    selectedProduct: selectedProduct,
-                    isLoading: storeKitService.isLoading,
+                    selectedPackage: selectedPackage,
+                    isLoading: revenueCatService.isLoading,
                     onPurchase: handlePurchase
                 )
                 .padding(.bottom, DesignTokens.Spacing.lg)
                 
                 PaywallFooterSection(
-                    isLoading: storeKitService.isLoading,
+                    isLoading: revenueCatService.isLoading,
                     onRestore: handleRestore
                 )
                 .padding(.bottom, DesignTokens.Spacing.xl)
@@ -94,18 +94,18 @@ struct PaywallPreview: View {
     
     @ViewBuilder
     private var productsContent: some View {
-        if storeKitService.isLoading {
+        if revenueCatService.isLoading {
             PaywallLoadingSection()
                 .padding(.bottom, DesignTokens.Spacing.xl)
-        } else if storeKitService.hasCreditProducts {
-            productsSection
+        } else if let offering = revenueCatService.currentOffering, !offering.availablePackages.isEmpty {
+            productsSection(offering: offering)
                 .padding(.bottom, DesignTokens.Spacing.lg)
         } else {
             PaywallErrorSection(
-                errorMessage: storeKitService.errorMessage,
+                errorMessage: revenueCatService.errorMessage,
                 onRetry: {
                     Task {
-                        await storeKitService.loadProducts()
+                        await revenueCatService.fetchOfferings()
                     }
                 }
             )
@@ -129,13 +129,15 @@ struct PaywallPreview: View {
     
     private func handleAppear() {
         Task {
-            await storeKitService.loadProducts()
-            if let bestValue = storeKitService.creditProducts.first(where: { $0.id == "credits_100" }) {
-                selectedProduct = bestValue
-                selectedProductId = bestValue.id
-            } else if let firstProduct = storeKitService.creditProducts.first {
-                selectedProduct = firstProduct
-                selectedProductId = firstProduct.id
+            await revenueCatService.fetchOfferings()
+            if let offering = revenueCatService.currentOffering {
+                if let bestValue = offering.availablePackages.first(where: { $0.storeProduct.productIdentifier.contains("100") }) {
+                    selectedPackage = bestValue
+                    selectedPackageId = bestValue.identifier
+                } else if let firstPackage = offering.availablePackages.first {
+                    selectedPackage = firstPackage
+                    selectedPackageId = firstPackage.identifier
+                }
             }
         }
         
@@ -146,7 +148,7 @@ struct PaywallPreview: View {
     
     private func handlePurchase() {
         Task {
-            guard let selectedProduct = selectedProduct else {
+            guard let selectedPackage = selectedPackage else {
                 showAlert(title: "No Package Selected", message: "Please select a credit package to continue.")
                 return
             }
@@ -154,7 +156,7 @@ struct PaywallPreview: View {
             DesignTokens.Haptics.impact(.medium)
             
             do {
-                _ = try await storeKitService.purchase(selectedProduct)
+                _ = try await revenueCatService.purchase(selectedPackage)
             } catch {
                 DispatchQueue.main.async {
                     self.handlePurchaseError(error)
@@ -166,7 +168,7 @@ struct PaywallPreview: View {
     private func handleRestore() {
         Task {
             do {
-                try await storeKitService.restorePurchases()
+                _ = try await revenueCatService.restorePurchases()
                 DispatchQueue.main.async {
                     self.showAlert(title: "Success!", message: "Purchases restored successfully!")
                 }
@@ -180,27 +182,28 @@ struct PaywallPreview: View {
     
     // MARK: - Products Section
     
-    private var productsSection: some View {
+    private func productsSection(offering: Offering) -> some View {
         VStack(spacing: DesignTokens.Spacing.md) {
-            ForEach(sortedCreditProducts, id: \.id) { product in
+            ForEach(sortedPackages(offering), id: \.identifier) { package in
                 CreditProductCard(
-                    product: product,
-                    isSelected: selectedProductId == product.id,
-                    isBestValue: product.id == "credits_100",
-                    isMostPopular: product.id == "credits_25",
+                    package: package,
+                    isSelected: selectedPackageId == package.identifier,
+                    isBestValue: package.storeProduct.productIdentifier.contains("100"),
+                    isMostPopular: package.storeProduct.productIdentifier.contains("25"),
                     onTap: {
                         DesignTokens.Haptics.selectionChanged()
-                        selectedProduct = product
-                        selectedProductId = product.id
+                        selectedPackage = package
+                        selectedPackageId = package.identifier
                     }
                 )
             }
         }
     }
     
-    private var sortedCreditProducts: [Product] {
-        storeKitService.creditProducts.sorted(by: { 
-            CreditAmountHelper.getAmount(from: $0.id) < CreditAmountHelper.getAmount(from: $1.id) 
+    private func sortedPackages(_ offering: Offering) -> [Package] {
+        offering.availablePackages.sorted(by: { 
+            CreditAmountHelper.getAmount(from: $0.storeProduct.productIdentifier) < 
+            CreditAmountHelper.getAmount(from: $1.storeProduct.productIdentifier) 
         })
     }
     
@@ -232,9 +235,9 @@ struct PaywallPreview: View {
         
         retryAction = {
             Task {
-                guard let selectedProduct = self.selectedProduct else { return }
+                guard let selectedPackage = self.selectedPackage else { return }
                 do {
-                    _ = try await self.storeKitService.purchase(selectedProduct)
+                    _ = try await self.revenueCatService.purchase(selectedPackage)
                 } catch {
                     DispatchQueue.main.async {
                         self.handlePurchaseError(error)
@@ -258,7 +261,7 @@ struct PaywallPreview: View {
         retryAction = {
             Task {
                 do {
-                    try await self.storeKitService.restorePurchases()
+                    _ = try await self.revenueCatService.restorePurchases()
                     DispatchQueue.main.async {
                         self.showAlert(title: "Success!", message: "Purchases restored successfully!")
                     }

@@ -6,10 +6,10 @@
 //
 
 import SwiftUI
-import StoreKit
+import RevenueCat
 
 struct PaywallCTAButton: View {
-    let selectedProduct: Product?
+    let selectedPackage: Package?
     let isLoading: Bool
     let onPurchase: () -> Void
     @Environment(\.colorScheme) var colorScheme
@@ -17,7 +17,7 @@ struct PaywallCTAButton: View {
     private var buttonText: String {
         if isLoading {
             return "Processing..."
-        } else if selectedProduct != nil {
+        } else if selectedPackage != nil {
             return "Continue Creating →"
         } else {
             return "Select a Package"
@@ -44,7 +44,7 @@ struct PaywallCTAButton: View {
             .frame(height: 56)
             .background(
                 Group {
-                    if selectedProduct != nil && !isLoading {
+                    if selectedPackage != nil && !isLoading {
                         LinearGradient(
                             colors: [
                                 DesignTokens.Gradients.primaryStart(colorScheme),
@@ -67,15 +67,15 @@ struct PaywallCTAButton: View {
             )
             .cornerRadius(DesignTokens.CornerRadius.lg)
             .shadow(
-                color: selectedProduct != nil ? DesignTokens.ShadowColors.primary(colorScheme) : Color.clear,
-                radius: selectedProduct != nil ? 16 : 0,
+                color: selectedPackage != nil ? DesignTokens.ShadowColors.primary(colorScheme) : Color.clear,
+                radius: selectedPackage != nil ? 16 : 0,
                 x: 0,
                 y: 8
             )
         }
-        .disabled(selectedProduct == nil || isLoading)
-        .opacity((selectedProduct != nil && !isLoading) ? 1.0 : 0.6)
-        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: selectedProduct != nil)
+        .disabled(selectedPackage == nil || isLoading)
+        .opacity((selectedPackage != nil && !isLoading) ? 1.0 : 0.6)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: selectedPackage != nil)
         .accessibilityLabel(buttonText)
         .accessibilityHint("Tap to purchase selected product")
     }

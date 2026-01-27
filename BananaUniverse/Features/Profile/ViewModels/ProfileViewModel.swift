@@ -19,26 +19,26 @@ class ProfileViewModel: ObservableObject {
     @Published var isProfileLoading: Bool = false
     @Published var profileError: String? = nil
     
-    // Success alert handling from StoreKitService
+    // Success alert handling from RevenueCatService
     @Published var shouldShowSuccessAlert: Bool = false
     @Published var successAlertMessage: String = ""
     
     private let supabaseService = SupabaseService.shared
     private let authService = HybridAuthService.shared
     private let creditManager = CreditManager.shared
-    private let storeKitService = StoreKitService.shared
+    private let revenueCatService = RevenueCatService.shared
     private var cancellables = Set<AnyCancellable>()
     
     init() {
-        // Subscribe to StoreKitService success alerts
-        storeKitService.$shouldShowSuccessAlert
+        // Subscribe to RevenueCatService success alerts
+        revenueCatService.$shouldShowSuccessAlert
             .receive(on: RunLoop.main)
             .sink { [weak self] shouldShow in
                 self?.shouldShowSuccessAlert = shouldShow
             }
             .store(in: &cancellables)
         
-        storeKitService.$successAlertMessage
+        revenueCatService.$successAlertMessage
             .receive(on: RunLoop.main)
             .sink { [weak self] message in
                 self?.successAlertMessage = message
@@ -49,7 +49,7 @@ class ProfileViewModel: ObservableObject {
     @MainActor
     func restorePurchases() async {
         do {
-            try await StoreKitService.shared.restorePurchases()
+            _ = try await RevenueCatService.shared.restorePurchases()
             #if DEBUG
             print("✅ Restore successful")
             #endif
@@ -175,6 +175,6 @@ class ProfileViewModel: ObservableObject {
     // MARK: - Success Alert Handling
     
     func dismissSuccessAlert() {
-        storeKitService.dismissSuccessAlert()
+        revenueCatService.dismissSuccessAlert()
     }
 }

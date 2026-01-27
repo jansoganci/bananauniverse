@@ -22,6 +22,14 @@ struct Config {
         return key
     }()
     
+    // MARK: - RevenueCat Configuration
+    static let revenueCatAPIKey: String = {
+        guard let key = infoPlistValue(for: "REVENUECAT_API_KEY") else {
+            fatalError("REVENUECAT_API_KEY not found in Info.plist.")
+        }
+        return key
+    }()
+    
     // MARK: - Edge Function Configuration
     static var edgeFunctionURL: String {
         return "\(supabaseURL)/functions/v1"
@@ -49,20 +57,6 @@ struct Config {
     
     // MARK: - Paywall Configuration
     // All paywall triggers now use PreviewPaywallView directly
-    
-    // MARK: - Payment Testing
-    /// Enable test mode to bypass StoreKit and simulate purchases
-    /// Set to true to test payment flow without Apple sandbox
-    static let enablePaymentTestMode: Bool = {
-        #if DEBUG
-        // Enable test mode in debug builds by default
-        // Set to false to test with real StoreKit
-        return false
-        #else
-        // Always use real payments in production
-        return false
-        #endif
-    }()
     
     // MARK: - Privacy & Legal
     static let privacyPolicyURL = "https://jansoganci.github.io/banana.universe/privacy.html"

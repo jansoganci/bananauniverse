@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		C5185E9D2EDF0BB8005DB7E6 /* storekit.storekit in Resources */ = {isa = PBXBuildFile; fileRef = C5185E9C2EDF0BB8005DB7E6 /* storekit.storekit */; };
+		C56D7F8C2F29245C00EA66C2 /* ReceiptParser in Frameworks */ = {isa = PBXBuildFile; productRef = C56D7F8B2F29245C00EA66C2 /* ReceiptParser */; };
+		C56D7F8E2F29245C00EA66C2 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = C56D7F8D2F29245C00EA66C2 /* RevenueCat */; };
 		C5B91CBB2E9D6A23000CA05D /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = C5B91CBA2E9D6A23000CA05D /* Auth */; };
 		C5B91CBD2E9D6A23000CA05D /* Realtime in Frameworks */ = {isa = PBXBuildFile; productRef = C5B91CBC2E9D6A23000CA05D /* Realtime */; };
 		C5B91CBF2E9D6A23000CA05D /* Storage in Frameworks */ = {isa = PBXBuildFile; productRef = C5B91CBE2E9D6A23000CA05D /* Storage */; };
@@ -55,7 +57,9 @@
 				C5B91CC12E9D6A23000CA05D /* Supabase in Frameworks */,
 				C5B91CBF2E9D6A23000CA05D /* Storage in Frameworks */,
 				C5B91CBB2E9D6A23000CA05D /* Auth in Frameworks */,
+				C56D7F8E2F29245C00EA66C2 /* RevenueCat in Frameworks */,
 				C5C6DDF92E9EE24A00C63300 /* FalClient in Frameworks */,
+				C56D7F8C2F29245C00EA66C2 /* ReceiptParser in Frameworks */,
 				C5B91CBD2E9D6A23000CA05D /* Realtime in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -109,6 +113,8 @@
 				C5B91CC62E9D6D99000CA05D /* Kingfisher */,
 				C5C6DDF82E9EE24A00C63300 /* FalClient */,
 				C5E35AB82ED094F800A5B66B /* StableID */,
+				C56D7F8B2F29245C00EA66C2 /* ReceiptParser */,
+				C56D7F8D2F29245C00EA66C2 /* RevenueCat */,
 			);
 			productName = BananaUniverse;
 			productReference = C5B91B602E9C4E54000CA05D /* BananaUniverse.app */;
@@ -144,6 +150,7 @@
 				C5B91CC52E9D6D99000CA05D /* XCRemoteSwiftPackageReference "Kingfisher" */,
 				C5C6DDF72E9EE24A00C63300 /* XCRemoteSwiftPackageReference "fal-swift" */,
 				C5E35AB72ED094F700A5B66B /* XCRemoteSwiftPackageReference "StableID" */,
+				C56D7F8A2F29245C00EA66C2 /* XCRemoteSwiftPackageReference "purchases-ios-spm" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = C5B91B612E9C4E54000CA05D /* Products */;
@@ -414,6 +421,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		C56D7F8A2F29245C00EA66C2 /* XCRemoteSwiftPackageReference "purchases-ios-spm" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RevenueCat/purchases-ios-spm.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.55.3;
+			};
+		};
 		C5B91CB92E9D6A23000CA05D /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/supabase/supabase-swift.git";
@@ -449,6 +464,16 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		C56D7F8B2F29245C00EA66C2 /* ReceiptParser */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C56D7F8A2F29245C00EA66C2 /* XCRemoteSwiftPackageReference "purchases-ios-spm" */;
+			productName = ReceiptParser;
+		};
+		C56D7F8D2F29245C00EA66C2 /* RevenueCat */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C56D7F8A2F29245C00EA66C2 /* XCRemoteSwiftPackageReference "purchases-ios-spm" */;
+			productName = RevenueCat;
+		};
 		C5B91CBA2E9D6A23000CA05D /* Auth */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = C5B91CB92E9D6A23000CA05D /* XCRemoteSwiftPackageReference "supabase-swift" */;

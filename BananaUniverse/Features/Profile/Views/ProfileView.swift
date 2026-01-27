@@ -638,11 +638,9 @@ struct ProfileView: View {
             
             // Debug Section (only in debug builds)
             #if DEBUG
-            if Config.enablePaymentTestMode {
-                PaymentDebugView()
-                    .padding(.horizontal, DesignTokens.Spacing.md)
-                    .padding(.bottom, DesignTokens.Spacing.md)
-            }
+            PaymentDebugView()
+                .padding(.horizontal, DesignTokens.Spacing.md)
+                .padding(.bottom, DesignTokens.Spacing.md)
             #endif
             
             // Bottom padding for scroll content

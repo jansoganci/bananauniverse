@@ -6,9 +6,10 @@
 //
 
 import SwiftUI
+import RevenueCat
 
 struct PaymentDebugView: View {
-    @StateObject private var storeKitService = StoreKitService.shared
+    @StateObject private var revenueCatService = RevenueCatService.shared
     @StateObject private var creditManager = CreditManager.shared
     @EnvironmentObject var themeManager: ThemeManager
     
@@ -21,30 +22,17 @@ struct PaymentDebugView: View {
             
             Divider()
             
-            // Test Mode Status
+            // RevenueCat Status
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
-                    Text("Test Mode:")
+                    Text("RevenueCat SDK:")
                         .font(.subheadline)
                         .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
                     Spacer()
-                    if Config.enablePaymentTestMode {
-                        Text("ENABLED")
-                            .font(.subheadline)
-                            .fontWeight(.bold)
-                            .foregroundColor(.orange)
-                    } else {
-                        Text("DISABLED")
-                            .font(.subheadline)
-                            .fontWeight(.bold)
-                            .foregroundColor(.green)
-                    }
-                }
-                
-                if Config.enablePaymentTestMode {
-                    Text("Purchases will be simulated (no real payment)")
-                        .font(.caption)
-                        .foregroundColor(.orange)
+                    Text("Configured")
+                        .font(.subheadline)
+                        .fontWeight(.bold)
+                        .foregroundColor(.green)
                 }
             }
             
@@ -63,33 +51,33 @@ struct PaymentDebugView: View {
             
             Divider()
             
-            // Products Status
+            // Offerings Status
             VStack(alignment: .leading, spacing: 8) {
-                Text("Products Loaded")
+                Text("Offerings Loaded")
                     .font(.subheadline)
                     .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
                 
-                if storeKitService.isLoading {
+                if revenueCatService.isLoading {
                     Text("Loading...")
                         .font(.caption)
                         .foregroundColor(.gray)
-                } else if storeKitService.hasCreditProducts {
-                    Text("\(storeKitService.creditProducts.count) products available")
+                } else if let offering = revenueCatService.currentOffering {
+                    Text("\(offering.availablePackages.count) packages available")
                         .font(.caption)
                         .foregroundColor(.green)
                     
-                    ForEach(storeKitService.creditProducts, id: \.id) { product in
+                    ForEach(offering.availablePackages) { package in
                         HStack {
-                            Text("• \(product.id)")
+                            Text("• \(package.identifier)")
                                 .font(.caption)
                             Spacer()
-                            Text(product.displayPrice)
+                            Text(package.storeProduct.localizedPriceString)
                                 .font(.caption)
                         }
                         .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
                     }
                 } else {
-                    Text("No products loaded")
+                    Text("No offerings loaded")
                         .font(.caption)
                         .foregroundColor(.red)
                 }
@@ -103,7 +91,7 @@ struct PaymentDebugView: View {
                     .font(.subheadline)
                     .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
                 
-                if let error = storeKitService.errorMessage {
+                if let error = revenueCatService.errorMessage {
                     Text("Error: \(error)")
                         .font(.caption)
                         .foregroundColor(.red)
@@ -124,10 +112,10 @@ struct PaymentDebugView: View {
                     .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
                 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("1. Check if Test Mode is enabled")
-                    Text("2. Try to purchase credits")
+                    Text("1. Use an Apple Sandbox account")
+                    Text("2. Try to purchase credits from paywall")
                     Text("3. Check if credits increase")
-                    Text("4. Check Xcode console for logs")
+                    Text("4. Check Xcode console for RevenueCat logs")
                 }
                 .font(.caption)
                 .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
