@@ -345,6 +345,12 @@ class HybridAuthService: ObservableObject {
         return userState.deviceId
     }
     
+    /// Returns true only if user has an email (not anonymous)
+    var hasEmail: Bool {
+        guard let email = currentUser?.email else { return false }
+        return !email.isEmpty
+    }
+    
     var identifier: String {
         return userState.identifier
     }

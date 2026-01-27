@@ -27,14 +27,15 @@ struct HomeView: View {
                     rightContent: .custom {
                         AnyView(
                             HStack(spacing: DesignTokens.Spacing.md) {
-                                // Search icon button
+                                // Search icon button - clean icon-only with larger tap target
                                 Button {
+                                    DesignTokens.Haptics.impact(.light)
                                     withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
                                         isSearchPresented = true
                                     }
                                 } label: {
                                     Image(systemName: "magnifyingglass")
-                                        .font(.system(size: 22, weight: .medium))
+                                        .font(.system(size: 20, weight: .medium))
                                         .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
                                 }
                                 .accessibilityLabel("Search tools")

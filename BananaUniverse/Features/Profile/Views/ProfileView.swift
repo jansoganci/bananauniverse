@@ -104,37 +104,53 @@ struct ProfileView: View {
             .padding(.horizontal, DesignTokens.Spacing.md)
             .padding(.top, DesignTokens.Spacing.md)
             
-            // Sign In or Create Account Button (for anonymous users)
-            if !authService.isAuthenticated {
-                Button {
-                    showSignIn = true
-                } label: {
-                    HStack {
-                        Image(systemName: "person.circle")
-                            .font(.system(size: 18, weight: .medium))
-                        Text("Sign In or Create Account")
-                            .font(.system(size: 16, weight: .semibold))
+            // Sign In Section (for anonymous users without email)
+            if !authService.hasEmail {
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+                    // Section Header
+                    Text("Account")
+                        .font(DesignTokens.Typography.title3)
+                        .foregroundColor(DesignTokens.Text.primary(colorScheme))
+                        .padding(.horizontal, DesignTokens.Spacing.md)
+                    
+                    // Sign In Card
+                    Button {
+                        showSignIn = true
+                    } label: {
+                        HStack(spacing: DesignTokens.Spacing.md) {
+                            Image(systemName: "person.crop.circle.badge.plus")
+                                .font(.system(size: 24, weight: .medium))
+                                .foregroundColor(DesignTokens.Brand.primary(colorScheme))
+                                .frame(width: 32, height: 32)
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Sign In with Apple")
+                                    .font(DesignTokens.Typography.headline)
+                                    .foregroundColor(DesignTokens.Text.primary(colorScheme))
+                                
+                                Text("Save your data and sync across devices")
+                                    .font(DesignTokens.Typography.caption1)
+                                    .foregroundColor(DesignTokens.Text.secondary(colorScheme))
+                            }
+                            
+                            Spacer()
+                            
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(DesignTokens.Text.tertiary(colorScheme))
+                        }
+                        .padding(.horizontal, DesignTokens.Spacing.md)
+                        .padding(.vertical, DesignTokens.Spacing.sm)
                     }
-                    .foregroundColor(DesignTokens.Text.onBrand(colorScheme))
-                    .frame(maxWidth: .infinity)
-                    .frame(height: DesignTokens.Layout.buttonHeight)
-                    .background(
-                        LinearGradient(
-                            colors: [
-                                DesignTokens.Gradients.primaryStart(colorScheme),
-                                DesignTokens.Gradients.primaryEnd(colorScheme)
-                            ],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
+                    .buttonStyle(PlainButtonStyle())
+                    .background(DesignTokens.Surface.secondary(colorScheme))
                     .cornerRadius(DesignTokens.CornerRadius.md)
+                    .padding(.horizontal, DesignTokens.Spacing.md)
                 }
-                .padding(.horizontal, DesignTokens.Spacing.md)
             }
             
-            // Account Section (for authenticated users)
-            if authService.isAuthenticated {
+            // Account Section (for authenticated users with email)
+            if authService.hasEmail {
                 VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
                     // Section Header
                     Text("Account")
@@ -380,7 +396,8 @@ struct ProfileView: View {
                         .background(DesignTokens.Surface.secondary(colorScheme))
                         .padding(.leading, 56)
                     
-                    // Notifications Selector
+                    // Notifications Selector (DEBUG only - not implemented yet)
+                    #if DEBUG
                     HStack(spacing: DesignTokens.Spacing.md) {
                         // Icon with circular background (matching ProfileRow)
                         Image(systemName: "bell.fill")
@@ -453,6 +470,11 @@ struct ProfileView: View {
                     }
                     .padding(.horizontal, DesignTokens.Spacing.md)
                     .padding(.vertical, DesignTokens.Spacing.sm)
+                    
+                    Divider()
+                        .background(DesignTokens.Surface.secondary(colorScheme))
+                        .padding(.leading, 56)
+                    #endif
                     
                     // Only show Delete Account for authenticated users
                     if authService.isAuthenticated {
@@ -622,8 +644,11 @@ struct ProfileView: View {
                     .padding(.bottom, DesignTokens.Spacing.md)
             }
             #endif
+            
+            // Bottom padding for scroll content
+            Spacer()
+                .frame(height: DesignTokens.Spacing.lg)
         }
-        .padding(.horizontal, DesignTokens.Spacing.md)
     }
 }
 

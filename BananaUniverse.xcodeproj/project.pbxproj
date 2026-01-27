@@ -317,7 +317,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = BananaUniverse/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Banana Universe";
+				INFOPLIST_KEY_CFBundleDisplayName = "Flario: AI Photo Editor";
 				INFOPLIST_KEY_CFBundleURLTypes = "{\n    CFBundleURLName = \"Apple Sign In\";\n    CFBundleURLSchemes =     (\n        \"com.janstrade.bananauniverse.signin\"\n    );\n}";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.photography";
 				INFOPLIST_KEY_LSApplicationQueriesSchemes = appleid;
@@ -334,7 +334,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1.1;
+				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.janstrade.bananauniverse;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -360,7 +360,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = BananaUniverse/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Banana Universe";
+				INFOPLIST_KEY_CFBundleDisplayName = "Flario: AI Photo Editor";
 				INFOPLIST_KEY_CFBundleURLTypes = "{\n    CFBundleURLName = \"Apple Sign In\";\n    CFBundleURLSchemes =     (\n        \"com.janstrade.bananauniverse.signin\"\n    );\n}";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.photography";
 				INFOPLIST_KEY_LSApplicationQueriesSchemes = appleid;
@@ -377,7 +377,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1.1;
+				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.janstrade.bananauniverse;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";

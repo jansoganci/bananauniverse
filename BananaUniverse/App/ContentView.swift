@@ -111,10 +111,18 @@ struct ContentView: View {
         appearance.stackedLayoutAppearance.normal.iconColor = inactiveColor
         appearance.stackedLayoutAppearance.normal.titleTextAttributes = [.foregroundColor: inactiveColor]
         
-        // Active tab (using brand primary color)
-        let activeColor = UIColor(swiftUIColor: DesignTokens.Brand.primary(colorScheme))
-        appearance.stackedLayoutAppearance.selected.iconColor = activeColor
-        appearance.stackedLayoutAppearance.selected.titleTextAttributes = [.foregroundColor: activeColor]
+        // Active tab
+        // Icon: Always use lime green (colorful, good looking)
+        let activeIconColor = UIColor(swiftUIColor: DesignTokens.Brand.primary(colorScheme))
+        appearance.stackedLayoutAppearance.selected.iconColor = activeIconColor
+        
+        // Text: Dark text in light mode for readability, lime green in dark mode
+        let activeTextColor = UIColor(swiftUIColor: 
+            colorScheme == .dark 
+                ? DesignTokens.Brand.primary(colorScheme)  // Lime green in dark mode
+                : DesignTokens.Text.primary(colorScheme)    // Dark text in light mode for readability
+        )
+        appearance.stackedLayoutAppearance.selected.titleTextAttributes = [.foregroundColor: activeTextColor]
         
         // Apply appearance to all tab bars
         UITabBar.appearance().standardAppearance = appearance

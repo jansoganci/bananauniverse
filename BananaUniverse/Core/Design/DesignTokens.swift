@@ -84,7 +84,7 @@ struct DesignTokens {
     struct Brand {
         // Primary brand color - Electric Lime (Action, Energy)
         static func primary(_ colorScheme: ColorScheme) -> Color {
-            Color(hex: "A4FC3C") // Same in both modes for consistency
+            colorScheme == .dark ? Color(hex: "A4FC3C") : Color(hex: "7DD321") // Darker lime in light mode for better contrast
         }
 
         // Primary pressed state
