@@ -18,12 +18,15 @@ struct OnboardingProgressDots: View {
         HStack(spacing: DesignTokens.Spacing.sm) {
             ForEach(0..<totalCount, id: \.self) { index in
                 Circle()
-                    .fill(index == currentIndex ? DesignTokens.Brand.secondary(colorScheme) : DesignTokens.Text.tertiary(colorScheme).opacity(0.3))
+                    .fill(index == currentIndex ? DesignTokens.Brand.primary(colorScheme) : DesignTokens.Text.tertiary(colorScheme).opacity(0.3))
                     .frame(width: 8, height: 8)
                     .scaleEffect(index == currentIndex ? 1.2 : 1.0)
                     .animation(DesignTokens.Animation.quick, value: currentIndex)
             }
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Onboarding Progress")
+        .accessibilityValue("Step \(currentIndex + 1) of \(totalCount)")
     }
 }
 

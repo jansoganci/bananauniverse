@@ -24,7 +24,7 @@ class OnboardingViewModel: ObservableObject {
 
         var title: String {
             switch self {
-            case .welcome: return "Welcome to BananaUniverse"
+            case .welcome: return "Welcome to Flario"
             case .howItWorks: return "How It Works"
             case .credits: return "Start with 10 Free Credits"
             }

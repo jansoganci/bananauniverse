@@ -526,7 +526,7 @@ struct ProfileView: View {
                         .padding(.leading, 56)
                     
                     ProfileRow(
-                        icon: "arrow.counterclockwise.circle.fill",
+                        icon: "arrow.clockwise",
                         title: "Restore Onboarding",
                         iconColor: DesignTokens.Brand.secondary(colorScheme),
                         showChevron: true,

@@ -11,6 +11,7 @@ import SwiftUI
 struct BeforeAfterSlider: View {
     @State private var sliderPosition: CGFloat = 0.5
     @State private var isDragging = false
+    @State private var autoPlayTimer: Timer? = nil
     
     let beforeImageName: String?
     let afterImageName: String?
@@ -99,17 +100,19 @@ struct BeforeAfterSlider: View {
                 
                 // Divider line
                 Rectangle()
-                    .fill(DesignTokens.Surface.primary(colorScheme).opacity(0.8))
+                    .fill(DesignTokens.Brand.primary(colorScheme).opacity(0.8))
                     .frame(width: 2)
                     .offset(x: dividerOffset)
             }
             .cornerRadius(DesignTokens.CornerRadius.lg)
-            .shadow(color: DesignTokens.ShadowColors.default(colorScheme).opacity(0.3), radius: 12, x: 0, y: 6)
+            .shadow(color: DesignTokens.ShadowColors.primary(colorScheme), radius: 12, x: 0, y: 6)
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { value in
                         guard width > 0 else { return }
                         isDragging = true
+                        autoPlayTimer?.invalidate()
+                        autoPlayTimer = nil
                         let newPosition = max(0, min(1, value.location.x / width))
                         withAnimation(.interactiveSpring()) {
                             sliderPosition = newPosition
@@ -119,8 +122,36 @@ struct BeforeAfterSlider: View {
                         isDragging = false
                     }
             )
+            .onAppear {
+                startAutoPlay()
+            }
+            .onDisappear {
+                autoPlayTimer?.invalidate()
+                autoPlayTimer = nil
+            }
         }
         .frame(height: 280)
+    }
+
+    private func startAutoPlay() {
+        // Subtle back-and-forth animation to show the "magic"
+        withAnimation(.easeInOut(duration: 1.5).delay(0.5)) {
+            sliderPosition = 0.2
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            withAnimation(.easeInOut(duration: 2.0)) {
+                sliderPosition = 0.8
+            }
+        }
+
+        // Periodic subtle movement if user hasn't touched it
+        autoPlayTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { _ in
+            guard !isDragging else { return }
+            withAnimation(.easeInOut(duration: 2.0)) {
+                sliderPosition = sliderPosition > 0.5 ? 0.3 : 0.7
+            }
+        }
     }
 }
 

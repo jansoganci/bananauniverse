@@ -26,6 +26,7 @@ struct OnboardingView: View {
                     HStack {
                         Spacer()
                         Button("Skip") {
+                            DesignTokens.Haptics.impact(.light)
                             viewModel.skip()
                             onComplete()
                         }
@@ -51,7 +52,7 @@ struct OnboardingView: View {
                     .tag(OnboardingViewModel.OnboardingScreen.credits)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
-                .animation(.easeInOut(duration: 0.25), value: viewModel.currentScreen)
+                .animation(DesignTokens.Animation.smooth, value: viewModel.currentScreen)
 
                 // Progress dots
                 OnboardingProgressDots(
@@ -67,7 +68,7 @@ struct OnboardingView: View {
                         SecondaryButton(
                             title: "Back",
                             icon: "chevron.left",
-                            accentColor: DesignTokens.Brand.secondary,
+                            accentColor: DesignTokens.Brand.primary,
                             action: { viewModel.previousScreen() }
                         )
                         .frame(maxWidth: 100)
@@ -80,21 +81,24 @@ struct OnboardingView: View {
                         PrimaryButton(
                             title: "Next",
                             icon: "arrow.right",
-                            accentColor: DesignTokens.Brand.secondary,
+                            accentColor: DesignTokens.Brand.primary,
                             action: { viewModel.nextScreen() }
                         )
+                        .designShadow(DesignTokens.Shadow.glow)
                         .frame(maxWidth: 100)
                     } else {
                         // Last screen: Show "Start Creating" button
                         PrimaryButton(
                             title: "Start Creating",
                             icon: "sparkles",
-                            accentColor: DesignTokens.Brand.secondary,
+                            accentColor: DesignTokens.Brand.primary,
                             action: {
+                                DesignTokens.Haptics.success()
                                 viewModel.complete()
                                 onComplete()
                             }
                         )
+                        .designShadow(DesignTokens.Shadow.glow)
                         .frame(maxWidth: .infinity)
                     }
                 }

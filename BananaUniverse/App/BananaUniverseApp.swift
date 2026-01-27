@@ -18,6 +18,7 @@ struct BananaUniverseApp: App {
     // MARK: - Onboarding State
     @AppStorage("hasSeenOnboarding") var hasSeenOnboarding = false
     @State private var showOnboarding = false
+    @State private var showSplash = true
 
     init() {
         // CRITICAL: Initialize StableID SYNCHRONOUSLY to prevent race conditions
@@ -107,55 +108,70 @@ struct BananaUniverseApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .task {
-                    // CRITICAL: Initialize quota system on app launch (only once)
-                    guard !hasInitialized else {
+            ZStack {
+                ContentView()
+                    .task {
+                        // CRITICAL: Initialize quota system on app launch (only once)
+                        guard !hasInitialized else {
+                            #if DEBUG
+                            print("⏭️ [App] Skipping initialization (already initialized)")
+                            #endif
+                            return
+                        }
+
+                        hasInitialized = true
+
                         #if DEBUG
-                        print("⏭️ [App] Skipping initialization (already initialized)")
-                        #endif
-                        return
-                    }
-
-                    hasInitialized = true
-
-                    #if DEBUG
-                    print("🚀 [App] Initializing credits on app launch")
-                    #endif
-
-                    await CreditManager.shared.initializeNewUser()
-
-                    // Check if user needs onboarding after initialization
-                    if !hasSeenOnboarding {
-                        #if DEBUG
-                        print("👋 [App] First launch detected, showing onboarding")
+                        print("🚀 [App] Initializing credits on app launch")
                         #endif
 
-                        // Small delay to let app fully load
-                        try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
-                        showOnboarding = true
-                    }
-                }
-                .onChange(of: scenePhase) { newPhase in
-                    // Refresh credits when app comes to foreground (after initialization)
-                    if newPhase == .active && hasInitialized {
-                        #if DEBUG
-                        print("🔄 [App] App became active, refreshing credits")
-                        #endif
+                        await CreditManager.shared.initializeNewUser()
 
-                        Task {
-                            await CreditManager.shared.loadQuota()
+                        // Check if user needs onboarding after initialization
+                        if !hasSeenOnboarding {
+                            #if DEBUG
+                            print("👋 [App] First launch detected, showing onboarding")
+                            #endif
+
+                            // Small delay to let app fully load
+                            try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+                            showOnboarding = true
                         }
                     }
+                    .onChange(of: scenePhase) { newPhase in
+                        // Refresh credits when app comes to foreground (after initialization)
+                        if newPhase == .active && hasInitialized {
+                            #if DEBUG
+                            print("🔄 [App] App became active, refreshing credits")
+                            #endif
+
+                            Task {
+                                await CreditManager.shared.loadQuota()
+                            }
+                        }
+                    }
+                    .sheet(isPresented: $showOnboarding) {
+                        OnboardingView(onComplete: {
+                            #if DEBUG
+                            print("✅ [App] Onboarding dismissed")
+                            #endif
+                            showOnboarding = false
+                        })
+                    }
+
+                if showSplash {
+                    SplashScreen()
+                        .transition(.opacity)
+                        .zIndex(1)
                 }
-                .sheet(isPresented: $showOnboarding) {
-                    OnboardingView(onComplete: {
-                        #if DEBUG
-                        print("✅ [App] Onboarding dismissed")
-                        #endif
-                        showOnboarding = false
-                    })
+            }
+            .task {
+                // Keep splash for 1.5 seconds then dismiss
+                try? await Task.sleep(nanoseconds: 1_500_000_000)
+                withAnimation(.easeInOut(duration: 0.5)) {
+                    showSplash = false
                 }
+            }
         }
     }
 }

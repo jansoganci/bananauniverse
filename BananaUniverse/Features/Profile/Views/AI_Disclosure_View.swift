@@ -86,7 +86,7 @@ struct AI_Disclosure_View: View {
                 .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
             
             VStack(alignment: .leading, spacing: 12) {
-                Text("BananaUniverse uses AI-powered services to enhance your image editing experience. These services process your images and prompts securely in the cloud.")
+                Text("Flario uses AI-powered services to enhance your image editing experience. These services process your images and prompts securely in the cloud.")
                     .font(.system(size: 16))
                     .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
                 

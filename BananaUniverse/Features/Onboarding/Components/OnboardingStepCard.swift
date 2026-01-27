@@ -88,6 +88,7 @@ struct OnboardingStepCard: View {
                 Image(systemName: iconName)
                     .font(.system(size: 28))
                     .foregroundColor(iconColor)
+                    .accessibilityHidden(true)
             }
         }
         .padding(DesignTokens.Spacing.md)
@@ -96,6 +97,9 @@ struct OnboardingStepCard: View {
                 .fill(DesignTokens.Background.secondary(colorScheme))
                 .shadow(color: DesignTokens.ShadowColors.default(colorScheme).opacity(0.1), radius: 4, x: 0, y: 2)
         )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Step \(stepNumber): \(title)")
+        .accessibilityHint(description)
     }
 }
 
@@ -108,7 +112,7 @@ struct OnboardingStepCard: View {
             iconName: "paintpalette.fill",
             title: "Choose your style",
             description: "Browse 19+ AI themes: toys, art, pro photos",
-            iconColor: DesignTokens.Semantic.warning(.dark),
+            iconColor: DesignTokens.Brand.primary(.dark),
             screenshotImageName: nil
         )
 
@@ -117,7 +121,7 @@ struct OnboardingStepCard: View {
             iconName: "camera.fill",
             title: "Upload your photo",
             description: "Take a picture or choose from your photo library",
-            iconColor: DesignTokens.Brand.accent(.dark),
+            iconColor: DesignTokens.Brand.primary(.dark),
             screenshotImageName: nil
         )
 

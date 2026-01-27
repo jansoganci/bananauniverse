@@ -196,6 +196,7 @@ struct SignInView: View {
             }
             
             // Migration will happen automatically in HybridAuthService
+            try await Task.sleep(nanoseconds: 300_000_000) // 0.3 seconds
             dismiss()
         } catch {
             let appError = AppError.from(error)
@@ -233,6 +234,9 @@ struct SignInView: View {
                 let nonce = currentNonce
                 
                 try await authService.signInWithApple(idToken: identityToken, nonce: nonce)
+                
+                // Wait for state to propagate before dismissing
+                try await Task.sleep(nanoseconds: 300_000_000) // 0.3 seconds
                 
                 dismiss()
                 
