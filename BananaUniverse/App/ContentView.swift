@@ -15,6 +15,7 @@ struct ContentView: View {
     @StateObject private var authService = HybridAuthService.shared
     @StateObject private var creditManager = CreditManager.shared
     @StateObject private var themeManager = ThemeManager()
+    @StateObject private var languageManager = LanguageManager.shared
     @StateObject private var appState = AppState()
 
     @Environment(\.colorScheme) var systemColorScheme
@@ -36,7 +37,7 @@ struct ContentView: View {
                     }
             }
             .tabItem {
-                Label("Home", systemImage: "house.fill")
+                Label("tab_home".localized, systemImage: "house.fill")
             }
             .tag(0)
 
@@ -49,29 +50,31 @@ struct ContentView: View {
             .environmentObject(themeManager)
             .environmentObject(appState)
             .tabItem {
-                Label("Create", systemImage: "wand.and.stars")
+                Label("tab_create".localized, systemImage: "wand.and.stars")
             }
             .tag(1)
 
             // Library Tab - Past jobs and history
             LibraryView()
                 .tabItem {
-                    Label("Library", systemImage: "square.stack.3d.up.fill")
+                    Label("tab_library".localized, systemImage: "square.stack.3d.up.fill")
                 }
                 .tag(2)
 
             // Profile Tab - User settings and account management
             ProfileView()
                 .tabItem {
-                    Label("Profile", systemImage: "person.fill")
+                    Label("tab_profile".localized, systemImage: "person.fill")
                 }
                 .tag(3)
             }
             .id(themeManager.resolvedColorScheme) // Force TabView recreation on theme change
+            .id(languageManager.currentLanguage) // Force TabView recreation on language change
             .accentColor(DesignTokens.Brand.primary(themeManager.resolvedColorScheme))
             .preferredColorScheme(themeManager.preference == .system ? nil : (themeManager.preference == .dark ? .dark : .light))
             .environmentObject(authService)
             .environmentObject(themeManager)
+            .environmentObject(languageManager)
             .environmentObject(appState)
             .onChange(of: systemColorScheme) { newScheme in
             themeManager.updateResolvedScheme(systemScheme: newScheme)

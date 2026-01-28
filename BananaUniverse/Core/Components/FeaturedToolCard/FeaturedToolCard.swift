@@ -33,7 +33,7 @@ struct FeaturedToolCard: View {
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundColor(DesignTokens.Text.onBrand(themeManager.resolvedColorScheme))
 
-                    Text("FEATURED")
+                    Text("core_featured".localized)
                         .font(DesignTokens.Typography.caption1)
                         .fontWeight(.bold)
                         .foregroundColor(DesignTokens.Text.onBrand(themeManager.resolvedColorScheme))
@@ -96,7 +96,7 @@ struct FeaturedToolCard: View {
                             Image(systemName: "play.fill")
                                 .font(.system(size: 12, weight: .semibold))
                             
-                            Text("Use Tool")
+                            Text("core_use_tool".localized)
                                 .font(DesignTokens.Typography.callout)
                                 .fontWeight(.semibold)
                         }

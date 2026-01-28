@@ -35,8 +35,8 @@ struct ChatView: View {
         .sheet(isPresented: $viewModel.showingLogin) {
             LoginView()
         }
-        .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
-            Button("OK") { viewModel.clearError() }
+        .alert("chat_error_title".localized, isPresented: .constant(viewModel.errorMessage != nil)) {
+            Button("chat_ok".localized) { viewModel.clearError() }
         } message: {
             Text(viewModel.errorMessage ?? "")
         }
@@ -111,15 +111,15 @@ struct ChatContainerView: View {
                 viewModel.showingImagePicker = true
             }
         }
-        .alert("Photo Library Access Required", isPresented: $showPermissionAlert) {
-            Button("Open Settings") {
+        .alert("chat_photo_access_title".localized, isPresented: $showPermissionAlert) {
+            Button("chat_open_settings".localized) {
                 if let url = URL(string: UIApplication.openSettingsURLString) {
                     UIApplication.shared.open(url)
                 }
             }
-            Button("Cancel", role: .cancel) { }
+            Button("chat_cancel".localized, role: .cancel) { }
         } message: {
-            Text("Please enable photo library access in Settings to save images to your Photos library.")
+            Text("chat_photo_access_message".localized)
         }
     }
     
@@ -161,27 +161,27 @@ struct ChatContainerView: View {
         isInputFocused = false
         
         // Show feedback
-        showToastMessage("✨ Processing your request...", type: .info)
+        showToastMessage("chat_processing_toast".localized, type: .info)
     }
     
     private func handleSaveMessage(_ messageId: UUID) {
-        showToastMessage("Saving...", type: .info)
+        showToastMessage("chat_saving_toast".localized, type: .info)
         
         Task {
             let result = await viewModel.saveMessageImage(messageId)
             await MainActor.run {
                 switch result {
                 case .success:
-                    showToastMessage("✅ Saved to Photos!", type: .success)
+                    showToastMessage("chat_saved_toast".localized, type: .success)
                     
                 case .failure(.permissionDenied):
                     showPermissionAlert = true
                     
                 case .failure(.noImage):
-                    showToastMessage("❌ No image to save", type: .error)
+                    showToastMessage("chat_no_image_toast".localized, type: .error)
                     
                 case .failure(.saveFailed(let error)):
-                    showToastMessage("❌ Save failed: \(error)", type: .error)
+                    showToastMessage("chat_save_failed_toast".localized(error), type: .error)
                 }
             }
         }
@@ -313,7 +313,7 @@ struct ChatInputView: View {
             .disabled(isProcessing)
             
             // Text input
-            TextField("Message", text: $text, axis: .vertical)
+            TextField("chat_input_placeholder".localized, text: $text, axis: .vertical)
                 .font(DesignTokens.Typography.body)
                 .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
                 .focused(isFocused)
@@ -589,7 +589,7 @@ struct MessageActionButtons: View {
                 HStack(spacing: 6) {
                     Image(systemName: isSaving ? "checkmark" : "arrow.down.circle")
                         .font(.system(size: 14, weight: .medium))
-                    Text(isSaving ? "Saved" : "Save")
+                    Text(isSaving ? "chat_saved_button".localized : "chat_save_button".localized)
                         .font(DesignTokens.Typography.caption1)
                         .fontWeight(.medium)
                 }
@@ -612,7 +612,7 @@ struct MessageActionButtons: View {
                 HStack(spacing: 6) {
                     Image(systemName: "square.and.arrow.up")
                         .font(.system(size: 14, weight: .medium))
-                    Text("Share")
+                    Text("chat_share_button".localized)
                         .font(DesignTokens.Typography.caption1)
                         .fontWeight(.medium)
                 }
@@ -644,7 +644,7 @@ struct ProcessingBubbleView: View {
                         .progressViewStyle(CircularProgressViewStyle(tint: DesignTokens.Brand.primary(themeManager.resolvedColorScheme)))
                         .scaleEffect(0.9)
                     
-                    Text("Processing your image...")
+                    Text("chat_processing_message".localized)
                         .font(DesignTokens.Typography.callout)
                         .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
                 }
@@ -706,11 +706,11 @@ struct EmptyStateView: View {
                         }
                         
                         VStack(spacing: 8) {
-                            Text("Start by uploading a photo")
+                            Text("chat_empty_title".localized)
                                 .font(DesignTokens.Typography.title3)
                                 .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
                             
-                            Text("Tap here to select an image from your library")
+                            Text("chat_empty_subtitle".localized)
                                 .font(DesignTokens.Typography.callout)
                                 .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
                                 .multilineTextAlignment(.center)
@@ -724,7 +724,7 @@ struct EmptyStateView: View {
                             .progressViewStyle(CircularProgressViewStyle(tint: DesignTokens.Brand.primary(themeManager.resolvedColorScheme)))
                             .scaleEffect(1.2)
                         
-                        Text("Uploading...")
+                        Text("chat_uploading".localized)
                             .font(DesignTokens.Typography.callout)
                             .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
                     }

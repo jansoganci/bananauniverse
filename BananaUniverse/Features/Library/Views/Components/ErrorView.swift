@@ -21,7 +21,7 @@ struct ErrorView: View {
                 .foregroundColor(DesignTokens.Semantic.error(themeManager.resolvedColorScheme))
                 .accessibilityHidden(true)
             
-            Text("Something went wrong")
+            Text("library_error_title".localized)
                 .font(DesignTokens.Typography.title3)
                 .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
                 .accessibilityAddTraits(.isHeader)
@@ -39,7 +39,7 @@ struct ErrorView: View {
                 HStack(spacing: DesignTokens.Spacing.sm) {
                     Image(systemName: "arrow.clockwise")
                         .font(.system(size: 16, weight: .medium))
-                    Text("Try Again")
+                    Text("library_try_again".localized)
                         .font(DesignTokens.Typography.callout)
                         .fontWeight(.semibold)
                 }
@@ -49,11 +49,11 @@ struct ErrorView: View {
                 .background(DesignTokens.Brand.primary(themeManager.resolvedColorScheme))
                 .cornerRadius(DesignTokens.CornerRadius.md)
             }
-            .accessibilityLabel("Try again")
-            .accessibilityHint("Double tap to retry loading history")
+            .accessibilityLabel("library_try_again".localized)
+            .accessibilityHint("library_accessibility_retry_hint".localized)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Error: \(message). Try again button available.")
+        .accessibilityLabel("\("chat_error_title".localized): \(message). \("library_try_again".localized)")
     }
 }

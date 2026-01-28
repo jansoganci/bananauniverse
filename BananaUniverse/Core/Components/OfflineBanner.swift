@@ -24,11 +24,11 @@ struct OfflineBanner: View {
                         .foregroundColor(.white)
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("You're Offline")
+                        Text("core_offline_title".localized)
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundColor(.white)
 
-                        Text("Check your internet connection")
+                        Text("core_offline_subtitle".localized)
                             .font(.system(size: 12, weight: .regular))
                             .foregroundColor(.white.opacity(0.9))
                     }

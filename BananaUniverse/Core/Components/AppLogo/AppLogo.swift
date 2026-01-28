@@ -67,7 +67,7 @@ struct AppLogo: View {
             .shadow(color: Color.black.opacity(0.2), radius: size * 0.1, x: 0, y: size * 0.05)
             
             if showText {
-                Text("Flario")
+                Text("core_app_name".localized)
                     .font(.system(size: size * 0.4, weight: .bold, design: .rounded))
                     .foregroundColor(DesignTokens.Brand.primary(colorScheme))
             }

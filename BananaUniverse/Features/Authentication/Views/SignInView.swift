@@ -38,11 +38,11 @@ struct SignInView: View {
             VStack(spacing: 24) {
                 // Header
                 VStack(spacing: 8) {
-                    Text(isSignUp ? "Create Account" : "Sign In")
+                    Text(isSignUp ? "auth_create_account".localized : "auth_sign_in".localized)
                         .font(.system(size: 28, weight: .bold))
                         .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
                     
-                    Text("Sync your progress across devices")
+                    Text("auth_sync_devices".localized)
                         .font(.system(size: 16))
                         .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
                 }
@@ -53,7 +53,7 @@ struct SignInView: View {
                     HStack {
                         Image(systemName: "icloud.and.arrow.up")
                             .foregroundColor(DesignTokens.Brand.primary(themeManager.resolvedColorScheme))
-                        Text("Never lose your work")
+                        Text("auth_never_lose_work".localized)
                             .font(.system(size: 16, weight: .medium))
                             .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
                     }
@@ -61,7 +61,7 @@ struct SignInView: View {
                     HStack {
                         Image(systemName: "lock.shield")
                             .foregroundColor(DesignTokens.Brand.primary(themeManager.resolvedColorScheme))
-                        Text("Secure backup of your creations")
+                        Text("auth_secure_backup".localized)
                             .font(.system(size: 16, weight: .medium))
                             .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
                     }
@@ -74,14 +74,14 @@ struct SignInView: View {
                 
                 // Sign In Form
                 VStack(spacing: 16) {
-                    TextField("Email", text: $email)
+                    TextField("auth_email".localized, text: $email)
                         .textFieldStyle(CustomTextFieldStyle())
                         .keyboardType(.emailAddress)
                         .autocapitalization(.none)
                         .frame(maxWidth: .infinity)
                         .padding(.horizontal, 20)
                     
-                    SecureField(isSignUp ? "Create Password" : "Password", text: $password)
+                    SecureField(isSignUp ? "auth_create_password".localized : "auth_password".localized, text: $password)
                         .textFieldStyle(CustomTextFieldStyle())
                         .frame(maxWidth: .infinity)
                         .padding(.horizontal, 20)
@@ -105,7 +105,7 @@ struct SignInView: View {
                                     .progressViewStyle(CircularProgressViewStyle(tint: DesignTokens.Text.onBrand(themeManager.resolvedColorScheme)))
                                     .scaleEffect(0.8)
                             }
-                            Text(isSignUp ? "Create Account" : "Sign In")
+                            Text(isSignUp ? "auth_create_account".localized : "auth_sign_in".localized)
                                 .font(.system(size: 16, weight: .bold))
                         }
                         .foregroundColor(DesignTokens.Text.onBrand(themeManager.resolvedColorScheme))
@@ -122,7 +122,7 @@ struct SignInView: View {
                         isSignUp.toggle()
                         errorMessage = ""
                     }) {
-                        Text(isSignUp ? "Already have an account? Sign In" : "Don't have an account? Sign Up")
+                        Text(isSignUp ? "auth_already_have_account".localized : "auth_dont_have_account".localized)
                             .font(.system(size: 14, weight: .medium))
                             .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
                             .underline()
@@ -134,7 +134,7 @@ struct SignInView: View {
                     Rectangle()
                         .fill(DesignTokens.Text.tertiary(themeManager.resolvedColorScheme))
                         .frame(height: 1)
-                    Text("OR")
+                    Text("auth_or".localized)
                         .font(.system(size: 12, weight: .medium))
                         .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
                         .padding(.horizontal, 16)
@@ -175,7 +175,7 @@ struct SignInView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
+                    Button("auth_cancel".localized) {
                         dismiss()
                     }
                     .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))

@@ -41,11 +41,11 @@ struct AI_Disclosure_View: View {
                 .padding(.top, 20)
             }
             .background(DesignTokens.Background.primary(themeManager.resolvedColorScheme))
-            .navigationTitle("AI Disclosure")
+            .navigationTitle("ai_disclosure_title".localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
+                    Button("ai_disclosure_done".localized) {
                         dismiss()
                     }
                     .foregroundColor(DesignTokens.Brand.accent(themeManager.resolvedColorScheme))
@@ -63,14 +63,14 @@ struct AI_Disclosure_View: View {
                     .font(.system(size: 32, weight: .medium))
                     .foregroundColor(DesignTokens.Brand.accent(themeManager.resolvedColorScheme))
                 
-                Text("AI Service Disclosure")
+                Text("ai_disclosure_header".localized)
                     .font(.system(size: 28, weight: .bold))
                     .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
                 
                 Spacer()
             }
             
-            Text("Transparency about our AI-powered features")
+            Text("ai_disclosure_subtitle".localized)
                 .font(.system(size: 16, weight: .medium))
                 .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
         }
@@ -81,16 +81,16 @@ struct AI_Disclosure_View: View {
     
     private var contentSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("How We Use AI")
+            Text("ai_disclosure_how_we_use".localized)
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
             
             VStack(alignment: .leading, spacing: 12) {
-                Text("Flario uses AI-powered services to enhance your image editing experience. These services process your images and prompts securely in the cloud.")
+                Text("ai_disclosure_description1".localized)
                     .font(.system(size: 16))
                     .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
                 
-                Text("We do not store your data permanently and respect your privacy throughout the entire process.")
+                Text("ai_disclosure_description2".localized)
                     .font(.system(size: 16))
                     .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
             }
@@ -107,7 +107,7 @@ struct AI_Disclosure_View: View {
     
     private var aiServicesSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("AI Services Used")
+            Text("ai_disclosure_services_used".localized)
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
             
@@ -115,24 +115,24 @@ struct AI_Disclosure_View: View {
                 // FalClient API
                 aiServiceRow(
                     icon: "wand.and.rays",
-                    title: "FalClient API",
-                    description: "AI image editing and enhancement",
+                    title: "ai_disclosure_fal_title".localized,
+                    description: "ai_disclosure_fal_desc".localized,
                     color: DesignTokens.Brand.accent(themeManager.resolvedColorScheme)
                 )
                 
                 // OpenAI/Gemini APIs
                 aiServiceRow(
                     icon: "text.bubble",
-                    title: "OpenAI / Gemini APIs",
-                    description: "Text and prompt generation",
+                    title: "ai_disclosure_openai_title".localized,
+                    description: "ai_disclosure_openai_desc".localized,
                     color: DesignTokens.Brand.secondary(themeManager.resolvedColorScheme)
                 )
                 
                 // Local Processing
                 aiServiceRow(
                     icon: "cpu",
-                    title: "Local Processing",
-                    description: "Offline image optimizations",
+                    title: "ai_disclosure_local_title".localized,
+                    description: "ai_disclosure_local_desc".localized,
                     color: DesignTokens.Brand.primary(themeManager.resolvedColorScheme)
                 )
             }
@@ -149,12 +149,12 @@ struct AI_Disclosure_View: View {
     
     private var privacyPolicySection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Privacy & Data Protection")
+            Text("ai_disclosure_privacy_title".localized)
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
             
             VStack(alignment: .leading, spacing: 12) {
-                Text("Your privacy is important to us. Learn more about how we handle your data and protect your information.")
+                Text("ai_disclosure_privacy_desc".localized)
                     .font(.system(size: 16))
                     .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
                 
@@ -167,7 +167,7 @@ struct AI_Disclosure_View: View {
                         Image(systemName: "lock.shield.fill")
                             .font(.system(size: 18, weight: .medium))
                         
-                        Text("View Privacy Policy")
+                        Text("ai_disclosure_view_privacy".localized)
                             .font(.system(size: 16, weight: .semibold))
                         
                         Spacer()
@@ -205,7 +205,7 @@ struct AI_Disclosure_View: View {
     
     private var footerSection: some View {
         VStack(spacing: 12) {
-            Text("Questions about our AI services?")
+            Text("ai_disclosure_questions".localized)
                 .font(.system(size: 16, weight: .medium))
                 .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
             
@@ -214,7 +214,7 @@ struct AI_Disclosure_View: View {
                     UIApplication.shared.open(url)
                 }
             }) {
-                Text("Contact Support")
+                Text("ai_disclosure_contact_support".localized)
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(DesignTokens.Brand.accent(themeManager.resolvedColorScheme))
                     .padding(.horizontal, 20)

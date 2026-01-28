@@ -39,7 +39,7 @@ struct OnboardingScreen4: View {
             .padding(.bottom, DesignTokens.Spacing.md)
 
             // Title
-            Text("Important: Save Your Images")
+            Text("onboarding_screen4_title".localized)
                 .font(DesignTokens.Typography.title1)
                 .foregroundColor(DesignTokens.Text.primary(colorScheme))
                 .multilineTextAlignment(.center)
@@ -54,12 +54,12 @@ struct OnboardingScreen4: View {
                         .font(.system(size: 20))
                     
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Save before closing")
+                        Text("onboarding_screen4_step1_title".localized)
                             .font(DesignTokens.Typography.subheadline)
                             .fontWeight(.semibold)
                             .foregroundColor(DesignTokens.Text.primary(colorScheme))
                         
-                        Text("Your processed images will be deleted from our servers when you close the result page. Make sure to save them to your device before closing.")
+                        Text("onboarding_screen4_step1_description".localized)
                             .font(DesignTokens.Typography.caption1)
                             .foregroundColor(DesignTokens.Text.secondary(colorScheme))
                     }
@@ -72,12 +72,12 @@ struct OnboardingScreen4: View {
                         .font(.system(size: 20))
                     
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Automatic deletion")
+                        Text("onboarding_screen4_step2_title".localized)
                             .font(DesignTokens.Typography.subheadline)
                             .fontWeight(.semibold)
                             .foregroundColor(DesignTokens.Text.primary(colorScheme))
                         
-                        Text("Images are automatically deleted from our servers after 1 hour. Please save important images to your device.")
+                        Text("onboarding_screen4_step2_description".localized)
                             .font(DesignTokens.Typography.caption1)
                             .foregroundColor(DesignTokens.Text.secondary(colorScheme))
                     }
@@ -89,7 +89,7 @@ struct OnboardingScreen4: View {
 
             // Get Started Button
             PrimaryButton(
-                title: "I Understand",
+                title: "onboarding_screen4_button".localized,
                 icon: "checkmark.circle.fill",
                 accentColor: DesignTokens.Brand.secondary,
                 action: onComplete

@@ -18,11 +18,11 @@ struct PaywallErrorSection: View {
                 .font(.system(size: 48))
                 .foregroundColor(DesignTokens.Semantic.warning(colorScheme))
             
-            Text("Unable to Load Products")
+            Text("paywall_error_title".localized)
                 .font(DesignTokens.Typography.headline)
                 .foregroundColor(DesignTokens.Text.primary(colorScheme))
             
-            Text(errorMessage ?? "Please check your internet connection and try again.")
+            Text(errorMessage ?? "paywall_error_connection_message".localized)
                 .font(DesignTokens.Typography.subheadline)
                 .foregroundColor(DesignTokens.Text.secondary(colorScheme))
                 .multilineTextAlignment(.center)
@@ -30,7 +30,7 @@ struct PaywallErrorSection: View {
             Button(action: onRetry) {
                 HStack(spacing: DesignTokens.Spacing.sm) {
                     Image(systemName: "arrow.clockwise")
-                    Text("Retry")
+                    Text("paywall_error_retry".localized)
                 }
                 .font(DesignTokens.Typography.headline)
                 .foregroundColor(DesignTokens.Text.onBrand(colorScheme))

@@ -17,8 +17,39 @@ struct QuotaCache {
     // MARK: - Storage Keys (v3 for credit system)
     private let creditsRemainingKey = "credits_remaining_v3"
     private let lastUpdateKey = "credits_last_update_v3"
+    private let lastRecoveryKey = "credits_last_recovery_v3"
 
     private init() {}
+
+    // MARK: - Recovery Protection
+
+    /// Saves recovery timestamp to prevent initial grant from overwriting
+    func saveRecoveryTimestamp() {
+        UserDefaults.standard.set(Date(), forKey: lastRecoveryKey)
+        #if DEBUG
+        print("💾 [CACHE] Recovery timestamp saved")
+        #endif
+    }
+
+    /// Checks if recovery happened recently (within 5 seconds)
+    func isRecentRecovery() -> Bool {
+        guard let recoveryDate = UserDefaults.standard.object(forKey: lastRecoveryKey) as? Date else {
+            return false
+        }
+        let elapsed = Date().timeIntervalSince(recoveryDate)
+        let isRecent = elapsed < 5.0
+        #if DEBUG
+        if isRecent {
+            print("💾 [CACHE] Recent recovery detected (\(String(format: "%.1f", elapsed))s ago)")
+        }
+        #endif
+        return isRecent
+    }
+
+    /// Clears recovery timestamp (call after safe period)
+    func clearRecoveryTimestamp() {
+        UserDefaults.standard.removeObject(forKey: lastRecoveryKey)
+    }
 
     // MARK: - Data Model
 
@@ -73,6 +104,7 @@ struct QuotaCache {
     func clear() {
         UserDefaults.standard.removeObject(forKey: creditsRemainingKey)
         UserDefaults.standard.removeObject(forKey: lastUpdateKey)
+        UserDefaults.standard.removeObject(forKey: lastRecoveryKey)
 
         #if DEBUG
         print("💾 [CACHE] Cleared all credit data")

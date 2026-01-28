@@ -35,7 +35,7 @@ struct StatusBadge: View {
             .padding(.vertical, DesignTokens.Spacing.xs)
             .background(badgeBackgroundColor)
             .cornerRadius(DesignTokens.CornerRadius.round)
-            .accessibilityLabel("Status: \(status.displayText)")
+            .accessibilityLabel(String(format: "accessibility_status".localized, status.displayText))
             .accessibilityAddTraits(.isStaticText)
     }
 }

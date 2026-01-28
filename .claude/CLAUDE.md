@@ -10,7 +10,8 @@
 - **AI:** fal.ai models (19+ tools)
 - **Database:** Supabase PostgreSQL with RLS
 - **Auth:** Supabase Auth (anonymous + email + Apple Sign-In)
-- **Payments:** StoreKit 2 (IAP for credit purchases)
+- **Payments:** RevenueCat (IAP for credit purchases)
+- **Localization:** 3 languages (English, Turkish, Spanish)
 
 ## Architecture Overview
 
@@ -24,12 +25,23 @@
 ### Credit System (Persistent Model)
 - **Default:** 10 credits per user (persistent, not daily)
 - **Consumption:** 1 credit per image generation
-- **Purchasing:** Credit packs via StoreKit IAP (10, 25, 50, 100)
+- **Purchasing:** Credit packs via RevenueCat (10, 25, 50, 100)
 - **Storage:** Device-local cache + backend sync
+- **Device Recovery:** Smart credit recovery via `recover_or_init_user()` RPC
 - **Architecture:**
   - `CreditManager` - UI state orchestration (@MainActor)
   - `QuotaService` - Network calls (actor)
   - `QuotaCache` - Persistent storage (UserDefaults)
+  - `RevenueCatService` - IAP purchase handling (@MainActor)
+
+### Localization System (i18n)
+- **Languages:** English (en), Turkish (tr), Spanish (es)
+- **Auto-detection:** Device language preference on first launch
+- **Persistence:** User preference saved in UserDefaults
+- **Architecture:**
+  - `LanguageManager` - Singleton, @MainActor, handles bundle switching
+  - `String+Localization.swift` - `.localized` extension for easy usage
+  - `Localizable.strings` - 343+ keys per language
 
 ### Database-Driven Content
 - **Themes Table:** All 19+ tools stored in Supabase
@@ -45,23 +57,30 @@
 - `SupabaseService` - Supabase client wrapper
 - `ThemeService` - Fetches tools from database
 - `CategoryService` - Fetches categories from database
-- `StoreKitService` - IAP purchase handling
+- `RevenueCatService` - IAP purchase handling (replaced StoreKitService)
 - `QuotaService` - Credit network operations
 - `QuotaCache` - Credit persistence layer
+- `LanguageManager` - Localization/language switching
 - `ThemeManager` - App theming (light/dark/auto)
 - `SeasonalManager` - Dynamic seasonal content
 - `StorageService` - User data persistence
 - `NetworkMonitor` - Connectivity monitoring
+- `RealtimeService` - Supabase realtime subscriptions
+- `SearchHistoryService` - Recent search persistence
 
-### Edge Functions (12 Total)
+### Edge Functions (14 Total)
 **Core Processing:**
 - `submit-job` - Submits AI generation jobs, consumes credits
 - `get-result` - Fetches generation results
 - `webhook-handler` - Handles fal.ai webhooks
 
 **IAP & Payments:**
-- `verify-iap-purchase` - Verifies App Store receipts
+- `verify-iap-purchase` - Verifies RevenueCat purchases (refactored, 240 lines)
 - `iap-webhook` - Handles Apple server notifications
+
+**Image Management:**
+- `delete-processed-image` - Delete individual images by job_id
+- `auto-cleanup-images` - Scheduled cleanup of unsaved images (24+ hours)
 
 **Maintenance:**
 - `cleanup-db` - Database cleanup tasks
@@ -79,6 +98,7 @@
 - `user_credits` - Persistent credit balances (user_id or device_id)
 - `credit_transactions` - Audit log of all credit changes
 - `iap_transactions` - Purchase history with Apple transaction IDs
+- `device_user_map` - Maps StableID (device) to user IDs for credit recovery
 
 ### Content Management
 - `themes` - AI tools/effects (19+ entries, database-driven)
@@ -113,6 +133,12 @@
 - Always validate purchases server-side
 - Use RLS policies for all tables
 - Sanitize user input (search queries, etc.)
+
+### Localization
+- Always use `.localized` extension for user-facing strings
+- Add new keys to ALL language files (en, tr, es)
+- Use `LanguageManager.shared.currentLanguage` for language checks
+- Test UI in all 3 languages (text length varies)
 
 ## Common Commands
 
@@ -182,16 +208,17 @@ BananaUniverse/
 │   └── Authentication/            # Login/signup views
 └── supabase/
     ├── functions/                 # Edge Functions (TypeScript/Deno)
-    └── migrations/                # SQL migrations (85+)
+    └── migrations/                # SQL migrations (107+)
 ```
 
 ## File Locations (Detailed)
 - **Models:** `Core/Models/` (Theme.swift, Category.swift, CreditInfo.swift, UserState.swift)
-- **Services:** `Core/Services/` (CreditManager, ThemeService, StoreKitService, etc.)
+- **Services:** `Core/Services/` (CreditManager, RevenueCatService, LanguageManager, etc.)
 - **Views:** `Features/{Feature}/Views/`
 - **ViewModels:** `Features/{Feature}/ViewModels/`
 - **Components:** `Core/Components/` (QuotaDisplayView, FeaturedCarousel, etc.)
 - **Design System:** `Core/Design/` (DesignTokens.swift, Color+DesignSystem.swift)
+- **Localizations:** `Resources/Localizations/{lang}.lproj/Localizable.strings`
 - **Edge Functions:** `supabase/functions/`
 - **Migrations:** `supabase/migrations/`
 
@@ -216,12 +243,26 @@ BananaUniverse/
 - Image library with job status
 - Real-time generation progress
 - Dark/light mode support
+- Multi-language support (EN, TR, ES)
+- Smart credit recovery on device change
 
-## Recent Updates (Nov 2025)
+## Recent Updates
+
+### January 2026
+- ✅ **Localization System** - 3 languages (EN, TR, ES) with LanguageManager (Jan 28)
+- ✅ **RevenueCat Migration** - Replaced StoreKit 2 with RevenueCat SDK (Jan 27)
+- ✅ **Paywall Refactor** - New component architecture, better UX (Jan 27)
+
+### December 2025
+- ✅ **Device Credit Recovery** - `recover_or_init_user()` RPC for smart credit recovery (Dec 1)
+- ✅ **Device-User Mapping** - `device_user_map` table for StableID tracking (Dec 1)
+- ✅ **Image Cleanup Functions** - `delete-processed-image`, `auto-cleanup-images` (Nov 30)
+- ✅ **Add Credits RPC** - `add_credits()` for refund operations (Nov 30)
+
+### November 2025
 - ✅ Converted to persistent credit system (Nov 13-14)
 - ✅ Database-driven tools/categories (Nov 14)
 - ✅ Seasonal expansion (Thanksgiving, Christmas)
-- ✅ StoreKit 2 IAP integration
 - ✅ Category display ordering improvements (Nov 15)
 - ✅ Credit transaction logging
 - ✅ Theme thumbnail support
@@ -234,7 +275,8 @@ BananaUniverse/
 3. Backend returns updated balance in response
 4. `CreditManager` updates UI state + cache
 5. Low credit warning at ≤1 credits
-6. Purchase flow via StoreKit → `verify-iap-purchase` → credits added
+6. Purchase flow via RevenueCat → `verify-iap-purchase` → credits added
+7. Device change → `recover_or_init_user()` recovers existing credits
 
 ### Tool Loading Flow
 1. `HomeViewModel` calls `ThemeService.fetchThemes()`
@@ -264,6 +306,8 @@ BananaUniverse/
 - CreditManager logs: `📊 [CREDITS]`
 - ThemeService logs: `🌐 ThemeService:`
 - Auth logs: `🔄 [AUTH]`
+- LanguageManager logs: `🌐 LanguageManager:`
+- RevenueCatService logs: `✅` (success) / `❌` (error)
 
 ## Performance Notes
 - ThemeService: 5-minute cache (reduces API calls)
@@ -281,10 +325,11 @@ BananaUniverse/
 
 ---
 
-**Last Updated:** November 15, 2025
-**Migration Count:** 85+
+**Last Updated:** January 28, 2026
+**Migration Count:** 107+
 **Tools Available:** 19+
-**Edge Functions:** 12
+**Edge Functions:** 14
+**Languages:** 3 (EN, TR, ES)
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # Supabase Backend Specialists - Agent Orchestration Rules
@@ -700,7 +745,7 @@ BananaUniverse now has **5 specialized iOS agents** for SwiftUI development:
 1. **ios-tech-lead-orchestrator** - Routes iOS tasks to specialists
 2. **swiftui-developer** - SwiftUI views, components, UI
 3. **ios-architect** - MVVM architecture, refactoring
-4. **storekit-specialist** - StoreKit 2, IAP implementation
+4. **storekit-specialist** - RevenueCat/StoreKit 2, IAP implementation
 5. **ios-testing-specialist** - XCTest, mocking, coverage
 
 ## When to Use iOS Agents
@@ -762,6 +807,16 @@ Assistant: I'll use @ios-tech-lead-orchestrator to coordinate this task
    ```swift
    private let creditManager = CreditManager.shared
    private let supabaseService = SupabaseService.shared
+   private let languageManager = LanguageManager.shared
+   ```
+
+6. **Use Localized Strings** - Always use `.localized` extension
+   ```swift
+   // ✅ Correct
+   Text("home_title".localized)
+
+   // ❌ Wrong
+   Text("Home")
    ```
 
 ### ❌ NEVER DO THIS
@@ -772,6 +827,7 @@ Assistant: I'll use @ios-tech-lead-orchestrator to coordinate this task
 4. **Create files > 300 lines** - Refactor!
 5. **Empty catch blocks** - Always log errors!
 6. **Magic numbers** - Use constants!
+7. **Hardcode strings** - Use `.localized` extension!
 
 ## Reference Code (Good Patterns)
 
@@ -779,10 +835,13 @@ Assistant: I'll use @ios-tech-lead-orchestrator to coordinate this task
 - `CreditManager.swift` - Service orchestration, @MainActor usage
 - `DesignTokens.swift` - Design system organization
 - `Config.swift` - Centralized configuration
+- `LanguageManager.swift` - Localization singleton pattern
+- `RevenueCatService.swift` - Clean IAP handling (193 lines)
 
 ### Anti-Patterns to Avoid:
 - `ChatViewModel.swift` - Too large (549 lines → should be 3 ViewModels)
 - `SupabaseService.swift` - Too many responsibilities (should be 3 services)
+- Hardcoded UI strings - Always use Localizable.strings
 
 ## iOS Agent Orchestration
 
@@ -819,6 +878,7 @@ Before completing any iOS task, verify:
 - [ ] Dark/light mode supported
 - [ ] Accessibility labels added
 - [ ] No empty catch blocks
+- [ ] Localized strings used (no hardcoded text)
 
 ## Common iOS Tasks
 
@@ -847,8 +907,8 @@ Steps:
 ```
 Agent: @storekit-specialist
 Steps:
-1. Add to App Store Connect
-2. Update StoreKitService
+1. Add to App Store Connect + RevenueCat dashboard
+2. Update RevenueCatService offerings
 3. Add to paywall UI
 4. Test in sandbox
 ```
@@ -918,7 +978,7 @@ Track these for iOS development:
 
 ---
 
-**Last Updated:** November 15, 2025
+**Last Updated:** January 28, 2026
 **iOS Agents:** 5 (1 orchestrator + 4 specialists)
 **Backend Agents:** 8 (1 orchestrator + 7 specialists)
 **Total Agents:** 13

@@ -190,19 +190,22 @@ class CreditManager: ObservableObject {
     /// Updates credits from StableID recovery (bypasses normal load flow)
     /// This is called by HybridAuthService after recover_or_init_user RPC
     func updateFromRecovery(credits: Int) async {
-        // Save to cache first
+        // Save recovery timestamp FIRST (prevents race condition)
+        QuotaCache.shared.saveRecoveryTimestamp()
+
+        // Save to cache
         QuotaCache.shared.save(creditsRemaining: credits)
-        
+
         // Update last load time to prevent debouncing from skipping subsequent loads
         lastLoadTime = Date()
-        
+
         // Track recovery time to prevent loadQuota from overwriting recovery value
         recoveryTime = Date()
-        
+
         await MainActor.run {
             self.creditsRemaining = credits
             self.isLoading = false
-            
+
             #if DEBUG
             print("💾 [CREDITS] Recovered from StableID: \(credits) credits")
             #endif
@@ -274,7 +277,25 @@ class CreditManager: ObservableObject {
     // MARK: - Private Helpers
 
     /// Updates credit state (atomic, with change detection)
+    /// Protected against overwriting recovered credits
     private func updateCredits(remaining: Int, total: Int? = nil) async {
+        // PROTECTION 1: Skip if recovery happened in the last 5 seconds
+        if QuotaCache.shared.isRecentRecovery() {
+            #if DEBUG
+            print("⏭️ [CREDITS] Skipping update - recent recovery protection (tried to set: \(remaining), keeping: \(creditsRemaining))")
+            #endif
+            return
+        }
+
+        // PROTECTION 2: Never overwrite with lower value if we have more credits
+        // This prevents initial grant (10) from overwriting recovered credits (e.g., 50)
+        if remaining < creditsRemaining && remaining <= 10 {
+            #if DEBUG
+            print("⏭️ [CREDITS] Skipping update - would overwrite higher balance (tried: \(remaining), current: \(creditsRemaining))")
+            #endif
+            return
+        }
+
         // Check if anything changed
         let remainingChanged = creditsRemaining != remaining
         let totalChanged = total != nil && creditsTotal != total!

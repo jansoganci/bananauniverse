@@ -18,7 +18,7 @@ struct ProcessingView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     @State private var progress: Double = 0.0
-    @State private var statusMessage: String = "Starting generation..."
+    @State private var statusMessageKey: String = "image_processing_status_starting"
     @State private var isCompleted: Bool = false
     @State private var pulseScale: CGFloat = 1.0
     @State private var progressAnimationTask: Task<Void, Never>?
@@ -74,7 +74,7 @@ struct ProcessingView: View {
                     .padding(.horizontal, DesignTokens.Spacing.lg)
 
                 // Status message
-                Text(statusMessage)
+                Text(statusMessageKey.localized)
                     .font(DesignTokens.Typography.body)
                     .foregroundStyle(DesignTokens.Text.secondary(colorScheme))
                     .multilineTextAlignment(.center)
@@ -111,7 +111,7 @@ struct ProcessingView: View {
                         .font(.title3)
                         .foregroundStyle(DesignTokens.Semantic.warning(colorScheme))
 
-                    Text("AI is working its magic...")
+                    Text("image_processing_magic_message".localized)
                         .font(DesignTokens.Typography.caption2)
                         .foregroundStyle(DesignTokens.Text.tertiary(colorScheme))
                 }
@@ -155,7 +155,7 @@ struct ProcessingView: View {
                     print("⏱️ [ProcessingView] Overall timeout reached (5min) for job: \(jobId)")
                     #endif
                     hasHandledCompletion = true
-                    onError("Processing timed out. Please check your connection and try again.")
+                    onError("image_processing_error_timeout".localized)
                 } else {
                     #if DEBUG
                     print("⚠️ [ProcessingView] Timeout fired but already handled")
@@ -179,7 +179,7 @@ struct ProcessingView: View {
             if update.status == "completed" {
                 if let imageUrl = update.imageUrl {
                     await MainActor.run {
-                        statusMessage = "Complete!"
+                        statusMessageKey = "image_processing_status_complete"
                         progress = 1.0
                         isCompleted = true
                     }
@@ -203,7 +203,7 @@ struct ProcessingView: View {
                 return // Exit function
             } else if update.status == "failed" {
                 await MainActor.run {
-                    statusMessage = "Failed"
+                    statusMessageKey = "image_processing_status_failed"
                     progress = 0.0
                 }
 
@@ -295,7 +295,7 @@ struct ProcessingView: View {
                     progress = 0.6
                 }
             }
-            statusMessage = "Queued..."
+            statusMessageKey = "image_processing_status_queued"
             
         case "processing":
             // Ensure we are at least at 60%
@@ -304,7 +304,7 @@ struct ProcessingView: View {
                     progress = 0.6
                 }
             }
-            statusMessage = "Creating your masterpiece..."
+            statusMessageKey = "image_processing_status_creating"
             
         case "completed":
             // Cancel fake progress and finish
@@ -312,15 +312,15 @@ struct ProcessingView: View {
             withAnimation(.easeOut(duration: 0.5)) {
                 progress = 1.0
             }
-            statusMessage = "Complete!"
+            statusMessageKey = "image_processing_status_complete"
             
         case "failed":
             progressAnimationTask?.cancel()
-            statusMessage = "Something went wrong"
+            statusMessageKey = "image_processing_status_failed"
             progress = 0.0
             
         default:
-            statusMessage = "Processing..."
+            statusMessageKey = "image_processing_status_creating"
         }
     }
 }

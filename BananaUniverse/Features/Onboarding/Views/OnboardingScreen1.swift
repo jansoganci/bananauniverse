@@ -21,18 +21,18 @@ struct OnboardingScreen1: View {
                 afterImageName: "OnboardingAfter"
             )
             .padding(.horizontal, DesignTokens.Spacing.md)
-            .accessibilityLabel("Interactive before and after comparison of AI photo transformation")
-            .accessibilityHint("Drag the slider to see the magic")
+            .accessibilityLabel("onboarding_screen1_accessibility_label".localized)
+            .accessibilityHint("onboarding_screen1_accessibility_hint".localized)
 
             // Title
-            Text("AI Magic in Seconds")
+            Text("onboarding_screen1_title".localized)
                 .font(DesignTokens.Typography.largeTitle)
                 .foregroundColor(DesignTokens.Text.primary(colorScheme))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, DesignTokens.Spacing.md)
 
             // Subtitle
-            Text("Transform any photo into viral content with one tap")
+            Text("onboarding_screen1_subtitle".localized)
                 .font(DesignTokens.Typography.callout)
                 .foregroundColor(DesignTokens.Text.secondary(colorScheme))
                 .multilineTextAlignment(.center)

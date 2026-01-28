@@ -98,7 +98,7 @@ struct OnboardingStepCard: View {
                 .shadow(color: DesignTokens.ShadowColors.default(colorScheme).opacity(0.1), radius: 4, x: 0, y: 2)
         )
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Step \(stepNumber): \(title)")
+        .accessibilityLabel(String(format: "onboarding_step_accessibility".localized, stepNumber, title))
         .accessibilityHint(description)
     }
 }

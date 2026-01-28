@@ -18,7 +18,7 @@ struct LibraryView: View {
             VStack(spacing: 0) {
                 // Header Bar
                 UnifiedHeaderBar(
-                    title: "Library"
+                    title: "library_title".localized
                 )
                 .accessibilityAddTraits(.isHeader)
                 
@@ -29,7 +29,7 @@ struct LibraryView: View {
                 } else if viewModel.showingError && viewModel.historyItems.isEmpty {
                     // Error State
                     ErrorView(
-                        message: viewModel.errorMessage ?? "An unknown error occurred",
+                        message: viewModel.errorMessage ?? "library_error_generic".localized,
                         onRetry: {
                             Task {
                                 await viewModel.loadHistory()
@@ -47,7 +47,7 @@ struct LibraryView: View {
                             if !viewModel.recentActivityItems.isEmpty {
                                 VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
                                     // Section Header
-                                    Text("Recent Activity")
+                                    Text("library_recent_activity".localized)
                                         .font(DesignTokens.Typography.title3)
                                         .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
                                     
@@ -112,16 +112,16 @@ struct LibraryView: View {
                 await viewModel.refreshHistory()
             }
         }
-        .alert("Error", isPresented: $viewModel.showingError) {
-            Button("OK") { viewModel.clearError() }
+        .alert("chat_error_title".localized, isPresented: $viewModel.showingError) {
+            Button("chat_ok".localized) { viewModel.clearError() }
         } message: {
-            Text(viewModel.errorMessage ?? "An unknown error occurred")
+            Text(viewModel.errorMessage ?? "library_error_generic".localized)
         }
-        .alert("Delete Edit", isPresented: $viewModel.showingDeleteConfirmation) {
-            Button("Cancel", role: .cancel) { viewModel.cancelDelete() }
-            Button("Delete", role: .destructive) { viewModel.confirmDelete() }
+        .alert("library_delete_title".localized, isPresented: $viewModel.showingDeleteConfirmation) {
+            Button("chat_cancel".localized, role: .cancel) { viewModel.cancelDelete() }
+            Button("library_action_delete".localized, role: .destructive) { viewModel.confirmDelete() }
         } message: {
-            Text("Are you sure you want to delete this edit from your history? This action cannot be undone.")
+            Text("library_delete_confirm".localized)
         }
         .sheet(isPresented: $viewModel.showingShareSheet) {
             if let item = viewModel.selectedItem {

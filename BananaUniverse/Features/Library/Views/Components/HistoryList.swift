@@ -31,8 +31,8 @@ struct HistoryList: View {
         .refreshable {
             await onRefresh()
         }
-        .accessibilityLabel("History list")
-        .accessibilityHint("Swipe down to refresh")
+        .accessibilityLabel("library_accessibility_list".localized)
+        .accessibilityHint("library_accessibility_refresh".localized)
     }
     
     // MARK: - Content View (Extracted for Phase 3)
@@ -42,7 +42,7 @@ struct HistoryList: View {
             // All History Section
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
                 // Section Header
-                Text("All History")
+                Text("library_all_history".localized)
                     .font(DesignTokens.Typography.title3)
                     .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
                 
@@ -123,7 +123,7 @@ struct HistoryListContentView: View {
             // All History Section
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
                 // Section Header
-                Text("All History")
+                Text("library_all_history".localized)
                     .font(DesignTokens.Typography.title3)
                     .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
                 

@@ -48,12 +48,12 @@ struct QuickAuthView: View {
                             .font(.system(size: 50))
                             .foregroundColor(DesignTokens.Brand.primary(themeManager.resolvedColorScheme))
                         
-                        Text("Sync Your Progress")
+                        Text("auth_sync_title".localized)
                             .font(.title)
                             .bold()
                             .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
                         
-                        Text("Sign in to sync your work across all your devices and never lose your creations")
+                        Text("auth_sync_subtitle".localized)
                             .font(.subheadline)
                             .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
                             .multilineTextAlignment(.center)
@@ -63,10 +63,10 @@ struct QuickAuthView: View {
                     
                     // Benefits
                     VStack(alignment: .leading, spacing: 16) {
-                        BenefitRow(icon: "checkmark.icloud", text: "Sync across iPhone, iPad, and future devices")
-                        BenefitRow(icon: "arrow.clockwise", text: "Automatic backup and restore")
-                        BenefitRow(icon: "gift", text: "Get started with free credits")
-                        BenefitRow(icon: "lock.shield", text: "Secure and private - your data stays protected")
+                        BenefitRow(icon: "checkmark.icloud", text: "auth_sync_benefit1".localized)
+                        BenefitRow(icon: "arrow.clockwise", text: "auth_sync_benefit2".localized)
+                        BenefitRow(icon: "gift", text: "auth_sync_benefit3".localized)
+                        BenefitRow(icon: "lock.shield", text: "auth_sync_benefit4".localized)
                     }
                     .padding(.horizontal)
                     .padding(.vertical, 8)
@@ -96,7 +96,7 @@ struct QuickAuthView: View {
                         Rectangle()
                             .frame(height: 1)
                             .foregroundColor(DesignTokens.Text.tertiary(themeManager.resolvedColorScheme))
-                        Text("or")
+                        Text("auth_or".localized.lowercased())
                             .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
                             .padding(.horizontal, 8)
                         Rectangle()
@@ -107,13 +107,13 @@ struct QuickAuthView: View {
                     
                     // Email Sign-In
                     VStack(spacing: 16) {
-                        TextField("Email", text: $email)
+                        TextField("auth_email".localized, text: $email)
                             .textContentType(.emailAddress)
                             .autocapitalization(.none)
                             .keyboardType(.emailAddress)
                             .textFieldStyle(.roundedBorder)
                         
-                        SecureField("Password", text: $password)
+                        SecureField("auth_password".localized, text: $password)
                             .textContentType(isSignUp ? .newPassword : .password)
                             .textFieldStyle(.roundedBorder)
                         
@@ -122,7 +122,7 @@ struct QuickAuthView: View {
                                 ProgressView()
                                     .progressViewStyle(CircularProgressViewStyle(tint: DesignTokens.Text.onBrand(themeManager.resolvedColorScheme)))
                             } else {
-                                Text(isSignUp ? "Create Account" : "Sign In")
+                                Text(isSignUp ? "auth_create_account".localized : "auth_sign_in".localized)
                                     .bold()
                             }
                         }
@@ -134,7 +134,7 @@ struct QuickAuthView: View {
                         .disabled(!isFormValid || authService.isLoading)
                         
                         Button(action: { isSignUp.toggle() }) {
-                            Text(isSignUp ? "Already have an account? Sign In" : "New here? Create Account")
+                            Text(isSignUp ? "auth_already_have_account".localized : "auth_new_here".localized)
                                 .font(.subheadline)
                                 .foregroundColor(DesignTokens.Text.link(themeManager.resolvedColorScheme))
                         }
@@ -148,14 +148,14 @@ struct QuickAuthView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Skip") {
+                    Button("auth_skip".localized) {
                         dismiss()
                     }
                     .foregroundColor(.secondary)
                 }
             }
-            .alert("Error", isPresented: $showError) {
-                Button("OK", role: .cancel) { }
+            .alert("auth_error_title".localized, isPresented: $showError) {
+                Button("auth_ok".localized, role: .cancel) { }
             } message: {
                 Text(errorMessage)
             }

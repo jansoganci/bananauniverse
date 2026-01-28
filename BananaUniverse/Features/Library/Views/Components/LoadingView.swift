@@ -97,6 +97,6 @@ struct LoadingView: View {
             }
         }
         .background(DesignTokens.Background.primary(themeManager.resolvedColorScheme))
-        .accessibilityLabel("Loading history")
+        .accessibilityLabel("accessibility_loading_history".localized)
     }
 }

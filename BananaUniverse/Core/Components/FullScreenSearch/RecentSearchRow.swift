@@ -36,7 +36,7 @@ struct RecentSearchRow: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(PlainButtonStyle())
-        .accessibilityLabel("Recent search: \(query). Double tap to search again.")
+        .accessibilityLabel(String(format: "accessibility_recent_search".localized, query))
     }
 }
 

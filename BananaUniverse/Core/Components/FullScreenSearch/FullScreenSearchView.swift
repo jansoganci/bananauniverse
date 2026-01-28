@@ -82,12 +82,12 @@ struct FullScreenSearchView: View {
         HStack(spacing: DesignTokens.Spacing.md) {
             // Cancel Button
             Button(action: onDismiss) {
-                Text("Cancel")
+                Text("core_cancel".localized)
                     .font(DesignTokens.Typography.body)
                     .foregroundColor(DesignTokens.Text.accent(colorScheme))
             }
-            .accessibilityLabel("Cancel search")
-            .accessibilityHint("Double tap to close")
+            .accessibilityLabel("accessibility_cancel_search".localized)
+            .accessibilityHint("accessibility_double_tap_close".localized)
             
             // Search TextField
             HStack(spacing: DesignTokens.Spacing.sm) {
@@ -95,7 +95,7 @@ struct FullScreenSearchView: View {
                     .font(.system(size: 16, weight: .medium))
                     .foregroundColor(DesignTokens.Text.secondary(colorScheme))
                 
-                TextField("Search tools…", text: $localSearchQuery)
+                TextField("search_placeholder".localized, text: $localSearchQuery)
                     .textInputAutocapitalization(.never)
                     .disableAutocorrection(true)
                     .font(DesignTokens.Typography.body)
@@ -114,8 +114,8 @@ struct FullScreenSearchView: View {
                             }
                         }
                     }
-                    .accessibilityLabel("Search tools")
-                    .accessibilityHint("Double tap to search")
+                    .accessibilityLabel("accessibility_search_tools".localized)
+                    .accessibilityHint("accessibility_double_tap_search".localized)
                 
                 if !localSearchQuery.isEmpty {
                     Button {
@@ -128,7 +128,7 @@ struct FullScreenSearchView: View {
                             .foregroundColor(DesignTokens.Text.secondary(colorScheme))
                             .font(.system(size: 16))
                     }
-                    .accessibilityLabel("Clear search")
+                    .accessibilityLabel("accessibility_clear_search".localized)
                     .transition(.scale.combined(with: .opacity))
                 }
             }
@@ -149,7 +149,7 @@ struct FullScreenSearchView: View {
     
     private var recentSearchesSection: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
-            Text("Recent Searches")
+            Text("core_recent_searches".localized)
                 .font(DesignTokens.Typography.subheadline)
                 .fontWeight(.semibold)
                 .foregroundColor(DesignTokens.Text.secondary(colorScheme))
@@ -180,7 +180,7 @@ struct FullScreenSearchView: View {
     
     private var popularToolsSection: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
-            Text("Popular Tools")
+            Text("core_popular_tools".localized)
                 .font(DesignTokens.Typography.subheadline)
                 .fontWeight(.semibold)
                 .foregroundColor(DesignTokens.Text.secondary(colorScheme))
@@ -209,7 +209,7 @@ struct FullScreenSearchView: View {
     private var searchResultsSection: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
             if !filteredResults.isEmpty {
-                Text("Results for \"\(localSearchQuery)\"")
+                Text(String(format: "search_results_for".localized, localSearchQuery))
                     .font(DesignTokens.Typography.subheadline)
                     .fontWeight(.semibold)
                     .foregroundColor(DesignTokens.Text.secondary(colorScheme))
@@ -240,11 +240,11 @@ struct FullScreenSearchView: View {
                         .foregroundColor(DesignTokens.Text.secondary(colorScheme))
                         .padding(.top, 60)
                     
-                    Text("No tools found")
+                    Text("core_no_tools_found".localized)
                         .font(.system(size: 20, weight: .semibold))
                         .foregroundColor(DesignTokens.Text.primary(colorScheme))
                     
-                    Text("Try a different search term")
+                    Text("core_try_different_search".localized)
                         .font(.system(size: 14))
                         .foregroundColor(DesignTokens.Text.secondary(colorScheme))
                 }

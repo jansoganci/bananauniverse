@@ -28,7 +28,7 @@ struct ResultView: View {
             // Header
             ZStack(alignment: .leading) {
                 UnifiedHeaderBar(
-                    title: "Result",
+                    title: "image_processing_result_title".localized,
                     leftContent: .empty,
                     rightContent: .none
                 )
@@ -101,10 +101,10 @@ struct ResultView: View {
         .onDisappear {
             handlePageClose()
         }
-        .alert("Saved!", isPresented: $showSavedAlert) {
-            Button("OK", role: .cancel) { }
+        .alert("image_processing_saved_title".localized, isPresented: $showSavedAlert) {
+            Button("chat_ok".localized, role: .cancel) { }
         } message: {
-            Text("Image saved to your photo library")
+            Text("image_processing_saved_message".localized)
         }
     }
     
@@ -141,14 +141,14 @@ struct DownloadButton: View {
                 if isSaving {
                     ProgressView()
                         .progressViewStyle(CircularProgressViewStyle(tint: DesignTokens.Brand.primary(themeManager.resolvedColorScheme)))
-                    Text("Saving...")
+                    Text("image_processing_saving".localized)
                 } else {
                     if viewModel.isImageSaved {
                         Image(systemName: "checkmark.circle.fill")
-                        Text("Saved")
+                        Text("image_processing_saved_button".localized)
                     } else {
                         Image(systemName: "arrow.down.circle")
-                        Text("Download")
+                        Text("image_processing_download".localized)
                     }
                 }
             }
@@ -192,7 +192,7 @@ struct CreateAnotherButton: View {
         } label: {
             HStack(spacing: DesignTokens.Spacing.sm) {
                 Image(systemName: "plus.circle")
-                Text("Create Another")
+                Text("image_processing_create_another".localized)
             }
             .font(.headline)
             .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
@@ -249,7 +249,7 @@ struct ProcessingInfoCard: View {
     var body: some View {
         HStack {
             VStack(alignment: .leading) {
-                Text("Model used")
+                Text("image_processing_model_used".localized)
                     .font(.caption)
                     .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
                 Text(modelType.displayName)
@@ -260,7 +260,7 @@ struct ProcessingInfoCard: View {
             Spacer()
             
             VStack(alignment: .trailing) {
-                Text("Cost")
+                Text("image_processing_cost_title".localized)
                     .font(.caption)
                     .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
                 HStack(spacing: 4) {
@@ -293,7 +293,7 @@ struct ShareButton: View {
         } label: {
             HStack(spacing: DesignTokens.Spacing.sm) {
                 Image(systemName: "square.and.arrow.up")
-                Text("Share")
+                Text("image_processing_share".localized)
             }
             .font(.headline)
             .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))

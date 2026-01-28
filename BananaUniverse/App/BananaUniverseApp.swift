@@ -20,6 +20,7 @@ struct BananaUniverseApp: App {
     @AppStorage("hasSeenOnboarding") var hasSeenOnboarding = false
     @State private var showOnboarding = false
     @State private var showSplash = true
+    @StateObject private var languageManager = LanguageManager.shared
 
     init() {
         // CRITICAL: Initialize StableID SYNCHRONOUSLY to prevent race conditions
@@ -166,10 +167,12 @@ struct BananaUniverseApp: App {
 
                 if showSplash {
                     SplashScreen()
+                        .environmentObject(languageManager)
                         .transition(.opacity)
                         .zIndex(1)
                 }
             }
+            .environmentObject(languageManager)
             .task {
                 // Keep splash for 1.5 seconds then dismiss
                 try? await Task.sleep(nanoseconds: 1_500_000_000)

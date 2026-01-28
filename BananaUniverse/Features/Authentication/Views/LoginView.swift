@@ -30,18 +30,18 @@ struct LoginView: View {
     
     var body: some View {
         VStack(spacing: 24) {
-            Text(isSignUpMode ? "Create Account" : "Welcome Back")
+            Text(isSignUpMode ? "auth_create_account".localized : "auth_welcome_back".localized)
                 .font(.largeTitle)
                 .bold()
                 .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
             
             VStack(spacing: 16) {
-                TextField("Email", text: $email)
+                TextField("auth_email".localized, text: $email)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                     .keyboardType(.emailAddress)
                     .autocapitalization(.none)
                 
-                SecureField("Password", text: $password)
+                SecureField("auth_password".localized, text: $password)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
             }
             
@@ -51,7 +51,7 @@ struct LoginView: View {
                         ProgressView()
                             .scaleEffect(0.8)
                     }
-                    Text(isSignUpMode ? "Sign Up" : "Sign In")
+                    Text(isSignUpMode ? "auth_sign_up".localized : "auth_sign_in".localized)
                 }
                 .frame(maxWidth: .infinity)
                 .frame(height: 50)
@@ -61,7 +61,7 @@ struct LoginView: View {
             }
             .disabled(!isFormValid || authService.isLoading)
             
-            Button(isSignUpMode ? "Already have an account? Sign In" : "Don't have an account? Sign Up") {
+            Button(isSignUpMode ? "auth_already_have_account".localized : "auth_dont_have_account".localized) {
                 isSignUpMode.toggle()
                 clearForm()
             }
@@ -71,8 +71,8 @@ struct LoginView: View {
         }
         .padding()
         .background(DesignTokens.Background.primary(themeManager.resolvedColorScheme))
-        .alert("Authentication Error", isPresented: $showingAlert) {
-            Button("OK", role: .cancel) { }
+        .alert("auth_error_title".localized, isPresented: $showingAlert) {
+            Button("auth_ok".localized, role: .cancel) { }
         } message: {
             Text(alertMessage)
         }

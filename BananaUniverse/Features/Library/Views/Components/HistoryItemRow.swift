@@ -58,35 +58,35 @@ struct HistoryItemRow: View {
                         DesignTokens.Haptics.impact(.medium)
                         onRerun()
                     } label: {
-                        Label("Re-run", systemImage: "arrow.clockwise")
+                        Label("library_action_rerun".localized, systemImage: "arrow.clockwise")
                     }
                     
                     Button {
                         DesignTokens.Haptics.impact(.light)
                         onShare()
                     } label: {
-                        Label("Share", systemImage: "square.and.arrow.up")
+                        Label("library_action_share".localized, systemImage: "square.and.arrow.up")
                     }
                     
                     Button {
                         DesignTokens.Haptics.impact(.light)
                         onDownload()
                     } label: {
-                        Label("Download", systemImage: "arrow.down.circle")
+                        Label("library_action_download".localized, systemImage: "arrow.down.circle")
                     }
                     
                     Button(role: .destructive) {
                         DesignTokens.Haptics.warning()
                         onDelete()
                     } label: {
-                        Label("Delete", systemImage: "trash")
+                        Label("library_action_delete".localized, systemImage: "trash")
                     }
                 } label: {
                     Image(systemName: "ellipsis")
                         .font(.system(size: 18, weight: .medium))
                         .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
                         .frame(width: DesignTokens.Layout.buttonHeight, height: DesignTokens.Layout.buttonHeight)
-                        .accessibilityLabel("More actions")
+                        .accessibilityLabel("library_action_more".localized)
                 }
             }
             .padding(.horizontal, DesignTokens.Spacing.md)
@@ -95,6 +95,6 @@ struct HistoryItemRow: View {
         .buttonStyle(PlainButtonStyle())
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(item.effectTitle), \(item.status.displayText), \(item.relativeDate)")
-        .accessibilityHint("Double tap to view details")
+        .accessibilityHint("library_accessibility_item_hint".localized)
     }
 }

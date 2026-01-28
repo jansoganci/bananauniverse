@@ -41,7 +41,7 @@ struct CachedAsyncImage: View {
                 .foregroundColor(DesignTokens.Text.tertiary(themeManager.resolvedColorScheme))
             
             if showsProgressView {
-                Text("Invalid URL")
+                Text("core_invalid_url".localized)
                     .font(DesignTokens.Typography.caption1)
                     .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
             }

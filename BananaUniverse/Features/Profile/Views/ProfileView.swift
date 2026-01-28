@@ -11,6 +11,7 @@ struct ProfileView: View {
     @StateObject private var viewModel = ProfileViewModel()
     @ObservedObject private var authService = HybridAuthService.shared
     @StateObject private var creditManager = CreditManager.shared
+    @StateObject private var languageManager = LanguageManager.shared
     @EnvironmentObject var themeManager: ThemeManager
     @State private var showPaywall = false
     @State private var showSignIn = false
@@ -18,7 +19,6 @@ struct ProfileView: View {
     @State private var showOnboarding = false
     @State private var authStateRefreshTrigger = false
     @State private var mockNotificationEnabled = true
-    @State private var selectedLanguage = "English"
     @State private var selectedNotificationSetting = "Enabled"
     @Environment(\.openURL) var openURL
     @Environment(\.colorScheme) var colorScheme
@@ -28,7 +28,7 @@ struct ProfileView: View {
             VStack(spacing: 0) {
                 // Header Bar
                 UnifiedHeaderBar(
-                    title: "Profile",
+                    title: "profile_title".localized,
                     leftContent: nil,
                     rightContent: nil
                 )
@@ -37,6 +37,7 @@ struct ProfileView: View {
                 ScrollView {
                     profileContent
                         .id(authStateRefreshTrigger) // Force refresh when auth state changes
+                        .id(languageManager.currentLanguage) // Force refresh when language changes
                 }
             }
             .background(DesignTokens.Background.primary(colorScheme))
@@ -64,22 +65,22 @@ struct ProfileView: View {
                 await viewModel.onAuthStateChanged(newState)
             }
         }
-        .alert("Restore Purchases", isPresented: $viewModel.showAlert) {
-            Button("OK", role: .cancel) { }
+        .alert("profile_restore_purchases".localized, isPresented: $viewModel.showAlert) {
+            Button("common_ok".localized, role: .cancel) { }
         } message: {
             Text(viewModel.alertMessage)
         }
-        .alert("Delete Account", isPresented: $viewModel.showDeleteConfirmation) {
-            Button("Cancel", role: .cancel) { }
-            Button("Delete Account", role: .destructive) {
+        .alert("profile_delete_account".localized, isPresented: $viewModel.showDeleteConfirmation) {
+            Button("common_cancel".localized, role: .cancel) { }
+            Button("profile_delete_account".localized, role: .destructive) {
                 Task {
                     await viewModel.deleteAccount()
                 }
             }
         } message: {
             VStack(spacing: 8) {
-                Text("Are you sure you want to delete your account?")
-                Text("This action cannot be undone. All your data, including processed images and credits, will be permanently deleted.")
+                Text("profile_delete_account_confirm".localized)
+                Text("profile_delete_account_warning".localized)
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
@@ -93,9 +94,9 @@ struct ProfileView: View {
             CreditCard(
                 creditsRemaining: creditManager.creditsRemaining,
                 features: [
-                    "Process AI images",
-                    "Fast processing",
-                    "High-quality outputs"
+                    "image_processing_status_creating".localized,
+                    "paywall_benefit_2_title".localized,
+                    "paywall_benefit_3_title".localized
                 ],
                 onBuyCreditsTap: {
                     showPaywall = true
@@ -108,7 +109,7 @@ struct ProfileView: View {
             if !authService.hasEmail {
                 VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
                     // Section Header
-                    Text("Account")
+                    Text("profile_account_section".localized)
                         .font(DesignTokens.Typography.title3)
                         .foregroundColor(DesignTokens.Text.primary(colorScheme))
                         .padding(.horizontal, DesignTokens.Spacing.md)
@@ -124,11 +125,11 @@ struct ProfileView: View {
                                 .frame(width: 32, height: 32)
                             
                             VStack(alignment: .leading, spacing: 4) {
-                                Text("Sign In with Apple")
+                                Text("profile_sign_in_apple".localized)
                                     .font(DesignTokens.Typography.headline)
                                     .foregroundColor(DesignTokens.Text.primary(colorScheme))
                                 
-                                Text("Save your data and sync across devices")
+                                Text("profile_sync_data".localized)
                                     .font(DesignTokens.Typography.caption1)
                                     .foregroundColor(DesignTokens.Text.secondary(colorScheme))
                             }
@@ -153,7 +154,7 @@ struct ProfileView: View {
             if authService.hasEmail {
                 VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
                     // Section Header
-                    Text("Account")
+                    Text("profile_account_section".localized)
                         .font(DesignTokens.Typography.title3)
                         .foregroundColor(DesignTokens.Text.primary(colorScheme))
                         .padding(.horizontal, DesignTokens.Spacing.md)
@@ -163,7 +164,7 @@ struct ProfileView: View {
                         // Email Row
                         ProfileRow(
                             icon: "envelope.fill",
-                            title: "Email",
+                            title: "profile_email".localized,
                             subtitle: authService.currentUser?.email ?? "Unknown",
                             iconColor: DesignTokens.Brand.primary(colorScheme),
                             showChevron: false
@@ -176,8 +177,8 @@ struct ProfileView: View {
                         // Credits Row
                         ProfileRow(
                             icon: "star.fill",
-                            title: "Credits",
-                            subtitle: "\(creditManager.creditsRemaining) credits",
+                            title: "profile_credits".localized,
+                            subtitle: creditManager.creditsRemaining == 1 ? "home_credit_remaining".localized(creditManager.creditsRemaining) : "home_credits_remaining".localized(creditManager.creditsRemaining),
                             iconColor: DesignTokens.Brand.primary(colorScheme),
                             showChevron: false,
                             action: {
@@ -192,7 +193,7 @@ struct ProfileView: View {
                         // Sign Out Row
                         ProfileRow(
                             icon: "arrow.right.square",
-                            title: "Sign Out",
+                            title: "profile_sign_out".localized,
                             iconColor: DesignTokens.Semantic.warning(colorScheme),
                             showChevron: true,
                             action: {
@@ -211,7 +212,7 @@ struct ProfileView: View {
             // Settings Section
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
                 // Section Header
-                Text("Settings")
+                Text("profile_settings_section".localized)
                     .font(DesignTokens.Typography.title3)
                     .foregroundColor(DesignTokens.Text.primary(colorScheme))
                     .padding(.horizontal, DesignTokens.Spacing.md)
@@ -231,7 +232,7 @@ struct ProfileView: View {
                             )
                         
                         // Text Content (matching ProfileRow)
-                        Text("Theme")
+                        Text("profile_theme".localized)
                             .font(DesignTokens.Typography.body)
                             .foregroundColor(DesignTokens.Text.primary(colorScheme))
                             .multilineTextAlignment(.leading)
@@ -248,7 +249,7 @@ struct ProfileView: View {
                                 HStack {
                                     Image(systemName: "sun.max.fill")
                                         .foregroundColor(DesignTokens.Brand.accent(colorScheme))
-                                    Text("Light")
+                                    Text("profile_theme_light".localized)
                                     if themeManager.preference == .light {
                                         Spacer()
                                         Image(systemName: "checkmark")
@@ -265,7 +266,7 @@ struct ProfileView: View {
                                 HStack {
                                     Image(systemName: "moon.fill")
                                         .foregroundColor(DesignTokens.Brand.secondary(colorScheme))
-                                    Text("Dark")
+                                    Text("profile_theme_dark".localized)
                                     if themeManager.preference == .dark {
                                         Spacer()
                                         Image(systemName: "checkmark")
@@ -282,7 +283,7 @@ struct ProfileView: View {
                                 HStack {
                                     Image(systemName: "circle.lefthalf.filled")
                                         .foregroundColor(DesignTokens.Text.tertiary(colorScheme))
-                                    Text("Auto")
+                                    Text("profile_theme_auto".localized)
                                     if themeManager.preference == .system {
                                         Spacer()
                                         Image(systemName: "checkmark")
@@ -333,7 +334,7 @@ struct ProfileView: View {
                             )
                         
                         // Text Content (matching ProfileRow)
-                        Text("Language")
+                        Text("profile_language".localized)
                             .font(DesignTokens.Typography.body)
                             .foregroundColor(DesignTokens.Text.primary(colorScheme))
                             .multilineTextAlignment(.leading)
@@ -342,38 +343,23 @@ struct ProfileView: View {
                         
                         // Language dropdown picker
                         Menu {
-                            Button(action: {
-                                withAnimation(.easeInOut(duration: 0.2)) {
-                                    selectedLanguage = "English"
-                                }
-                            }) {
-                                HStack {
-                                    Text("English")
-                                    if selectedLanguage == "English" {
-                                        Spacer()
-                                        Image(systemName: "checkmark")
-                                            .foregroundColor(DesignTokens.Brand.primary(colorScheme))
-                                    }
-                                }
-                            }
-                            
-                            Button(action: {
-                                withAnimation(.easeInOut(duration: 0.2)) {
-                                    selectedLanguage = "Turkish"
-                                }
-                            }) {
-                                HStack {
-                                    Text("Turkish")
-                                    if selectedLanguage == "Turkish" {
-                                        Spacer()
-                                        Image(systemName: "checkmark")
-                                            .foregroundColor(DesignTokens.Brand.primary(colorScheme))
+                            ForEach(AppLanguage.allCases) { language in
+                                Button(action: {
+                                    languageManager.setLanguage(language.rawValue)
+                                }) {
+                                    HStack {
+                                        Text(language.displayName)
+                                        if languageManager.currentLanguage == language.rawValue {
+                                            Spacer()
+                                            Image(systemName: "checkmark")
+                                                .foregroundColor(DesignTokens.Brand.primary(colorScheme))
+                                        }
                                     }
                                 }
                             }
                         } label: {
                             HStack(spacing: 6) {
-                                Text(selectedLanguage)
+                                Text(AppLanguage(rawValue: languageManager.currentLanguage)?.displayName ?? "English")
                                     .font(.system(size: 16, weight: .medium))
                                     .foregroundColor(DesignTokens.Text.primary(colorScheme))
                                     .lineLimit(1)
@@ -410,7 +396,7 @@ struct ProfileView: View {
                             )
                         
                         // Text Content (matching ProfileRow)
-                        Text("Notifications")
+                        Text("profile_notifications".localized)
                             .font(DesignTokens.Typography.body)
                             .foregroundColor(DesignTokens.Text.primary(colorScheme))
                             .multilineTextAlignment(.leading)
@@ -426,7 +412,7 @@ struct ProfileView: View {
                                 }
                             }) {
                                 HStack {
-                                    Text("Enabled")
+                                    Text("profile_notifications_enabled".localized)
                                     if selectedNotificationSetting == "Enabled" {
                                         Spacer()
                                         Image(systemName: "checkmark")
@@ -442,7 +428,7 @@ struct ProfileView: View {
                                 }
                             }) {
                                 HStack {
-                                    Text("Disabled")
+                                    Text("profile_notifications_disabled".localized)
                                     if selectedNotificationSetting == "Disabled" {
                                         Spacer()
                                         Image(systemName: "checkmark")
@@ -452,7 +438,7 @@ struct ProfileView: View {
                             }
                         } label: {
                             HStack(spacing: 6) {
-                                Text(selectedNotificationSetting)
+                                Text(selectedNotificationSetting == "Enabled" ? "profile_notifications_enabled".localized : "profile_notifications_disabled".localized)
                                     .font(.system(size: 16, weight: .medium))
                                     .foregroundColor(DesignTokens.Text.primary(colorScheme))
                                     .lineLimit(1)
@@ -505,7 +491,7 @@ struct ProfileView: View {
                                 }
                                 
                                 // Text Content (matching ProfileRow)
-                                Text(viewModel.isDeletingAccount ? "Deleting Account..." : "Delete Account")
+                                Text(viewModel.isDeletingAccount ? "profile_deleting_account".localized : "profile_delete_account".localized)
                                     .font(DesignTokens.Typography.body)
                                     .foregroundColor(DesignTokens.Semantic.error(colorScheme))
                                     .multilineTextAlignment(.leading)
@@ -527,7 +513,7 @@ struct ProfileView: View {
                     
                     ProfileRow(
                         icon: "arrow.clockwise",
-                        title: "Restore Onboarding",
+                        title: "profile_restore_onboarding".localized,
                         iconColor: DesignTokens.Brand.secondary(colorScheme),
                         showChevron: true,
                         action: {
@@ -549,7 +535,7 @@ struct ProfileView: View {
             // Support Section
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
                 // Section Header
-                Text("Support")
+                Text("profile_support_section".localized)
                     .font(DesignTokens.Typography.title3)
                     .foregroundColor(DesignTokens.Text.primary(colorScheme))
                     .padding(.horizontal, DesignTokens.Spacing.md)
@@ -558,7 +544,7 @@ struct ProfileView: View {
                 VStack(spacing: 0) {
                     ProfileRow(
                         icon: "questionmark.circle.fill",
-                        title: "Help & Support",
+                        title: "profile_help_support".localized,
                         iconColor: DesignTokens.Brand.primary(colorScheme),
                         showChevron: true,
                         action: {
@@ -574,7 +560,7 @@ struct ProfileView: View {
                     
                     ProfileRow(
                         icon: "hand.raised.fill",
-                        title: "Privacy Policy",
+                        title: "profile_privacy_policy".localized,
                         iconColor: DesignTokens.Brand.primary(colorScheme),
                         showChevron: true,
                         action: {
@@ -590,7 +576,7 @@ struct ProfileView: View {
                     
                     ProfileRow(
                         icon: "doc.text.fill",
-                        title: "Terms of Service",
+                        title: "profile_terms_service".localized,
                         iconColor: DesignTokens.Brand.primary(colorScheme),
                         showChevron: true,
                         action: {
@@ -606,7 +592,7 @@ struct ProfileView: View {
                     
                     ProfileRow(
                         icon: "brain.head.profile",
-                        title: "AI Service Disclosure",
+                        title: "profile_ai_disclosure".localized,
                         iconColor: DesignTokens.Brand.primary(colorScheme),
                         showChevron: true,
                         action: {
@@ -621,7 +607,7 @@ struct ProfileView: View {
                     // Restore Purchases Button (always visible)
                     ProfileRow(
                         icon: "arrow.clockwise.circle.fill",
-                        title: "Restore Purchases",
+                        title: "profile_restore_purchases".localized,
                         iconColor: DesignTokens.Brand.primary(colorScheme),
                         showChevron: true,
                         action: {
@@ -662,11 +648,11 @@ struct CreditCard: View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Your Credits")
+                    Text("profile_credits_title".localized)
                         .font(.system(size: 20, weight: .bold))
                         .foregroundColor(DesignTokens.Text.primary(colorScheme))
 
-                    Text("\(creditsRemaining) credit\(creditsRemaining == 1 ? "" : "s") available")
+                    Text(creditsRemaining == 1 ? "profile_credit_available".localized(creditsRemaining) : "profile_credits_available".localized(creditsRemaining))
                         .font(.system(size: 14))
                         .foregroundColor(DesignTokens.Text.secondary(colorScheme))
                 }
@@ -691,7 +677,7 @@ struct CreditCard: View {
             }
 
             Button(action: onBuyCreditsTap) {
-                Text("Buy Credits")
+                Text("profile_buy_credits".localized)
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(DesignTokens.Text.onBrand(colorScheme))
                     .frame(maxWidth: .infinity)

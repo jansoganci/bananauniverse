@@ -39,7 +39,7 @@ struct OnboardingScreen3: View {
                         .font(.system(size: 32, weight: .bold))
                         .foregroundColor(DesignTokens.Brand.primary(colorScheme))
 
-                    Text("Credits")
+                    Text("onboarding_screen3_credits_label".localized)
                         .font(.system(size: 10, weight: .medium))
                         .foregroundColor(DesignTokens.Text.secondary(colorScheme))
                 }
@@ -48,10 +48,10 @@ struct OnboardingScreen3: View {
             .opacity(animateItems ? 1 : 0)
             .animation(DesignTokens.Animation.bouncy.delay(0.1), value: animateItems)
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Ten free credits bonus")
+            .accessibilityLabel("onboarding_screen3_bonus_accessibility".localized)
 
             // Title
-            Text("10 Free Credits to Get Started")
+            Text("onboarding_screen3_title".localized)
                 .font(DesignTokens.Typography.title1)
                 .foregroundColor(DesignTokens.Text.primary(colorScheme))
                 .multilineTextAlignment(.center)
@@ -61,7 +61,7 @@ struct OnboardingScreen3: View {
                 .animation(DesignTokens.Animation.smooth.delay(0.2), value: animateItems)
 
             // Description
-            Text("1 credit per transformation. All 19+ tools included. Buy more anytime.")
+            Text("onboarding_screen3_subtitle".localized)
                 .font(DesignTokens.Typography.callout)
                 .foregroundColor(DesignTokens.Text.secondary(colorScheme))
                 .multilineTextAlignment(.center)
@@ -75,7 +75,7 @@ struct OnboardingScreen3: View {
                 HStack {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundColor(DesignTokens.Brand.primary(colorScheme))
-                    Text("Collectible Figure — 1 credit")
+                    Text("onboarding_screen3_feature1".localized)
                         .font(DesignTokens.Typography.subheadline)
                         .foregroundColor(DesignTokens.Text.secondary(colorScheme))
                 }
@@ -83,7 +83,7 @@ struct OnboardingScreen3: View {
                 HStack {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundColor(DesignTokens.Brand.primary(colorScheme))
-                    Text("Professional Headshot — 4 credits")
+                    Text("onboarding_screen3_feature2".localized)
                         .font(DesignTokens.Typography.subheadline)
                         .foregroundColor(DesignTokens.Text.secondary(colorScheme))
                 }
@@ -91,7 +91,7 @@ struct OnboardingScreen3: View {
                 HStack {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundColor(DesignTokens.Brand.primary(colorScheme))
-                    Text("No hidden fees — Start creating now")
+                    Text("onboarding_screen3_feature3".localized)
                         .font(DesignTokens.Typography.subheadline)
                         .foregroundColor(DesignTokens.Text.secondary(colorScheme))
                 }

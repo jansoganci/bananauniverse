@@ -18,7 +18,7 @@ struct WarningBanner: View {
                     .foregroundColor(.black)
                     .font(.system(size: 14, weight: .semibold))
                 
-                Text("Save before closing! This image will disappear when you close this page.")
+                Text("image_processing_warning_save".localized)
                     .font(.caption)
                     .fontWeight(.medium)
                     .foregroundColor(.black)

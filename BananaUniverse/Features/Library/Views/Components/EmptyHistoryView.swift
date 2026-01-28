@@ -19,17 +19,17 @@ struct EmptyHistoryView: View {
                 .foregroundColor(DesignTokens.Text.tertiary(themeManager.resolvedColorScheme))
                 .accessibilityHidden(true)
             
-            Text("No editing history found")
+            Text("library_no_history_title".localized)
                 .font(DesignTokens.Typography.title3)
                 .foregroundColor(DesignTokens.Text.accent(themeManager.resolvedColorScheme))
                 .accessibilityAddTraits(.isHeader)
             
-            Text("Your AI edits will appear here")
+            Text("library_no_history_subtitle".localized)
                 .font(DesignTokens.Typography.callout)
                 .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("No editing history found. Your AI edits will appear here.")
+        .accessibilityLabel("\("library_no_history_title".localized). \("library_no_history_subtitle".localized).")
     }
 }

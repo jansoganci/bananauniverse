@@ -108,7 +108,7 @@ struct QuotaDisplayView: View {
     }
     
     private var titleView: some View {
-        Text("Credits")
+        Text("profile_credits".localized)
             .font(.system(size: 16))
             .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
     }
@@ -119,12 +119,12 @@ struct QuotaDisplayView: View {
                 HStack(spacing: 6) {
                     ProgressView()
                         .scaleEffect(0.7)
-                    Text("Syncing...")
+                    Text("core_syncing".localized)
                         .font(.system(size: style == .compact ? 13 : 14))
                         .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
                 }
             } else {
-                Text("\(creditManager.creditsRemaining) credits")
+                Text("\(creditManager.creditsRemaining) \("core_credits_suffix".localized)")
                     .font(.system(size: style == .compact ? 13 : 14))
                     .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
             }
@@ -139,7 +139,7 @@ struct QuotaDisplayView: View {
                     .scaleEffect(0.7)
                     .frame(width: 12, height: 12)
 
-                Text("Syncing...")
+                Text("core_syncing".localized)
                     .font(.system(size: 13, weight: .medium))
                     .lineLimit(1)
                     .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
@@ -151,7 +151,7 @@ struct QuotaDisplayView: View {
                         .foregroundColor(DesignTokens.Semantic.warning(themeManager.resolvedColorScheme))
                 }
 
-                Text("\(creditManager.creditsRemaining) credits")
+                Text("\(creditManager.creditsRemaining) \("core_credits_suffix".localized)")
                     .font(.system(size: 13, weight: .medium))
                     .lineLimit(1)
                     .foregroundColor(creditManager.shouldShowQuotaWarning ? DesignTokens.Semantic.warning(themeManager.resolvedColorScheme) : DesignTokens.Text.primary(themeManager.resolvedColorScheme))

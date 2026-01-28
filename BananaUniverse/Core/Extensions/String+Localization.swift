@@ -11,12 +11,15 @@ import Foundation
 extension String {
     /// Localized string using NSLocalizedString
     var localized: String {
-        NSLocalizedString(self, comment: "")
+        let bundle = LanguageManager.shared.bundle
+        return NSLocalizedString(self, bundle: bundle, comment: "")
     }
     
     /// Localized string with format arguments
     func localized(_ arguments: CVarArg...) -> String {
-        String(format: localized, arguments: arguments)
+        let bundle = LanguageManager.shared.bundle
+        let localizedString = NSLocalizedString(self, bundle: bundle, comment: "")
+        return String(format: localizedString, arguments: arguments)
     }
     
     /// Localized string with specific table name

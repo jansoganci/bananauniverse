@@ -7,58 +7,336 @@
 */
 
 // MARK: - Paywall Header
-"paywall_title" = "Get Credits";
-"paywall_subtitle" = "Buy credits to process AI images";
+"paywall_title" = "Unlock AI Creation";
+"paywall_subtitle" = "Credits never expire. No subscription.";
 
-// MARK: - Benefits
-"paywall_benefit_1_title" = "Unlimited AI image edits";
-"paywall_benefit_1_description" = "Process as many images as you want";
-"paywall_benefit_2_title" = "Faster processing priority";
-"paywall_benefit_2_description" = "Skip the queue and get results instantly";
-"paywall_benefit_3_title" = "Advanced AI filters";
-"paywall_benefit_3_description" = "Access to advanced AI models and effects";
+// MARK: - Products
+"paywall_product_credits" = "%@ Credits";
+"paywall_product_per_credit" = "%@/credit";
 
-// MARK: - Products (Credit Packages)
-// Note: These are now credit packages, not subscriptions
-"paywall_weekly_title" = "100 Credits";
-"paywall_weekly_description" = "Perfect for trying out AI image processing";
-"paywall_weekly_price" = "$4.99";
-
-"paywall_yearly_title" = "1000 Credits";
-"paywall_yearly_description" = "Best value - save 70% compared to smaller packages";
-"paywall_yearly_price" = "$79.99";
-"paywall_yearly_savings" = "Save 70%";
+// MARK: - Paywall v2.0 Cards
+"paywall_card_credits" = "%d Credits";
+"paywall_card_per_credit" = "%@/credit";
+"paywall_card_save" = "Save %d%%";
+"paywall_card_value_description" = "= %d AI creations";
 
 // MARK: - Badges
-"paywall_trial_badge" = "Popular";
-"paywall_best_value_badge" = "BEST VALUE";
+"paywall_badge_best_value" = "BEST VALUE";
+"paywall_badge_popular" = "POPULAR";
+"paywall_badge_save_percent" = "Save %d%%";
 
-// MARK: - CTA Button
-"paywall_cta_button" = "Buy Credits";
-"paywall_cta_loading" = "Processing...";
+// MARK: - Loading
+"paywall_loading" = "Loading...";
 
-// MARK: - Footer Links
-"paywall_footer_terms" = "Terms of Service";
-"paywall_footer_privacy" = "Privacy Policy";
+// MARK: - Error
+"paywall_error_title" = "Unable to Load";
+"paywall_error_retry" = "Retry";
+"paywall_error_no_package_title" = "No Package Selected";
+"paywall_error_no_package_message" = "Please select a credit package.";
+
+// MARK: - CTA
+"paywall_cta_continue" = "Continue";
+"paywall_button_cta_dynamic" = "Get %d Credits";
+
+// MARK: - Footer
 "paywall_footer_restore" = "Restore Purchases";
+"paywall_footer_terms" = "Terms";
+"paywall_footer_privacy" = "Privacy";
+"paywall_footer_ai_disclosure" = "AI Disclosure";
 
-// MARK: - Success Messages
-"paywall_purchase_success" = "Purchase successful! Credits have been added to your account.";
-"paywall_restore_success" = "Purchases restored successfully! Credits have been added to your account.";
+// MARK: - Alerts
+"paywall_alert_success" = "Success";
+"paywall_alert_purchases_restored" = "Purchases restored.";
+"paywall_alert_ok" = "OK";
+"paywall_alert_cancel" = "Cancel";
+"paywall_alert_retry" = "Retry";
+"paywall_alert_retry_action" = "Retry Action";
+"paywall_alert_success_title" = "Success!";
+ "paywall_alert_retry_title" = "Retry?";
 
-// MARK: - Error Messages
-"paywall_error_purchase_failed" = "Purchase failed. Please check your App Store account and try again.";
-"paywall_error_restore_failed" = "No previous purchases found. Please check your App Store account.";
-"paywall_error_product_not_found" = "Product not available. Please try again later.";
-"paywall_error_generic" = "Something went wrong. Please try again.";
+// MARK: - Paywall Specific Errors
+"paywall_error_purchase_failed" = "Purchase Failed";
+"paywall_error_restore_failed" = "Restore Failed";
+
+// MARK: - Connection Errors
+"paywall_error_connection_title" = "Connection Error";
+"paywall_error_connection_message" = "Please check your internet connection.";
+"paywall_error_payment_title" = "Payment Error";
+"paywall_error_payment_message" = "Please check your Apple ID and try again.";
+"paywall_error_generic_title" = "Error";
+"paywall_error_generic_message" = "Something went wrong. Please try again.";
+
+// MARK: - Toolbar
+"paywall_toolbar_close" = "Close";
+
+// MARK: - Onboarding
+"onboarding_skip" = "Skip";
+"onboarding_back" = "Back";
+"onboarding_next" = "Next";
+"onboarding_start_creating" = "Start Creating";
+
+// MARK: - Onboarding Screen 1
+"onboarding_screen1_title" = "AI Magic in Seconds";
+"onboarding_screen1_subtitle" = "Transform any photo into viral content with one tap";
+"onboarding_screen1_accessibility_label" = "Interactive before and after comparison of AI photo transformation";
+"onboarding_screen1_accessibility_hint" = "Drag the slider to see the magic";
+
+// MARK: - Onboarding Screen 2
+"onboarding_screen2_title" = "How It Works";
+"onboarding_screen2_step1_title" = "Choose your style";
+"onboarding_screen2_step1_description" = "Browse 19+ AI themes: toys, art, pro photos";
+"onboarding_screen2_step2_title" = "Upload your photo";
+"onboarding_screen2_step2_description" = "Take a picture or choose from your photo library";
+"onboarding_screen2_step3_title" = "Generate & share";
+"onboarding_screen2_step3_description" = "Customize settings, hit generate, and share!";
+
+// MARK: - Onboarding Screen 3
+"onboarding_screen3_title" = "10 Free Credits to Get Started";
+"onboarding_screen3_subtitle" = "1 credit per transformation. All 19+ tools included. Buy more anytime.";
+"onboarding_screen3_credits_label" = "Credits";
+"onboarding_screen3_bonus_accessibility" = "Ten free credits bonus";
+"onboarding_screen3_feature1" = "Collectible Figure — 1 credit";
+"onboarding_screen3_feature2" = "Professional Headshot — 4 credits";
+"onboarding_screen3_feature3" = "No hidden fees — Start creating now";
+
+// MARK: - Onboarding Screen 4
+"onboarding_screen4_title" = "Important: Save Your Images";
+"onboarding_screen4_step1_title" = "Save before closing";
+"onboarding_screen4_step1_description" = "Your processed images will be deleted from our servers when you close the result page. Make sure to save them to your device before closing.";
+"onboarding_screen4_step2_title" = "Automatic deletion";
+"onboarding_screen4_step2_description" = "Images are automatically deleted from our servers after 1 hour. Please save important images to your device.";
+"onboarding_screen4_button" = "I Understand";
+
+// MARK: - Authentication
+"auth_welcome_back" = "Welcome Back";
+"auth_create_account" = "Create Account";
+"auth_sign_in" = "Sign In";
+"auth_sign_up" = "Sign Up";
+"auth_email" = "Email";
+"auth_password" = "Password";
+"auth_create_password" = "Create Password";
+"auth_or" = "OR";
+"auth_cancel" = "Cancel";
+"auth_skip" = "Skip";
+"auth_error_title" = "Authentication Error";
+"auth_error_generic" = "Authentication failed";
+"auth_ok" = "OK";
+"auth_dont_have_account" = "Don't have an account? Sign Up";
+"auth_already_have_account" = "Already have an account? Sign In";
+"auth_new_here" = "New here? Create Account";
+
+// MARK: - Quick Auth
+"auth_sync_title" = "Sync Your Progress";
+"auth_sync_subtitle" = "Sign in to sync your work across all your devices and never lose your creations";
+"auth_sync_benefit1" = "Sync across iPhone, iPad, and future devices";
+"auth_sync_benefit2" = "Automatic backup and restore";
+"auth_sync_benefit3" = "Get started with free credits";
+"auth_sync_benefit4" = "Secure and private - your data stays protected";
+
+// MARK: - Sign In View
+"auth_sync_devices" = "Sync your progress across devices";
+"auth_never_lose_work" = "Never lose your work";
+"auth_secure_backup" = "Secure backup of your creations";
+
+// MARK: - Home
+"home_low_credits" = "Low Credits";
+"home_credits_remaining" = "%d credits remaining";
+"home_credit_remaining" = "%d credit remaining";
+"home_buy_credits" = "Buy Credits";
+"home_error_loading_themes" = "Error Loading Themes";
+"home_ok" = "OK";
+"home_retry" = "Retry";
+"home_search_tools" = "Search tools";
+"home_search_hint" = "Double tap to open search";
+
+// MARK: - Image Processing
+"image_processing_warning_save" = "Save before closing! This image will disappear when you close this page.";
+"image_processing_create_title" = "Create";
+"image_processing_loading_masterpiece" = "Loading your masterpiece...";
+"image_processing_error_no_url" = "No image URL";
+"image_processing_error_invalid_data" = "Invalid image data";
+"image_processing_error_not_found" = "Image not found (404)";
+"image_processing_error_http" = "HTTP error: %d";
+"image_processing_select_images" = "Select Images";
+"image_processing_select_limit" = "Select 1-2 images (optional)";
+"image_processing_image_slot" = "Image %d";
+"image_processing_prompt_title" = "Prompt";
+"image_processing_prompt_placeholder" = "Describe what you want to create...";
+"image_processing_settings_title" = "Settings";
+"image_processing_model_title" = "Model";
+"image_processing_aspect_ratio_title" = "Aspect Ratio";
+"image_processing_resolution_title" = "Resolution";
+"image_processing_output_format_title" = "Output Format";
+"image_processing_estimated_cost" = "Estimated Cost";
+"image_processing_credits_unit" = "credits";
+"image_processing_insufficient_credits" = "Insufficient credits";
+"image_processing_generating" = "Generating...";
+"image_processing_generate_button" = "Generate";
+"image_processing_status_starting" = "Starting generation...";
+"image_processing_status_queued" = "Queued...";
+"image_processing_status_creating" = "Creating your masterpiece...";
+"image_processing_status_complete" = "Complete!";
+"image_processing_status_failed" = "Failed";
+"image_processing_magic_message" = "AI is working its magic...";
+"image_processing_result_title" = "Result";
+"image_processing_saved_title" = "Saved!";
+"image_processing_saved_message" = "Image saved to your photo library";
+"image_processing_saving" = "Saving...";
+"image_processing_download" = "Download";
+"image_processing_saved_button" = "Saved";
+"image_processing_create_another" = "Create Another";
+"image_processing_model_used" = "Model used";
+"image_processing_cost_title" = "Cost";
+"image_processing_share" = "Share";
+"image_processing_error_timeout" = "Processing timed out. Please check your connection and try again.";
+
+// MARK: - Chat
+"chat_error_title" = "Error";
+"chat_ok" = "OK";
+"chat_photo_access_title" = "Photo Library Access Required";
+"chat_photo_access_message" = "Please enable photo library access in Settings to save images to your Photos library.";
+"chat_open_settings" = "Open Settings";
+"chat_cancel" = "Cancel";
+"chat_processing_toast" = "✨ Processing your request...";
+"chat_saving_toast" = "Saving...";
+"chat_saved_toast" = "✅ Saved to Photos!";
+"chat_no_image_toast" = "❌ No image to save";
+"chat_save_failed_toast" = "❌ Save failed: %@";
+"chat_input_placeholder" = "Message";
+"chat_save_button" = "Save";
+"chat_saved_button" = "Saved";
+"chat_share_button" = "Share";
+"chat_processing_message" = "Processing your image...";
+"chat_uploading" = "Uploading...";
+"chat_empty_title" = "Start by uploading a photo";
+"chat_empty_subtitle" = "Tap here to select an image from your library";
+"chat_search_accessibility" = "Search tools";
+"chat_search_hint" = "Double tap to open search";
+
+// MARK: - Core Components
+"core_app_name" = "Flario";
+"core_see_all" = "See All";
+"core_cancel" = "Cancel";
+"core_recent_searches" = "Recent Searches";
+"core_popular_tools" = "Popular Tools";
+"core_no_tools_found" = "No tools found";
+"core_try_different_search" = "Try a different search term";
+"core_try_now" = "Try Now";
+"core_use_tool" = "Use Tool";
+"core_featured" = "FEATURED";
+"core_offline_title" = "You're Offline";
+"core_offline_subtitle" = "Check your internet connection";
+"core_invalid_url" = "Invalid URL";
+"core_syncing" = "Syncing...";
+"core_credits_suffix" = "credits";
+
+// MARK: - Library
+"library_title" = "Library";
+"library_recent_activity" = "Recent Activity";
+"library_all_history" = "All History";
+"library_no_history_title" = "No editing history found";
+"library_no_history_subtitle" = "Your AI edits will appear here";
+"library_error_title" = "Something went wrong";
+"library_error_generic" = "An unknown error occurred";
+"library_try_again" = "Try Again";
+"library_delete_title" = "Delete Edit";
+"library_delete_confirm" = "Are you sure you want to delete this edit from your history? This action cannot be undone.";
+"library_action_rerun" = "Re-run";
+"library_action_share" = "Share";
+"library_action_download" = "Download";
+"library_action_delete" = "Delete";
+"library_action_more" = "More actions";
+"library_accessibility_list" = "History list";
+"library_accessibility_refresh" = "Swipe down to refresh";
+"library_accessibility_item_hint" = "Double tap to view details";
+"library_accessibility_retry_hint" = "Double tap to retry loading history";
+
+// MARK: - Profile
+"profile_title" = "Profile";
+"profile_restore_purchases" = "Restore Purchases";
+"profile_delete_account" = "Delete Account";
+"profile_delete_account_confirm" = "Are you sure you want to delete your account?";
+"profile_delete_account_warning" = "This action cannot be undone. All your data, including processed images and credits, will be permanently deleted.";
+"profile_deleting_account" = "Deleting Account...";
+"profile_credits_title" = "Your Credits";
+"profile_credits_available" = "%d credits available";
+"profile_credit_available" = "%d credit available";
+"profile_buy_credits" = "Buy Credits";
+"profile_account_section" = "Account";
+"profile_sign_in_apple" = "Sign In with Apple";
+"profile_sync_data" = "Save your data and sync across devices";
+"profile_email" = "Email";
+"profile_credits" = "Credits";
+"profile_sign_out" = "Sign Out";
+"profile_settings_section" = "Settings";
+"profile_theme" = "Theme";
+"profile_theme_light" = "Light";
+"profile_theme_dark" = "Dark";
+"profile_theme_auto" = "Auto";
+"profile_language" = "Language";
+"profile_language_en" = "English";
+"profile_language_tr" = "Turkish";
+"profile_notifications" = "Notifications";
+"profile_notifications_enabled" = "Enabled";
+"profile_notifications_disabled" = "Disabled";
+"profile_restore_onboarding" = "Restore Onboarding";
+"profile_support_section" = "Support";
+"profile_help_support" = "Help & Support";
+"profile_privacy_policy" = "Privacy Policy";
+"profile_terms_service" = "Terms of Service";
+"profile_ai_disclosure" = "AI Service Disclosure";
+
+// MARK: - AI Disclosure
+"ai_disclosure_title" = "AI Disclosure";
+"ai_disclosure_header" = "AI Service Disclosure";
+"ai_disclosure_subtitle" = "Transparency about our AI-powered features";
+"ai_disclosure_how_we_use" = "How We Use AI";
+"ai_disclosure_description1" = "Flario uses AI-powered services to enhance your image editing experience. These services process your images and prompts securely in the cloud.";
+"ai_disclosure_description2" = "We do not store your data permanently and respect your privacy throughout the entire process.";
+"ai_disclosure_services_used" = "AI Services Used";
+"ai_disclosure_fal_title" = "FalClient API";
+"ai_disclosure_fal_desc" = "AI image editing and enhancement";
+"ai_disclosure_openai_title" = "OpenAI / Gemini APIs";
+"ai_disclosure_openai_desc" = "Text and prompt generation";
+"ai_disclosure_local_title" = "Local Processing";
+"ai_disclosure_local_desc" = "Offline image optimizations";
+"ai_disclosure_privacy_title" = "Privacy & Data Protection";
+"ai_disclosure_privacy_desc" = "Your privacy is important to us. Learn more about how we handle your data and protect your information.";
+"ai_disclosure_view_privacy" = "View Privacy Policy";
+"ai_disclosure_questions" = "Questions about our AI services?";
+"ai_disclosure_contact_support" = "Contact Support";
+"ai_disclosure_done" = "Done";
+
+// MARK: - Common
+"common_ok" = "OK";
+"common_cancel" = "Cancel";
 
 // MARK: - Accessibility
-"paywall_accessibility_title" = "Credit purchase paywall";
-"paywall_accessibility_benefit" = "Feature benefit";
-"paywall_accessibility_product_card" = "Credit package option";
-"paywall_accessibility_selected_product" = "Selected credit package";
-"paywall_accessibility_cta_button" = "Purchase credits";
-"paywall_accessibility_restore_button" = "Restore previous purchases";
-"paywall_accessibility_terms_link" = "View terms of service";
-"paywall_accessibility_privacy_link" = "View privacy policy";
+"accessibility_double_tap_view" = "Double tap to view";
+"accessibility_loading_history" = "Loading history";
+"accessibility_cancel_search" = "Cancel search";
+"accessibility_double_tap_close" = "Double tap to close";
+"accessibility_search_tools" = "Search tools";
+"accessibility_double_tap_search" = "Double tap to search";
+"accessibility_clear_search" = "Clear search";
+"accessibility_status" = "Status: %@";
+"accessibility_recent_search" = "Recent search: %@. Double tap to search again.";
 
+// MARK: - Search
+"search_placeholder" = "Search tools...";
+"search_results_for" = "Results for \"%@\"";
+
+// MARK: - Onboarding Accessibility
+"onboarding_step_accessibility" = "Step %d: %@";
+"onboarding_progress_accessibility" = "Onboarding Progress";
+"onboarding_step_of" = "Step %d of %d";
+
+// MARK: - Paywall Benefits
+"paywall_benefit_2_title" = "Premium Effects";
+"paywall_benefit_3_title" = "Priority Processing";
+
+// MARK: - Tab Bar
+"tab_home" = "Home";
+"tab_create" = "Create";
+"tab_library" = "Library";
+"tab_profile" = "Profile";

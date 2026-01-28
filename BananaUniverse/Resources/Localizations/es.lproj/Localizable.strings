@@ -1,0 +1,342 @@
+/* 
+  Localizable.strings
+  BananaUniverse
+  
+  Spanish localization strings
+*/
+
+// MARK: - Paywall Header
+"paywall_title" = "Crea con IA sin límites";
+"paywall_subtitle" = "Tus créditos no caducan. Sin suscripciones.";
+
+// MARK: - Products
+"paywall_product_credits" = "%@ créditos";
+"paywall_product_per_credit" = "%@/crédito";
+
+// MARK: - Paywall v2.0 Cards
+"paywall_card_credits" = "%d créditos";
+"paywall_card_per_credit" = "%@/crédito";
+"paywall_card_save" = "Ahorra %d%%";
+"paywall_card_value_description" = "= %d creaciones con IA";
+
+// MARK: - Badges
+"paywall_badge_best_value" = "MEJOR OFERTA";
+"paywall_badge_popular" = "POPULAR";
+"paywall_badge_save_percent" = "Ahorra %d%%";
+
+// MARK: - Loading
+"paywall_loading" = "Cargando...";
+
+// MARK: - Error
+"paywall_error_title" = "No se pudo cargar";
+"paywall_error_retry" = "Reintentar";
+"paywall_error_no_package_title" = "Paquete no seleccionado";
+"paywall_error_no_package_message" = "Por favor, selecciona un paquete de créditos.";
+
+// MARK: - CTA
+"paywall_cta_continue" = "Continuar";
+"paywall_button_cta_dynamic" = "Obtener %d créditos";
+
+// MARK: - Footer
+"paywall_footer_restore" = "Restaurar compras";
+"paywall_footer_terms" = "Términos";
+"paywall_footer_privacy" = "Privacidad";
+"paywall_footer_ai_disclosure" = "Información de IA";
+
+// MARK: - Alerts
+"paywall_alert_success" = "Éxito";
+"paywall_alert_purchases_restored" = "Compras restauradas.";
+"paywall_alert_ok" = "Aceptar";
+"paywall_alert_cancel" = "Cancelar";
+"paywall_alert_retry" = "Reintentar";
+"paywall_alert_retry_action" = "Reintentar acción";
+"paywall_alert_success_title" = "¡Éxito!";
+"paywall_alert_retry_title" = "¿Reintentar?";
+
+// MARK: - Paywall Specific Errors
+"paywall_error_purchase_failed" = "Error en la compra";
+"paywall_error_restore_failed" = "Error al restaurar";
+
+// MARK: - Connection Errors
+"paywall_error_connection_title" = "Error de conexión";
+"paywall_error_connection_message" = "Por favor, comprueba tu conexión a internet.";
+"paywall_error_payment_title" = "Error de pago";
+"paywall_error_payment_message" = "Por favor, comprueba tu Apple ID e inténtalo de nuevo.";
+"paywall_error_generic_title" = "Error";
+"paywall_error_generic_message" = "Algo salió mal. Por favor, inténtalo de nuevo.";
+
+// MARK: - Toolbar
+"paywall_toolbar_close" = "Cerrar";
+
+// MARK: - Onboarding
+"onboarding_skip" = "Omitir";
+"onboarding_back" = "Atrás";
+"onboarding_next" = "Siguiente";
+"onboarding_start_creating" = "Empezar a crear";
+
+// MARK: - Onboarding Screen 1
+"onboarding_screen1_title" = "Poder de la IA en segundos";
+"onboarding_screen1_subtitle" = "Transforma cualquier foto en contenido viral con un toque";
+"onboarding_screen1_accessibility_label" = "Comparación interactiva de antes y después de la transformación con IA";
+"onboarding_screen1_accessibility_hint" = "Desliza para ver la transformación";
+
+// MARK: - Onboarding Screen 2
+"onboarding_screen2_title" = "Cómo funciona";
+"onboarding_screen2_step1_title" = "Elige tu estilo";
+"onboarding_screen2_step1_description" = "Explora más de 19 temas: juguetes, arte, fotos pro";
+"onboarding_screen2_step2_title" = "Sube tu foto";
+"onboarding_screen2_step2_description" = "Toma una foto o elígela de tu biblioteca";
+"onboarding_screen2_step3_title" = "Genera y comparte";
+"onboarding_screen2_step3_description" = "Ajusta la configuración, genera y comparte";
+
+// MARK: - Onboarding Screen 3
+"onboarding_screen3_title" = "10 créditos gratis para empezar";
+"onboarding_screen3_subtitle" = "1 crédito por transformación. Todas las herramientas incluidas. Compra más en cualquier momento.";
+"onboarding_screen3_credits_label" = "Créditos";
+"onboarding_screen3_bonus_accessibility" = "Bono de diez créditos gratis";
+"onboarding_screen3_feature1" = "Figura de colección — 1 crédito";
+"onboarding_screen3_feature2" = "Retrato profesional — 4 créditos";
+"onboarding_screen3_feature3" = "Sin cargos ocultos — Crea ahora";
+
+// MARK: - Onboarding Screen 4
+"onboarding_screen4_title" = "Importante: Guarda tus imágenes";
+"onboarding_screen4_step1_title" = "Guarda antes de cerrar";
+"onboarding_screen4_step1_description" = "Las imágenes se borrarán de nuestros servidores al cerrar la página. Guárdalas en tu dispositivo.";
+"onboarding_screen4_step2_title" = "Borrado automático";
+"onboarding_screen4_step2_description" = "Las imágenes se borran automáticamente tras 1 hora. Guarda lo que sea importante.";
+"onboarding_screen4_button" = "Entendido";
+
+// MARK: - Authentication
+"auth_welcome_back" = "Bienvenido de nuevo";
+"auth_create_account" = "Crear cuenta";
+"auth_sign_in" = "Iniciar sesión";
+"auth_sign_up" = "Registrarse";
+"auth_email" = "Correo electrónico";
+"auth_password" = "Contraseña";
+"auth_create_password" = "Crear contraseña";
+"auth_or" = "O";
+"auth_cancel" = "Cancelar";
+"auth_skip" = "Omitir";
+"auth_error_title" = "Error de autenticación";
+"auth_error_generic" = "Fallo en la autenticación";
+"auth_ok" = "Aceptar";
+"auth_dont_have_account" = "¿No tienes cuenta? Regístrate";
+"auth_already_have_account" = "¿Ya tienes cuenta? Inicia sesión";
+"auth_new_here" = "¿Eres nuevo? Crea una cuenta";
+
+// MARK: - Quick Auth
+"auth_sync_title" = "Sincroniza tu progreso";
+"auth_sync_subtitle" = "Inicia sesión para sincronizar tu trabajo en todos tus dispositivos";
+"auth_sync_benefit1" = "Sincroniza en iPhone, iPad y futuros dispositivos";
+"auth_sync_benefit2" = "Respaldo y restauración automática";
+"auth_sync_benefit3" = "Empieza con créditos gratis";
+"auth_sync_benefit4" = "Seguro y privado: tus datos están protegidos";
+
+// MARK: - Sign In View
+"auth_sync_devices" = "Sincroniza tu progreso en varios dispositivos";
+"auth_never_lose_work" = "Nunca pierdas tu trabajo";
+"auth_secure_backup" = "Copia de seguridad segura de tus creaciones";
+
+// MARK: - Home
+"home_low_credits" = "Créditos bajos";
+"home_credits_remaining" = "Te quedan %d créditos";
+"home_credit_remaining" = "Te queda %d crédito";
+"home_buy_credits" = "Comprar créditos";
+"home_error_loading_themes" = "Error al cargar temas";
+"home_ok" = "Aceptar";
+"home_retry" = "Reintentar";
+"home_search_tools" = "Buscar herramientas";
+"home_search_hint" = "Toca dos veces para abrir la búsqueda";
+
+// MARK: - Image Processing
+"image_processing_warning_save" = "¡Guarda antes de cerrar! Esta imagen desaparecerá.";
+"image_processing_create_title" = "Crear";
+"image_processing_loading_masterpiece" = "Creando tu obra maestra...";
+"image_processing_error_no_url" = "Sin URL de imagen";
+"image_processing_error_invalid_data" = "Datos de imagen no válidos";
+"image_processing_error_not_found" = "Imagen no encontrada (404)";
+"image_processing_error_http" = "Error HTTP: %d";
+"image_processing_select_images" = "Seleccionar imágenes";
+"image_processing_select_limit" = "Selecciona 1-2 imágenes (opcional)";
+"image_processing_image_slot" = "Imagen %d";
+"image_processing_prompt_title" = "Prompt";
+"image_processing_prompt_placeholder" = "Describe lo que quieres crear...";
+"image_processing_settings_title" = "Ajustes";
+"image_processing_model_title" = "Modelo";
+"image_processing_aspect_ratio_title" = "Relación de aspecto";
+"image_processing_resolution_title" = "Resolución";
+"image_processing_output_format_title" = "Formato de salida";
+"image_processing_estimated_cost" = "Coste estimado";
+"image_processing_credits_unit" = "créditos";
+"image_processing_insufficient_credits" = "Créditos insuficientes";
+"image_processing_generating" = "Generando...";
+"image_processing_generate_button" = "Generar";
+"image_processing_status_starting" = "Iniciando generación...";
+"image_processing_status_queued" = "En cola...";
+"image_processing_status_creating" = "Creando tu obra maestra...";
+"image_processing_status_complete" = "¡Completado!";
+"image_processing_status_failed" = "Fallido";
+"image_processing_magic_message" = "La IA está trabajando...";
+"image_processing_result_title" = "Resultado";
+"image_processing_saved_title" = "¡Guardado!";
+"image_processing_saved_message" = "Imagen guardada en tu biblioteca";
+"image_processing_saving" = "Guardando...";
+"image_processing_download" = "Descargar";
+"image_processing_saved_button" = "Guardado";
+"image_processing_create_another" = "Crear otra";
+"image_processing_model_used" = "Modelo utilizado";
+"image_processing_cost_title" = "Coste";
+"image_processing_share" = "Compartir";
+"image_processing_error_timeout" = "Tiempo de espera agotado. Por favor, comprueba tu conexión e inténtalo de nuevo.";
+
+// MARK: - Chat
+"chat_error_title" = "Error";
+"chat_ok" = "Aceptar";
+"chat_photo_access_title" = "Acceso a fotos requerido";
+"chat_photo_access_message" = "Por favor, permite el acceso a la biblioteca en Ajustes para guardar imágenes.";
+"chat_open_settings" = "Abrir Ajustes";
+"chat_cancel" = "Cancelar";
+"chat_processing_toast" = "✨ Procesando tu solicitud...";
+"chat_saving_toast" = "Guardando...";
+"chat_saved_toast" = "✅ ¡Guardado en Fotos!";
+"chat_no_image_toast" = "❌ No hay imagen para guardar";
+"chat_save_failed_toast" = "❌ Error al guardar: %@";
+"chat_input_placeholder" = "Mensaje";
+"chat_save_button" = "Guardar";
+"chat_saved_button" = "Guardado";
+"chat_share_button" = "Compartir";
+"chat_processing_message" = "Procesando tu imagen...";
+"chat_uploading" = "Subiendo...";
+"chat_empty_title" = "Empieza subiendo una foto";
+"chat_empty_subtitle" = "Toca aquí para seleccionar una imagen de tu biblioteca";
+"chat_search_accessibility" = "Buscar herramientas";
+"chat_search_hint" = "Toca dos veces para abrir la búsqueda";
+
+// MARK: - Core Components
+"core_app_name" = "Flario";
+"core_see_all" = "Ver todo";
+"core_cancel" = "Cancelar";
+"core_recent_searches" = "Búsquedas recientes";
+"core_popular_tools" = "Herramientas populares";
+"core_no_tools_found" = "No se encontraron herramientas";
+"core_try_different_search" = "Prueba con otro término de búsqueda";
+"core_try_now" = "Probar ahora";
+"core_use_tool" = "Usar herramienta";
+"core_featured" = "DESTACADO";
+"core_offline_title" = "Estás desconectado";
+"core_offline_subtitle" = "Revisa tu conexión a internet";
+"core_invalid_url" = "URL no válida";
+"core_syncing" = "Sincronizando...";
+"core_credits_suffix" = "créditos";
+
+// MARK: - Library
+"library_title" = "Biblioteca";
+"library_recent_activity" = "Actividad reciente";
+"library_all_history" = "Historial completo";
+"library_no_history_title" = "Sin historial de edición";
+"library_no_history_subtitle" = "Tus ediciones aparecerán aquí";
+"library_error_title" = "Algo salió mal";
+"library_error_generic" = "Ocurrió un error desconocido";
+"library_try_again" = "Intentar de nuevo";
+"library_delete_title" = "Eliminar edición";
+"library_delete_confirm" = "¿Seguro que quieres eliminar esta edición? Esta acción no se puede deshacer.";
+"library_action_rerun" = "Re-ejecutar";
+"library_action_share" = "Compartir";
+"library_action_download" = "Descargar";
+"library_action_delete" = "Eliminar";
+"library_action_more" = "Más acciones";
+"library_accessibility_list" = "Lista de historial";
+"library_accessibility_refresh" = "Desliza hacia abajo para actualizar";
+"library_accessibility_item_hint" = "Toca dos veces para ver detalles";
+"library_accessibility_retry_hint" = "Toca dos veces para intentar cargar el historial de nuevo";
+
+// MARK: - Profile
+"profile_title" = "Perfil";
+"profile_restore_purchases" = "Restaurar compras";
+"profile_delete_account" = "Eliminar cuenta";
+"profile_delete_account_confirm" = "¿Seguro que quieres eliminar tu cuenta?";
+"profile_delete_account_warning" = "Esta acción no se puede deshacer. Se borrarán tus datos, imágenes y créditos.";
+"profile_deleting_account" = "Eliminando cuenta...";
+"profile_credits_title" = "Tus créditos";
+"profile_credits_available" = "%d créditos disponibles";
+"profile_credit_available" = "%d crédito disponible";
+"profile_buy_credits" = "Comprar créditos";
+"profile_account_section" = "Cuenta";
+"profile_sign_in_apple" = "Continuar con Apple";
+"profile_sync_data" = "Guarda tus datos y sincroniza en todos tus dispositivos";
+"profile_email" = "Correo electrónico";
+"profile_credits" = "Créditos";
+"profile_sign_out" = "Cerrar sesión";
+"profile_settings_section" = "Ajustes";
+"profile_theme" = "Tema";
+"profile_theme_light" = "Claro";
+"profile_theme_dark" = "Oscuro";
+"profile_theme_auto" = "Automático";
+"profile_language" = "Idioma";
+"profile_language_en" = "Inglés";
+"profile_language_tr" = "Turco";
+"profile_language_es" = "Español";
+"profile_notifications" = "Notificaciones";
+"profile_notifications_enabled" = "Activado";
+"profile_notifications_disabled" = "Desactivado";
+"profile_restore_onboarding" = "Restaurar Onboarding";
+"profile_support_section" = "Soporte";
+"profile_help_support" = "Ayuda y soporte";
+"profile_privacy_policy" = "Política de privacidad";
+"profile_terms_service" = "Términos del servicio";
+"profile_ai_disclosure" = "Información de IA";
+
+// MARK: - AI Disclosure
+"ai_disclosure_title" = "Información de IA";
+"ai_disclosure_header" = "Información del servicio de IA";
+"ai_disclosure_subtitle" = "Transparencia sobre nuestras funciones de IA";
+"ai_disclosure_how_we_use" = "Cómo usamos la IA";
+"ai_disclosure_description1" = "Flario utiliza servicios de IA para mejorar tus fotos. Estos servicios procesan tus imágenes y prompts de forma segura en la nube.";
+"ai_disclosure_description2" = "No guardamos tus datos permanentemente y respetamos tu privacidad durante todo el proceso.";
+"ai_disclosure_services_used" = "Servicios de IA utilizados";
+"ai_disclosure_fal_title" = "FalClient API";
+"ai_disclosure_fal_desc" = "Edición y mejora de imágenes con IA";
+"ai_disclosure_openai_title" = "APIs de OpenAI / Gemini";
+"ai_disclosure_openai_desc" = "Generación de texto y prompts";
+"ai_disclosure_local_title" = "Procesamiento local";
+"ai_disclosure_local_desc" = "Optimizaciones de imagen sin conexión";
+"ai_disclosure_privacy_title" = "Privacidad y protección de datos";
+"ai_disclosure_privacy_desc" = "Tu privacidad es importante. Obtén más información sobre cómo manejamos tus datos.";
+"ai_disclosure_view_privacy" = "Ver política de privacidad";
+"ai_disclosure_questions" = "¿Preguntas sobre nuestros servicios de IA?";
+"ai_disclosure_contact_support" = "Contactar con soporte";
+"ai_disclosure_done" = "Hecho";
+
+// MARK: - Common
+"common_ok" = "Aceptar";
+"common_cancel" = "Cancelar";
+
+// MARK: - Accessibility
+"accessibility_double_tap_view" = "Toca dos veces para ver";
+"accessibility_loading_history" = "Cargando historial";
+"accessibility_cancel_search" = "Cancelar búsqueda";
+"accessibility_double_tap_close" = "Toca dos veces para cerrar";
+"accessibility_search_tools" = "Buscar herramientas";
+"accessibility_double_tap_search" = "Toca dos veces para buscar";
+"accessibility_clear_search" = "Limpiar búsqueda";
+"accessibility_status" = "Estado: %@";
+"accessibility_recent_search" = "Búsqueda reciente: %@. Toca dos veces para buscar de nuevo.";
+
+// MARK: - Search
+"search_placeholder" = "Buscar herramientas...";
+"search_results_for" = "Resultados de \"%@\"";
+
+// MARK: - Onboarding Accessibility
+"onboarding_step_accessibility" = "Paso %d: %@";
+"onboarding_progress_accessibility" = "Progreso del onboarding";
+"onboarding_step_of" = "Paso %d de %d";
+
+// MARK: - Paywall Benefits
+"paywall_benefit_2_title" = "Efectos Premium";
+"paywall_benefit_3_title" = "Procesamiento Prioritario";
+
+// MARK: - Tab Bar
+"tab_home" = "Inicio";
+"tab_create" = "Crear";
+"tab_library" = "Biblioteca";
+"tab_profile" = "Perfil";

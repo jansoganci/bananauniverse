@@ -56,7 +56,7 @@ struct CategoryRow: View {
                             onSeeAllTap()
                         }) {
                             HStack(spacing: DesignTokens.Spacing.xs) {
-                                Text("See All")
+                                Text("core_see_all".localized)
                                     .font(DesignTokens.Typography.subheadline)
                                     .fontWeight(.semibold)
                                     .foregroundColor(DesignTokens.Brand.primary(themeManager.resolvedColorScheme))

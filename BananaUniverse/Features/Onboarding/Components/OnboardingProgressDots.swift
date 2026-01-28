@@ -25,8 +25,8 @@ struct OnboardingProgressDots: View {
             }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Onboarding Progress")
-        .accessibilityValue("Step \(currentIndex + 1) of \(totalCount)")
+        .accessibilityLabel("onboarding_progress_accessibility".localized)
+        .accessibilityValue(String(format: "onboarding_step_of".localized, currentIndex + 1, totalCount))
     }
 }
 

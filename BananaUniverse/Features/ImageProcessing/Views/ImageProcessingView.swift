@@ -23,7 +23,7 @@ struct ImageProcessingView: View {
             // Header
             ZStack(alignment: .leading) {
                 UnifiedHeaderBar(
-                    title: "Create",
+                    title: "image_processing_create_title".localized,
                     leftContent: .empty,
                     rightContent: .quotaBadge(creditManager.creditsRemaining, {
                         viewModel.showingPaywall = true
@@ -111,8 +111,8 @@ struct ImageProcessingView: View {
             .environmentObject(themeManager)
             .environmentObject(viewModel) // ✅ Inject ViewModel
         }
-        .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
-            Button("OK") { viewModel.clearError() }
+        .alert("chat_error_title".localized, isPresented: .constant(viewModel.errorMessage != nil)) {
+            Button("chat_ok".localized) { viewModel.clearError() }
         } message: {
             Text(viewModel.errorMessage ?? "")
         }
@@ -228,7 +228,7 @@ struct ResultViewLoader: View {
             } else if isLoading {
                 ResultLoadingView()
             } else {
-                ResultErrorView(message: loadError ?? "Failed to load image", onDismiss: onDismiss)
+                ResultErrorView(message: loadError ?? "image_processing_error_no_url".localized, onDismiss: onDismiss)
             }
         }
         .onAppear {
@@ -248,7 +248,7 @@ struct ResultViewLoader: View {
     private func loadImage() async {
         guard let imageURL = imageURL else {
             await MainActor.run {
-                loadError = "No image URL"
+                loadError = "image_processing_error_no_url".localized
                 isLoading = false
             }
             return
@@ -293,7 +293,7 @@ struct ResultViewLoader: View {
                         } else {
                             // Invalid image data - don't retry
                             await MainActor.run {
-                                loadError = "Invalid image data"
+                                loadError = "image_processing_error_invalid_data".localized
                                 isLoading = false
                             }
 
@@ -313,7 +313,7 @@ struct ResultViewLoader: View {
                             continue // Retry
                         } else {
                             await MainActor.run {
-                                loadError = "Image not found (404)"
+                                loadError = "image_processing_error_not_found".localized
                                 isLoading = false
                             }
 
@@ -333,7 +333,7 @@ struct ResultViewLoader: View {
                             continue // Retry
                         } else {
                             await MainActor.run {
-                                loadError = "HTTP error: \(httpResponse.statusCode)"
+                                loadError = "image_processing_error_http".localized(httpResponse.statusCode)
                                 isLoading = false
                             }
                             return
@@ -386,7 +386,7 @@ struct ResultLoadingView: View {
                 .scaleEffect(1.5)
                 .progressViewStyle(CircularProgressViewStyle(tint: DesignTokens.Brand.primary(themeManager.resolvedColorScheme)))
 
-            Text("Loading your masterpiece...")
+            Text("image_processing_loading_masterpiece".localized)
                 .font(.headline)
                 .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
         }
@@ -408,7 +408,7 @@ struct ResultErrorView: View {
                 .font(.system(size: 60))
                 .foregroundColor(DesignTokens.Semantic.error(themeManager.resolvedColorScheme))
 
-            Text("Error")
+            Text("chat_error_title".localized)
                 .font(.title)
                 .fontWeight(.bold)
                 .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
@@ -420,7 +420,7 @@ struct ResultErrorView: View {
                 .padding(.horizontal, DesignTokens.Spacing.lg)
 
             Button(action: onDismiss) {
-                Text("Close")
+                Text("paywall_toolbar_close".localized)
                     .font(DesignTokens.Typography.headline)
                     .foregroundColor(DesignTokens.Text.onBrand(themeManager.resolvedColorScheme))
                     .frame(maxWidth: .infinity)
@@ -445,7 +445,7 @@ struct ImageSelectionSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
-            Text("Select Images")
+            Text("image_processing_select_images".localized)
                 .font(.headline)
                 .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
 
@@ -473,7 +473,7 @@ struct ImageSelectionSection: View {
                 }
             }
 
-            Text("Select 1-2 images (optional)")
+            Text("image_processing_select_limit".localized)
                 .font(.caption)
                 .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
         }
@@ -516,7 +516,7 @@ struct ImageSlot: View {
                             .font(.system(size: 40))
                             .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
 
-                        Text("Image \(index + 1)")
+                        Text("image_processing_image_slot".localized(index + 1))
                             .font(.caption)
                             .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
                     }
@@ -547,11 +547,11 @@ struct PromptSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
-            Text("Prompt")
+            Text("image_processing_prompt_title".localized)
                 .font(.headline)
                 .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
 
-            TextField("Describe what you want to create...", text: $viewModel.prompt, axis: .vertical)
+            TextField("image_processing_prompt_placeholder".localized, text: $viewModel.prompt, axis: .vertical)
                 .textFieldStyle(.plain)
                 .padding(DesignTokens.Spacing.md)
                 .lineLimit(3...8)
@@ -578,7 +578,7 @@ struct SettingsSection: View {
                     Image(systemName: "slider.horizontal.3")
                         .foregroundColor(DesignTokens.Brand.primary(themeManager.resolvedColorScheme))
 
-                    Text("Settings")
+                    Text("image_processing_settings_title".localized)
                         .font(.headline)
                         .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
 
@@ -639,12 +639,12 @@ struct ModelPicker: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
-            Text("Model")
+            Text("image_processing_model_title".localized)
                 .font(.subheadline)
                 .fontWeight(.semibold)
                 .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
 
-            Picker("Model", selection: Binding(
+            Picker("image_processing_model_title".localized, selection: Binding(
                 get: { viewModel.selectedModel },
                 set: { viewModel.selectModel($0) }
             )) {
@@ -665,7 +665,7 @@ struct AspectRatioPicker: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
-            Text("Aspect Ratio")
+            Text("image_processing_aspect_ratio_title".localized)
                 .font(.subheadline)
                 .fontWeight(.semibold)
                 .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
@@ -711,12 +711,12 @@ struct ResolutionPicker: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
-            Text("Resolution")
+            Text("image_processing_resolution_title".localized)
                 .font(.subheadline)
                 .fontWeight(.semibold)
                 .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
 
-            Picker("Resolution", selection: $viewModel.selectedResolution) {
+            Picker("image_processing_resolution_title".localized, selection: $viewModel.selectedResolution) {
                 ForEach(Resolution.allCases) { resolution in
                     Text(resolution.displayName).tag(resolution)
                 }
@@ -734,12 +734,12 @@ struct OutputFormatPicker: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
-            Text("Output Format")
+            Text("image_processing_output_format_title".localized)
                 .font(.subheadline)
                 .fontWeight(.semibold)
                 .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
 
-            Picker("Format", selection: $viewModel.selectedOutputFormat) {
+            Picker("image_processing_output_format_title".localized, selection: $viewModel.selectedOutputFormat) {
                 ForEach(OutputFormat.allCases) { format in
                     Text(format.displayName).tag(format)
                 }
@@ -758,7 +758,7 @@ struct CreditCostCard: View {
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Estimated Cost")
+                Text("image_processing_estimated_cost".localized)
                     .font(.subheadline)
                     .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
 
@@ -766,7 +766,7 @@ struct CreditCostCard: View {
                     Text("\(viewModel.estimatedCost)")
                         .font(.title2)
                         .fontWeight(.bold)
-                    Text("credits")
+                    Text("image_processing_credits_unit".localized)
                         .font(.subheadline)
                 }
                 .foregroundColor(DesignTokens.Brand.primary(themeManager.resolvedColorScheme))
@@ -775,7 +775,7 @@ struct CreditCostCard: View {
             Spacer()
 
             if !viewModel.hasEnoughCredits {
-                Text("Insufficient credits")
+                Text("image_processing_insufficient_credits".localized)
                     .font(.caption)
                     .foregroundColor(DesignTokens.Semantic.error(themeManager.resolvedColorScheme))
             }
@@ -804,10 +804,10 @@ struct GenerateButton: View {
                 if viewModel.isProcessing {
                     ProgressView()
                         .progressViewStyle(CircularProgressViewStyle(tint: DesignTokens.Text.onBrand(themeManager.resolvedColorScheme)))
-                    Text("Generating...")
+                    Text("image_processing_generating".localized)
                 } else {
                     Image(systemName: "wand.and.stars")
-                    Text("Generate")
+                    Text("image_processing_generate_button".localized)
                 }
             }
             .font(DesignTokens.Typography.headline)

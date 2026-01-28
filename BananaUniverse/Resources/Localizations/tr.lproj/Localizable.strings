@@ -1,0 +1,342 @@
+/* 
+  Localizable.strings
+  BananaUniverse
+  
+  Turkish localization strings for paywall and app
+  Created by AI Assistant on 27.01.2026.
+*/
+
+// MARK: - Paywall Header
+"paywall_title" = "Kredi Al";
+"paywall_subtitle" = "Krediler süresiz. Abonelik yok.";
+
+// MARK: - Products
+"paywall_product_credits" = "%@ Kredi";
+"paywall_product_per_credit" = "%@/kredi";
+
+// MARK: - Paywall v2.0 Cards
+"paywall_card_credits" = "%d Kredi";
+"paywall_card_per_credit" = "%@/kredi";
+"paywall_card_save" = "%%%d Tasarruf";
+"paywall_card_value_description" = "= %d Yapay Zeka üretimi";
+
+// MARK: - Badges
+"paywall_badge_best_value" = "EN AVANTAJLI";
+"paywall_badge_popular" = "POPÜLER";
+"paywall_badge_save_percent" = "%%%d Tasarruf";
+
+// MARK: - Loading
+"paywall_loading" = "Yükleniyor...";
+
+// MARK: - Error
+"paywall_error_title" = "Yüklenemedi";
+"paywall_error_retry" = "Tekrar Dene";
+"paywall_error_no_package_title" = "Paket Seçilmedi";
+"paywall_error_no_package_message" = "Lütfen bir kredi paketi seçin.";
+
+// MARK: - CTA
+"paywall_cta_continue" = "Devam Et";
+"paywall_button_cta_dynamic" = "%d Kredi Al";
+
+// MARK: - Footer
+"paywall_footer_restore" = "Satın Alımları Geri Yükle";
+"paywall_footer_terms" = "Koşullar";
+"paywall_footer_privacy" = "Gizlilik";
+"paywall_footer_ai_disclosure" = "AI Açıklaması";
+
+// MARK: - Alerts
+"paywall_alert_success" = "Başarılı";
+"paywall_alert_purchases_restored" = "Satın alımlar geri yüklendi.";
+"paywall_alert_ok" = "Tamam";
+"paywall_alert_cancel" = "İptal";
+"paywall_alert_retry" = "Tekrar Dene";
+"paywall_alert_retry_action" = "Tekrar Dene";
+"paywall_alert_success_title" = "Başarılı!";
+
+// MARK: - Paywall Specific Errors
+"paywall_alert_retry_title" = "Tekrar Dene?";
+"paywall_error_purchase_failed" = "Satın Alma Başarısız";
+"paywall_error_restore_failed" = "Geri Yükleme Başarısız";
+
+// MARK: - Connection Errors
+"paywall_error_connection_title" = "Bağlantı Hatası";
+"paywall_error_connection_message" = "Lütfen internet bağlantınızı kontrol edin.";
+"paywall_error_payment_title" = "Ödeme Hatası";
+"paywall_error_payment_message" = "Lütfen Apple ID'nizi kontrol edip tekrar deneyin.";
+"paywall_error_generic_title" = "Hata";
+"paywall_error_generic_message" = "Bir şeyler yanlış gitti. Lütfen tekrar deneyin.";
+
+// MARK: - Toolbar
+"paywall_toolbar_close" = "Kapat";
+
+// MARK: - Onboarding
+"onboarding_skip" = "Atla";
+"onboarding_back" = "Geri";
+"onboarding_next" = "İleri";
+"onboarding_start_creating" = "Oluşturmaya Başla";
+
+// MARK: - Onboarding Screen 1
+"onboarding_screen1_title" = "Saniyeler İçinde AI Sihri";
+"onboarding_screen1_subtitle" = "Herhangi bir fotoğrafı tek dokunuşla viral içeriğe dönüştürün";
+"onboarding_screen1_accessibility_label" = "AI fotoğraf dönüşümünün etkileşimli öncesi ve sonrası karşılaştırması";
+"onboarding_screen1_accessibility_hint" = "Sihri görmek için kaydırıcıyı sürükleyin";
+
+// MARK: - Onboarding Screen 2
+"onboarding_screen2_title" = "Nasıl Çalışır?";
+"onboarding_screen2_step1_title" = "Stilinizi seçin";
+"onboarding_screen2_step1_description" = "19+ AI temasına göz atın: oyuncaklar, sanat, profesyonel fotoğraflar";
+"onboarding_screen2_step2_title" = "Fotoğrafınızı yükleyin";
+"onboarding_screen2_step2_description" = "Bir fotoğraf çekin veya kütüphanenizden seçin";
+"onboarding_screen2_step3_title" = "Oluşturun ve paylaşın";
+"onboarding_screen2_step3_description" = "Ayarları özelleştirin, oluştura basın ve paylaşın!";
+
+// MARK: - Onboarding Screen 3
+"onboarding_screen3_title" = "Başlamak İçin 10 Ücretsiz Kredi";
+"onboarding_screen3_subtitle" = "Dönüşüm başına 1 kredi. Tüm 19+ araç dahil. İstediğiniz zaman daha fazla alın.";
+"onboarding_screen3_credits_label" = "Kredi";
+"onboarding_screen3_bonus_accessibility" = "On ücretsiz kredi bonusu";
+"onboarding_screen3_feature1" = "Koleksiyon Figürü — 1 kredi";
+"onboarding_screen3_feature2" = "Profesyonel Vesikalık — 4 kredi";
+"onboarding_screen3_feature3" = "Gizli ücret yok — Şimdi oluşturmaya başlayın";
+
+// MARK: - Onboarding Screen 4
+"onboarding_screen4_title" = "Önemli: Görüntülerinizi Kaydedin";
+"onboarding_screen4_step1_title" = "Kapatmadan önce kaydedin";
+"onboarding_screen4_step1_description" = "İşlenen görüntüleriniz, sonuç sayfasını kapattığınızda sunucularımızdan silinecektir. Kapatmadan önce cihazınıza kaydettiğinizden emin olun.";
+"onboarding_screen4_step2_title" = "Otomatik silme";
+"onboarding_screen4_step2_description" = "Görüntüler 1 saat sonra sunucularımızdan otomatik olarak silinir. Lütfen önemli görüntüleri cihazınıza kaydedin.";
+"onboarding_screen4_button" = "Anladım";
+
+// MARK: - Authentication
+"auth_welcome_back" = "Tekrar Hoş Geldiniz";
+"auth_create_account" = "Hesap Oluştur";
+"auth_sign_in" = "Giriş Yap";
+"auth_sign_up" = "Kayıt Ol";
+"auth_email" = "E-posta";
+"auth_password" = "Şifre";
+"auth_create_password" = "Şifre Oluştur";
+"auth_or" = "veya";
+"auth_cancel" = "İptal";
+"auth_skip" = "Atla";
+"auth_error_title" = "Kimlik Doğrulama Hatası";
+"auth_error_generic" = "Kimlik doğrulama başarısız oldu";
+"auth_ok" = "Tamam";
+"auth_dont_have_account" = "Hesabınız yok mu? Kayıt Ol";
+"auth_already_have_account" = "Zaten bir hesabınız var mı? Giriş Yap";
+"auth_new_here" = "Yeni misiniz? Hesap Oluştur";
+
+// MARK: - Quick Auth
+"auth_sync_title" = "İlerlemenizi Senkronize Edin";
+"auth_sync_subtitle" = "Çalışmalarınızı tüm cihazlarınızda senkronize etmek ve kreasyonlarınızı asla kaybetmemek için giriş yapın";
+"auth_sync_benefit1" = "iPhone, iPad ve gelecek cihazlar arasında senkronizasyon";
+"auth_sync_benefit2" = "Otomatik yedekleme ve geri yükleme";
+"auth_sync_benefit3" = "Ücretsiz kredilerle başlayın";
+"auth_sync_benefit4" = "Güvenli ve özel - verileriniz korunur";
+
+// MARK: - Sign In View
+"auth_sync_devices" = "İlerlemenizi cihazlar arasında senkronize edin";
+"auth_never_lose_work" = "Çalışmalarınızı asla kaybetmeyin";
+"auth_secure_backup" = "Kreasyonlarınızın güvenli yedeği";
+
+// MARK: - Home
+"home_low_credits" = "Düşük Kredi";
+"home_credits_remaining" = "%d kredi kaldı";
+"home_credit_remaining" = "%d kredi kaldı";
+"home_buy_credits" = "Kredi Satın Al";
+"home_error_loading_themes" = "Temalar Yüklenirken Hata Oluştu";
+"home_ok" = "Tamam";
+"home_retry" = "Tekrar Dene";
+"home_search_tools" = "Araçları ara";
+"home_search_hint" = "Aramayı açmak için çift dokunun";
+
+// MARK: - Image Processing
+"image_processing_warning_save" = "Kapatmadan önce kaydedin! Bu sayfa kapandığında görüntü silinecektir.";
+"image_processing_create_title" = "Oluştur";
+"image_processing_loading_masterpiece" = "Başyapıtınız yükleniyor...";
+"image_processing_error_no_url" = "Görüntü URL'si bulunamadı";
+"image_processing_error_invalid_data" = "Geçersiz görüntü verisi";
+"image_processing_error_not_found" = "Görüntü bulunamadı (404)";
+"image_processing_error_http" = "HTTP hatası: %d";
+"image_processing_select_images" = "Görüntü Seç";
+"image_processing_select_limit" = "1-2 görüntü seçin (isteğe bağlı)";
+"image_processing_image_slot" = "Görüntü %d";
+"image_processing_prompt_title" = "İstem";
+"image_processing_prompt_placeholder" = "Ne oluşturmak istediğinizi tarif edin...";
+"image_processing_settings_title" = "Ayarlar";
+"image_processing_model_title" = "Model";
+"image_processing_aspect_ratio_title" = "En Boy Oranı";
+"image_processing_resolution_title" = "Çözünürlük";
+"image_processing_output_format_title" = "Çıktı Formatı";
+"image_processing_estimated_cost" = "Tahmini Maliyet";
+"image_processing_credits_unit" = "kredi";
+"image_processing_insufficient_credits" = "Yetersiz kredi";
+"image_processing_generating" = "Oluşturuluyor...";
+"image_processing_generate_button" = "Oluştur";
+"image_processing_status_starting" = "Başlatılıyor...";
+"image_processing_status_queued" = "Sırada...";
+"image_processing_status_creating" = "Başyapıtınız oluşturuluyor...";
+"image_processing_status_complete" = "Tamamlandı!";
+"image_processing_status_failed" = "Başarısız";
+"image_processing_magic_message" = "AI sihrini konuşturuyor...";
+"image_processing_result_title" = "Sonuç";
+"image_processing_saved_title" = "Kaydedildi!";
+"image_processing_saved_message" = "Görüntü fotoğraf kütüphanenize kaydedildi";
+"image_processing_saving" = "Kaydediliyor...";
+"image_processing_download" = "İndir";
+"image_processing_saved_button" = "Kaydedildi";
+"image_processing_create_another" = "Başka Oluştur";
+"image_processing_model_used" = "Kullanılan model";
+"image_processing_cost_title" = "Maliyet";
+"image_processing_share" = "Paylaş";
+"image_processing_error_timeout" = "İşlem zaman aşımına uğradı. Lütfen bağlantınızı kontrol edip tekrar deneyin.";
+
+// MARK: - Chat
+"chat_error_title" = "Hata";
+"chat_ok" = "Tamam";
+"chat_photo_access_title" = "Fotoğraf Kitaplığı Erişimi Gerekli";
+"chat_photo_access_message" = "Görüntüleri Fotoğraflar kitaplığınıza kaydetmek için lütfen Ayarlar'dan fotoğraf kitaplığı erişimini etkinleştirin.";
+"chat_open_settings" = "Ayarları Aç";
+"chat_cancel" = "İptal";
+"chat_processing_toast" = "✨ İsteğiniz işleniyor...";
+"chat_saving_toast" = "Kaydediliyor...";
+"chat_saved_toast" = "✅ Fotoğraflara kaydedildi!";
+"chat_no_image_toast" = "❌ Kaydedilecek görüntü yok";
+"chat_save_failed_toast" = "❌ Kaydetme başarısız: %@";
+"chat_input_placeholder" = "Mesaj";
+"chat_save_button" = "Kaydet";
+"chat_saved_button" = "Kaydedildi";
+"chat_share_button" = "Paylaş";
+"chat_processing_message" = "Görüntünüz işleniyor...";
+"chat_uploading" = "Yükleniyor...";
+"chat_empty_title" = "Bir fotoğraf yükleyerek başlayın";
+"chat_empty_subtitle" = "Kütüphanenizden bir görüntü seçmek için buraya dokunun";
+"chat_search_accessibility" = "Araçları ara";
+"chat_search_hint" = "Aramayı açmak için çift dokunun";
+
+// MARK: - Core Components
+"core_app_name" = "Flario";
+"core_see_all" = "Tümünü Gör";
+"core_cancel" = "İptal";
+"core_recent_searches" = "Son Aramalar";
+"core_popular_tools" = "Popüler Araçlar";
+"core_no_tools_found" = "Araç bulunamadı";
+"core_try_different_search" = "Farklı bir arama terimi deneyin";
+"core_try_now" = "Şimdi Dene";
+"core_use_tool" = "Aracı Kullan";
+"core_featured" = "ÖNE ÇIKAN";
+"core_offline_title" = "Çevrimdışısınız";
+"core_offline_subtitle" = "İnternet bağlantınızı kontrol edin";
+"core_invalid_url" = "Geçersiz URL";
+"core_syncing" = "Senkronize ediliyor...";
+"core_credits_suffix" = "kredi";
+
+// MARK: - Library
+"library_title" = "Kütüphane";
+"library_recent_activity" = "Son Etkinlik";
+"library_all_history" = "Tüm Geçmiş";
+"library_no_history_title" = "Düzenleme geçmişi bulunamadı";
+"library_no_history_subtitle" = "AI düzenlemeleriniz burada görünecek";
+"library_error_title" = "Bir şeyler yanlış gitti";
+"library_error_generic" = "Bilinmeyen bir hata oluştu";
+"library_try_again" = "Tekrar Dene";
+"library_delete_title" = "Düzenlemeyi Sil";
+"library_delete_confirm" = "Bu düzenlemeyi geçmişinizden silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.";
+"library_action_rerun" = "Tekrar Çalıştır";
+"library_action_share" = "Paylaş";
+"library_action_download" = "İndir";
+"library_action_delete" = "Sil";
+"library_action_more" = "Daha fazla işlem";
+"library_accessibility_list" = "Geçmiş listesi";
+"library_accessibility_refresh" = "Yenilemek için aşağı kaydırın";
+"library_accessibility_item_hint" = "Detayları görüntülemek için çift dokunun";
+"library_accessibility_retry_hint" = "Geçmişi yüklemeyi tekrar denemek için çift dokunun";
+
+// MARK: - Profile
+"profile_title" = "Profil";
+"profile_restore_purchases" = "Satın Alımları Geri Yükle";
+"profile_delete_account" = "Hesabı Sil";
+"profile_delete_account_confirm" = "Hesabınızı silmek istediğinizden emin misiniz?";
+"profile_delete_account_warning" = "Bu işlem geri alınamaz. İşlenen görüntüleriniz ve kredileriniz dahil tüm verileriniz kalıcı olarak silinecektir.";
+"profile_deleting_account" = "Hesap Siliniyor...";
+"profile_credits_title" = "Kredileriniz";
+"profile_credits_available" = "%d kredi kullanılabilir";
+"profile_credit_available" = "%d kredi kullanılabilir";
+"profile_buy_credits" = "Kredi Satın Al";
+"profile_account_section" = "Hesap";
+"profile_sign_in_apple" = "Apple ile Giriş Yap";
+"profile_sync_data" = "Verilerinizi kaydedin ve cihazlar arasında senkronize edin";
+"profile_email" = "E-posta";
+"profile_credits" = "Krediler";
+"profile_sign_out" = "Oturumu Kapat";
+"profile_settings_section" = "Ayarlar";
+"profile_theme" = "Tema";
+"profile_theme_light" = "Açık";
+"profile_theme_dark" = "Koyu";
+"profile_theme_auto" = "Otomatik";
+"profile_language" = "Dil";
+"profile_language_en" = "İngilizce";
+"profile_language_tr" = "Türkçe";
+"profile_notifications" = "Bildirimler";
+"profile_notifications_enabled" = "Etkin";
+"profile_notifications_disabled" = "Devre Dışı";
+"profile_restore_onboarding" = "Başlangıç Rehberini Sıfırla";
+"profile_support_section" = "Destek";
+"profile_help_support" = "Yardım ve Destek";
+"profile_privacy_policy" = "Gizlilik Politikası";
+"profile_terms_service" = "Kullanım Koşulları";
+"profile_ai_disclosure" = "AI Servis Açıklaması";
+
+// MARK: - AI Disclosure
+"ai_disclosure_title" = "Yapay Zeka Bildirimi";
+"ai_disclosure_header" = "Yapay Zeka Servis Bildirimi";
+"ai_disclosure_subtitle" = "AI destekli özelliklerimiz hakkında şeffaflık";
+"ai_disclosure_how_we_use" = "AI'yı Nasıl Kullanıyoruz?";
+"ai_disclosure_description1" = "Flario, görüntü düzenleme deneyiminizi geliştirmek için AI destekli servisler kullanır. Bu servisler, görüntülerinizi ve komutlarınızı bulutta güvenli bir şekilde işler.";
+"ai_disclosure_description2" = "Verilerinizi kalıcı olarak saklamıyoruz ve tüm süreç boyunca gizliliğinize saygı duyuyoruz.";
+"ai_disclosure_services_used" = "Kullanılan AI Servisleri";
+"ai_disclosure_fal_title" = "FalClient API";
+"ai_disclosure_fal_desc" = "AI görüntü düzenleme ve iyileştirme";
+"ai_disclosure_openai_title" = "OpenAI / Gemini API'leri";
+"ai_disclosure_openai_desc" = "Metin ve komut oluşturma";
+"ai_disclosure_local_title" = "Yerel İşleme";
+"ai_disclosure_local_desc" = "Çevrimdışı görüntü optimizasyonları";
+"ai_disclosure_privacy_title" = "Gizlilik ve Veri Koruması";
+"ai_disclosure_privacy_desc" = "Gizliliğiniz bizim için önemlidir. Verilerinizi nasıl işlediğimiz ve bilgilerinizi nasıl koruduğumuz hakkında daha fazla bilgi edinin.";
+"ai_disclosure_view_privacy" = "Gizlilik Politikasını Görüntüle";
+"ai_disclosure_questions" = "AI servislerimiz hakkında sorularınız mı var?";
+"ai_disclosure_contact_support" = "Destekle İletişime Geçin";
+"ai_disclosure_done" = "Bitti";
+
+// MARK: - Common
+"common_ok" = "Tamam";
+"common_cancel" = "İptal";
+
+// MARK: - Accessibility
+"accessibility_double_tap_view" = "Görüntülemek için çift dokunun";
+"accessibility_loading_history" = "Geçmiş yükleniyor";
+"accessibility_cancel_search" = "Aramayı iptal et";
+"accessibility_double_tap_close" = "Kapatmak için çift dokunun";
+"accessibility_search_tools" = "Araçları ara";
+"accessibility_double_tap_search" = "Aramak için çift dokunun";
+"accessibility_clear_search" = "Aramayı temizle";
+"accessibility_status" = "Durum: %@";
+"accessibility_recent_search" = "Son arama: %@. Tekrar aramak için çift dokunun.";
+
+// MARK: - Search
+"search_placeholder" = "Araçları ara...";
+"search_results_for" = "\"%@\" için sonuçlar";
+
+// MARK: - Onboarding Accessibility
+"onboarding_step_accessibility" = "Adım %d: %@";
+"onboarding_progress_accessibility" = "Başlangıç İlerlemesi";
+"onboarding_step_of" = "Adım %d / %d";
+
+// MARK: - Paywall Benefits
+"paywall_benefit_2_title" = "Premium Efektler";
+"paywall_benefit_3_title" = "Öncelikli İşleme";
+
+// MARK: - Tab Bar
+"tab_home" = "Ana Sayfa";
+"tab_create" = "Oluştur";
+"tab_library" = "Kütüphane";
+"tab_profile" = "Profil";

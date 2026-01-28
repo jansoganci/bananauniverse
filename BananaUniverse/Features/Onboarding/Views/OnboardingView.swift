@@ -25,7 +25,7 @@ struct OnboardingView: View {
                 if !viewModel.isLastScreen {
                     HStack {
                         Spacer()
-                        Button("Skip") {
+                        Button("onboarding_skip".localized) {
                             DesignTokens.Haptics.impact(.light)
                             viewModel.skip()
                             onComplete()
@@ -66,7 +66,7 @@ struct OnboardingView: View {
                     // Back button (only show if not on first screen)
                     if !viewModel.isFirstScreen {
                         SecondaryButton(
-                            title: "Back",
+                            title: "onboarding_back".localized,
                             icon: "chevron.left",
                             accentColor: DesignTokens.Brand.primary,
                             action: { viewModel.previousScreen() }
@@ -79,7 +79,7 @@ struct OnboardingView: View {
                     // Next button (only if not last screen)
                     if !viewModel.isLastScreen {
                         PrimaryButton(
-                            title: "Next",
+                            title: "onboarding_next".localized,
                             icon: "arrow.right",
                             accentColor: DesignTokens.Brand.primary,
                             action: { viewModel.nextScreen() }
@@ -89,7 +89,7 @@ struct OnboardingView: View {
                     } else {
                         // Last screen: Show "Start Creating" button
                         PrimaryButton(
-                            title: "Start Creating",
+                            title: "onboarding_start_creating".localized,
                             icon: "sparkles",
                             accentColor: DesignTokens.Brand.primary,
                             action: {

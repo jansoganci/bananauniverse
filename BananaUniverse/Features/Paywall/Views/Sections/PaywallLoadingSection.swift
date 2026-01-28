@@ -16,7 +16,7 @@ struct PaywallLoadingSection: View {
                 .scaleEffect(1.5)
                 .tint(DesignTokens.Brand.primary(colorScheme))
             
-            Text("Loading products...")
+            Text("paywall_loading".localized)
                 .font(DesignTokens.Typography.subheadline)
                 .foregroundColor(DesignTokens.Text.secondary(colorScheme))
         }

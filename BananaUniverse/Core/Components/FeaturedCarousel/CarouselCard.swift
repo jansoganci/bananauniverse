@@ -66,7 +66,7 @@ struct CarouselCard: View {
                     
                     // CTA button with Electric Lime gradient
                     HStack(spacing: DesignTokens.Spacing.xs) {
-                        Text("Try Now")
+                        Text("core_try_now".localized)
                             .font(DesignTokens.Typography.callout)
                             .fontWeight(.semibold)
                         Image(systemName: "arrow.right")

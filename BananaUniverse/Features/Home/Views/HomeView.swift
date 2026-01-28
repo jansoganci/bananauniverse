@@ -38,8 +38,8 @@ struct HomeView: View {
                                         .font(.system(size: 20, weight: .medium))
                                         .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
                                 }
-                                .accessibilityLabel("Search tools")
-                                .accessibilityHint("Double tap to open search")
+                                .accessibilityLabel("home_search_tools".localized)
+                                .accessibilityHint("home_search_hint".localized)
                                 
                                 // Credits badge
                                 QuotaDisplayView(
@@ -108,13 +108,13 @@ struct HomeView: View {
             .refreshable {
                 viewModel.refresh()
             }
-            .alert("Error Loading Themes", isPresented: $viewModel.showingErrorAlert) {
-                Button("OK", role: .cancel) {}
-                Button("Retry") {
+            .alert("home_error_loading_themes".localized, isPresented: $viewModel.showingErrorAlert) {
+                Button("home_ok".localized, role: .cancel) {}
+                Button("home_retry".localized) {
                     viewModel.loadData()
                 }
             } message: {
-                Text(viewModel.errorMessage ?? "An error occurred")
+                Text(viewModel.errorMessage ?? "auth_error_generic".localized)
             }
         }
         .fullScreenCover(isPresented: $isSearchPresented) {
@@ -162,18 +162,18 @@ struct QuotaWarningBanner: View {
                 .font(.system(size: 16))
             
             VStack(alignment: .leading, spacing: 2) {
-                Text("Low Credits")
+                Text("home_low_credits".localized)
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(DesignTokens.Text.primary(themeManager.resolvedColorScheme))
                 
-                Text("\(creditManager.creditsRemaining) credit\(creditManager.creditsRemaining == 1 ? "" : "s") remaining")
+                Text(creditManager.creditsRemaining == 1 ? "home_credit_remaining".localized(creditManager.creditsRemaining) : "home_credits_remaining".localized(creditManager.creditsRemaining))
                     .font(.system(size: 12))
                     .foregroundColor(DesignTokens.Text.secondary(themeManager.resolvedColorScheme))
             }
             
             Spacer()
             
-            Button("Buy Credits") {
+            Button("home_buy_credits".localized) {
                 showPaywall = true
             }
             .font(.system(size: 12, weight: .semibold))

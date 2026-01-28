@@ -50,7 +50,7 @@ struct RecentActivityCard: View {
         .buttonStyle(PlainButtonStyle())
         .frame(width: 120, height: 180)
         .accessibilityLabel("\(item.effectTitle), \(item.relativeDate)")
-        .accessibilityHint("Double tap to view")
+        .accessibilityHint("accessibility_double_tap_view".localized)
     }
     
     // MARK: - Helper Functions
