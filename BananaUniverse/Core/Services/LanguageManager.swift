@@ -29,16 +29,28 @@ class LanguageManager: ObservableObject {
     @Published var currentLanguage: String {
         didSet {
             UserDefaults.standard.set(currentLanguage, forKey: "app_language")
+            updateBundle()
         }
     }
     
+    /// Cached bundle to avoid repeated path lookups and logging
+    private(set) var bundle: Bundle = .main
+    
     private init() {
         // 1. Check if user already saved a preference
-        if let savedLanguage = UserDefaults.standard.string(forKey: "app_language") {
-            self.currentLanguage = savedLanguage
+        let savedLanguage = UserDefaults.standard.string(forKey: "app_language") 
+            ?? LanguageManager.resolveDeviceLanguage().rawValue
+        
+        self.currentLanguage = savedLanguage
+        updateBundle()
+    }
+    
+    private func updateBundle() {
+        if let path = Bundle.main.path(forResource: currentLanguage, ofType: "lproj"),
+           let newBundle = Bundle(path: path) {
+            self.bundle = newBundle
         } else {
-            // 2. Resolve based on device language
-            self.currentLanguage = LanguageManager.resolveDeviceLanguage().rawValue
+            self.bundle = .main
         }
     }
     
@@ -58,21 +70,7 @@ class LanguageManager: ObservableObject {
         return .english // Fallback
     }
     
-    /// Returns the bundle for the current language
-    var bundle: Bundle {
-        print("🌐 [LanguageManager] Current Language: \(currentLanguage)")
-        if let path = Bundle.main.path(forResource: currentLanguage, ofType: "lproj") {
-            print("🌐 [LanguageManager] Found bundle path: \(path)")
-            if let bundle = Bundle(path: path) {
-                return bundle
-            }
-        }
-        print("🌐 [LanguageManager] Bundle NOT found for \(currentLanguage), falling back to .main")
-        return .main
-    }
-    
     func setLanguage(_ language: String) {
-        print("🌐 [LanguageManager] Setting language to: \(language)")
         withAnimation {
             currentLanguage = language
         }
