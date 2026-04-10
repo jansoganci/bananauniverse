@@ -1,176 +1,26 @@
-# BananaUniverse 🍌✨
+# Flario
+Flario is an iOS app for creators who want fast, AI-powered photo transformations, and it is currently in active private development.
 
-**Professional AI Image Processing Suite for iOS**
+## What it does
+- Lets users run 103 AI image tools across 11 categories from one chat-style workflow.
+- Applies edits through `nano-banana` and `nano-banana-pro`, including multi-image inputs and configurable output settings.
+- Tracks image jobs in real time with Supabase Realtime, so results appear without manual refresh.
+- Uses a persistent credit model with StoreKit 2 purchases (10/25/50/100 packs) and full transaction logs.
+- Delivers database-driven tools and category content, so new tools can be shipped without an app update.
 
-BananaUniverse is a comprehensive iOS app that transforms your photos using **103 cutting-edge AI models** across **11 dynamic categories**. Built with the Steve Jobs philosophy of "Simplicity is the ultimate sophistication," it delivers professional-grade image enhancement through a fast, elegant WhatsApp-style chat interface powered by Supabase Edge Functions and database-driven content management.
+## How I built this
+I used Cursor for day-to-day implementation, refactors, and migration-heavy backend tasks; Claude for architecture checks and edge-case reasoning; and Copilot for fast code drafting in repetitive UI and service-layer work. AI tools generated first-pass code, migration scaffolds, and implementation options, then I reviewed every integration point, finalized data flow decisions, and validated credit logic, RLS behavior, and realtime updates manually. I also owned the final product decisions around UX simplicity, tool taxonomy, and release readiness.
 
-**Current Version: 1.2.0** - Massive content expansion with database-driven tools, persistent credit system, and nano-banana integration.
-
----
-
-## ✨ Features
-
-### 🎨 **103 AI-Powered Tools Across 11 Categories:**
-
-All tools are **database-driven** - new tools can be added remotely without app updates!
-
-#### **Main Tools (7)**
-- Remove Object from Image (lama-cleaner)
-- Remove Background (rembg)
-- Put Items on Models (virtual try-on)
-- Add Objects to Images (inpainting)
-- Change Image Perspectives
-- Generate Image Series
-- Style Transfers
-
-#### **Pro Looks (10)**
-- LinkedIn Headshot Generator
-- Passport Photo Creator
-- Twitter/X Avatar Maker
-- Gradient Headshot
-- Resume Photo Generator
-- Slide Background Maker
-- YouTube Thumbnail Creator
-- CV/Portfolio Portrait
-- Profile Banner Generator
-- Designer-Style ID Photo
-
-#### **Restoration (2)**
-- Image Upscaler (2x-4x)
-- Historical Photo Restore (colorization)
-
-#### **Seasonal (9)**
-- Thanksgiving Magic Edit, Family Portrait, Autumn Color Enhancer
-- Christmas Magic Edit, Holiday Portrait, Winter Wonderland, Santa Hat Overlay
-- New Year Glamour, Confetti Celebration
-
-#### **🔥 Animated Vehicles (10)** - NEW! ✅ With Thumbnails
-- Friendly Car Eyes, Racing Champion, Vintage Cartoon Car
-- Monster Truck Toon, Friendly Bus, Sports Car Hero
-- Cartoon Truck, Off-Road Explorer, Classic Roadster, Rally Racer
-
-#### **🔥 Anime Styles (15)** - NEW! Viral Potential
-- Studio Ghibli Style ⭐, Makoto Shinkai Style ⭐
-- Magical Girl Anime, Shonen Action Hero, Kawaii Chibi Style
-- Dark Anime Aesthetic, 90s Retro Anime, Slice of Life Anime
-- Cyberpunk Anime, Watercolor Anime, Sports Anime Hero
-- Fantasy Anime, Romance Anime, Comedy Anime, Vintage Anime Portrait
-
-#### **🔥 Retro Aesthetic (10)** - NEW! Nostalgia Factor
-- VHS 80s Aesthetic, Y2K Digital Aesthetic, Polaroid Film Look
-- Vintage Film Grain, Grunge 90s Style, Sepia Tone Classic
-- Lo-Fi Art Style, Retro Arcade Pixel, Vintage Postcard, Old TV Static
-
-#### **Toy Style (10)** - NEW!
-- LEGO Brick Style, Action Figure Transformation, Plushie Toy Style
-- Collectible Figure Look, Wooden Toy Aesthetic, Miniature Model Style
-- Vinyl Figure Style, Toy Story Look, Wind-Up Toy Style, Toy Packaging Box
-
-#### **🔥 Meme Magic (12)** - NEW! Social Media Optimized
-- Distracted Boyfriend Setup, Drake Reaction Format, Bernie Sanders Sitting
-- Woman Yelling at Cat, Expanding Brain Meme, This Is Fine Dog
-- Side Eye Chloe, Two Buttons Choice, Galaxy Brain Ascension
-- Stonks Guy Style, Doge Transformation, Change My Mind Setup
-
-#### **Thanksgiving (8)** - Expanded
-- Multiple Thanksgiving-themed transformations with autumn aesthetics
-
-#### **Christmas (10)** - Expanded
-- Multiple Christmas-themed transformations with winter holiday magic
+## Tech Stack
+- **Frontend:** Swift 5.9+, SwiftUI (iOS 15.0+), Combine, Supabase Swift SDK, StoreKit 2
+- **Backend:** Supabase Edge Functions (Deno 1.x, TypeScript), fal.ai (`nano-banana`, `nano-banana-pro`)
+- **Database:** Supabase PostgreSQL, 94+ migrations, Row-Level Security, stored procedures (`submit_job_atomic`, `add_credits`, `deduct_credits`, `get_credits`)
+- **Integrations:** Supabase Auth, Database, Storage, Realtime (WebSocket), Apple App Store Connect (IAP verification flow)
+- **Deployment:** iOS app via Xcode/App Store Connect, backend services deployed with Supabase CLI
 
 ---
 
-### 🚀 **Core Capabilities:**
-
-#### **Database-Driven Content System** 🆕
-- All 103 tools stored in Supabase database
-- Remote content management (add tools without app updates)
-- Dynamic categories with display ordering
-- Theme thumbnails via Supabase Storage
-- 5-minute caching for optimal performance
-
-#### **Persistent Credit System** 🆕
-- **Changed from daily quota → persistent credits**
-- Start with 10 free credits (never expire!)
-- 1 credit = 1 image generation
-- Purchase credit packs: 10, 25, 50, 100 credits
-- IAP integration via StoreKit 2
-- Lifetime usage tracking
-- Transaction audit trail
-
-#### **nano-banana & nano-banana-pro Integration** 🆕
-- Dual model support (standard + pro)
-- Multi-image upload (1-2 images per generation)
-- User-selectable aspect ratios: 1:1, 16:9, 9:16, 4:3
-- Output format selection: JPEG, PNG, WEBP
-- Resolution control (Pro model): 1K, 2K, 4K
-- Dynamic credit cost calculation
-
-#### **Realtime Updates** 🆕
-- Supabase Realtime enabled on processed_images
-- Live job status updates via WebSocket
-- Automatic UI refresh on completion
-- No polling required
-
-#### **Modern User Experience**
-- **WhatsApp-Style Chat Interface**: Intuitive messaging UI for AI interactions
-- **Search & Discovery**: Quick search across all 103 tools
-- **Theme Support**: Light, Dark, and Auto modes with smooth transitions
-- **Image Library**: Complete history with save/share functionality
-- **Featured Carousel**: Dynamic showcase of tools from all categories
-- **Category Browsing**: Amazon-style horizontal scrolling rows
-
----
-
-## 🏗️ Tech Stack
-
-### **Frontend (iOS)**
-- **Language**: Swift 5.9+ + SwiftUI (iOS 15.0+)
-- **Architecture**: Feature-based MVVM with Combine
-- **Design System**: Comprehensive design tokens (DesignTokens.swift)
-- **Libraries**:
-  - Supabase Swift SDK (auth + database + storage + realtime)
-  - StoreKit 2 (native credit purchases)
-  - AsyncImage (built-in image loading)
-
-### **Backend (Serverless)**
-- **Runtime**: Supabase Edge Functions (Deno 1.x + TypeScript)
-- **AI Provider**: fal.ai (nano-banana, nano-banana-pro)
-- **Database**: Supabase PostgreSQL with RLS policies
-- **Storage**: Supabase Storage (theme-thumbnails, processed images)
-- **Realtime**: Supabase Realtime (WebSocket connections)
-
-### **Database Architecture**
-- **94+ Migrations**: Complete schema with 15+ tables
-- **Stored Procedures**: Atomic operations (submit_job_atomic, add_credits, deduct_credits)
-- **RLS Policies**: Row-Level Security on all user-facing tables
-- **Device + User Based**: Supports both anonymous and authenticated users
-
-### **Edge Functions (12 Total)**
-```
-Core Processing:
-  - submit-job         (Job submission with nano-banana support)
-  - get-result         (Result polling)
-  - webhook-handler    (fal.ai webhook processing)
-
-IAP & Payments:
-  - verify-iap-purchase (Server-side IAP verification)
-  - iap-webhook        (Apple server notifications)
-
-Maintenance:
-  - cleanup-db         (Database cleanup)
-  - cleanup-images     (Storage cleanup)
-  - cleanup-logs       (Log rotation)
-
-Monitoring:
-  - health-check       (System health)
-  - log-alert         (Alert notifications)
-  - log-monitor       (Log monitoring)
-```
-
----
-
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -241,7 +91,9 @@ Cmd + R
 
 ---
 
-## 📱 App Structure
+## Project Structure
+
+The shipping app name is **Flario**. In this repository the iOS sources and Xcode project still live under the legacy root folder and project name `BananaUniverse` (see installation steps above).
 
 ```
 BananaUniverse/
@@ -310,7 +162,7 @@ BananaUniverse/
 
 ---
 
-## 🔧 Configuration
+## Database Schema & API
 
 ### Database Architecture
 
@@ -364,7 +216,7 @@ get_credits()         -- Unified credit balance lookup
 - 100 credits pack
 ```
 
-### Thumbnail System 🆕
+### Thumbnail System
 
 **Storage Bucket:** `theme-thumbnails` (public)
 **URL Format:** `https://[project].supabase.co/storage/v1/object/public/theme-thumbnails/{filename}.png`
@@ -376,7 +228,7 @@ get_credits()         -- Unified credit balance lookup
 
 ---
 
-## 🎯 Performance & Architecture
+## Performance & Architecture
 
 ### **Steve Jobs Philosophy**
 Built following the principle: *"Simplicity is the ultimate sophistication"*
@@ -413,7 +265,7 @@ Built following the principle: *"Simplicity is the ultimate sophistication"*
 
 ---
 
-## 📊 Statistics
+## Statistics
 
 **Version 1.2.0:**
 - **AI Tools:** 103 (from 27 in v1.1.0) - 281% increase
@@ -426,7 +278,7 @@ Built following the principle: *"Simplicity is the ultimate sophistication"*
 
 ---
 
-## 🚧 What's Next
+## What's Next
 
 ### Pending Features
 - **Thumbnail Generation** (93 remaining themes)
@@ -441,23 +293,23 @@ Built following the principle: *"Simplicity is the ultimate sophistication"*
 
 ---
 
-## 📄 License
+## License
 
 This project is private and proprietary. All rights reserved.
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 This is a private project. For questions or support, contact the development team.
 
 ---
 
-## 📚 Documentation
+## Additional docs
 
 ### Core Documentation
 - **CHANGELOG.md** - Complete version history with v1.2.0 updates
-- **README.md** (this file) - Project overview and setup
+- **README.md** (this file) - Flario project overview and setup
 - **STEVE_JOBS_MASTER_PLAN.md** - Development philosophy
 
 ### Technical Docs
@@ -465,7 +317,7 @@ This is a private project. For questions or support, contact the development tea
 - **Implementation Guides:** `docs/backend-architecture/` (8 strategy docs, ~160KB)
 - **Design System:** `Core/Design/DesignTokens.swift` - Complete UI tokens
 
-### Thumbnail System 🆕
+### Thumbnail System
 - **README_THUMBNAILS.md** - Index and overview
 - **THEME_THUMBNAILS_GENERATION_GUIDE.md** - Complete guide with prompts (40KB)
 - **QUICK_START_GUIDE.md** - 5-minute quickstart
@@ -477,7 +329,7 @@ This is a private project. For questions or support, contact the development tea
 
 ---
 
-## 🎉 Acknowledgments
+## Acknowledgments
 
 Built with:
 - **Supabase** - Backend infrastructure
@@ -489,7 +341,7 @@ Built with:
 
 **Last Updated:** November 21, 2025
 **Version:** 1.2.0
-**Maintained by:** BananaUniverse Development Team
+**Maintained by:** Flario
 
 ---
 
