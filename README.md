@@ -1,4 +1,7 @@
 # Flario
+
+> Now documented at [jansoganci.com/work/flario](https://jansoganci.com/work/flario) — part of my public build log.
+
 Flario is an iOS app for creators who want fast, AI-powered photo transformations, and it is currently in active private development.
 
 ## What it does
