@@ -2,7 +2,7 @@
 
 > Now documented at [jansoganci.com/work/flario](https://jansoganci.com/work/flario) — part of my public build log.
 
-Flario is an iOS app for creators who want fast, AI-powered photo transformations, and it is currently in active private development.
+Flario is an iOS app for creators who want fast, AI-powered photo transformations. Development has stopped — this description reflects the state of the project while it was active, not its current status.
 
 ## What it does
 - Lets users run 103 AI image tools across 11 categories from one chat-style workflow.
